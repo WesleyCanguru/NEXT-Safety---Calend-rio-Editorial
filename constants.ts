@@ -201,7 +201,7 @@ export const SOCIAL_STRATEGY: PlatformStrategy[] = [
     id: 'linkedin',
     name: 'LinkedIn',
     schedule: 'Terça e Quinta',
-    description: 'Esses são, historicamente e em 2025/2026, os melhores dias do LinkedIn.',
+    description: 'Foco total em qualidade e exclusividade. Terça e Quinta são os dias nobres para conteúdo técnico.',
     bestDays: [
       {
         day: 'Terça',
@@ -212,7 +212,8 @@ export const SOCIAL_STRATEGY: PlatformStrategy[] = [
         reason: ['Bom alcance', 'Leitura mais profunda']
       }
     ],
-    tip: 'Colocar o post reaproveitado do Instagram em um desses dias (normalmente quinta) funciona muito bem.'
+    // Dica corrigida conforme solicitação do usuário
+    tip: 'Posts reaproveitados do Instagram podem entrar como conteúdo extra na Segunda, Quarta ou Sexta (dias originais), caso façam sentido para o público B2B. A prioridade de Terça e Quinta segue sendo conteúdo 100% exclusivo e técnico.'
   }
 ];
 
@@ -235,7 +236,7 @@ export const WEEKLY_SCHEDULE: WeeklyScheduleRow[] = [
   {
     day: 'Quinta',
     platforms: 'LinkedIn',
-    content: 'Conteúdo exclusivo OU repost adaptado'
+    content: 'Conteúdo exclusivo (Estratégico / Mercado)'
   },
   {
     day: 'Sexta',
@@ -255,7 +256,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
         'Foco: Risco, Aplicação, Ambiente, Institucional'
       ],
       linkedin: [
-        'Terça | Quinta | Sexta (Reaproveitado)',
+        'Terça | Quinta',
         'Foco: Técnico, Analítico, Estratégico'
       ]
     },
@@ -303,13 +304,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'O papel da Next Safety na proteção das mãos no Brasil'
-          },
-          {
-            day: '06/02 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post institucional',
-            theme: 'Adaptado do post institucional de 06/02'
           }
         ]
       },
@@ -347,13 +341,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático técnico',
             theme: 'Por que conforto também é segurança no uso prolongado'
-          },
-          {
-            day: '13/02 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 09/02 (materiais)',
-            theme: 'Comparativo de materiais para decisores'
           }
         ]
       },
@@ -391,13 +378,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático produto + contexto',
             theme: 'Cada aplicação exige uma luva específica'
-          },
-          {
-            day: '20/02 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 16/02',
-            theme: 'Gestão de erros no uso de EPIs'
           }
         ]
       },
@@ -435,13 +415,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional estratégico',
             theme: 'Next Safety como parceira técnica do mercado brasileiro'
-          },
-          {
-            day: '27/02 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post institucional de 27/02',
-            theme: 'Parceria técnica e estratégica'
           }
         ]
       }
@@ -457,7 +430,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
         'Foco: Tecnologia, Critérios Técnicos, Aplicação Real'
       ],
       linkedin: [
-        'Terça | Quinta | Sexta (Reaproveitado)',
+        'Terça | Quinta',
         'Foco: Técnico, Analítico, Estratégico, Gestão'
       ]
     },
@@ -502,13 +475,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'Por que a Next Safety atua como parceira técnica — não apenas fornecedora'
-          },
-          {
-            day: '06/03 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post institucional',
-            theme: 'Adaptado do post institucional de 06/03'
           }
         ]
       },
@@ -546,13 +512,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático técnico',
             theme: 'Tecnologia que trabalha a favor da produtividade'
-          },
-          {
-            day: '13/03 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 09/03',
-            theme: 'Adaptado do carrossel de 09/03'
           }
         ]
       },
@@ -590,13 +549,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional técnico',
             theme: 'Autoridade técnica se constrói com critério e consistência'
-          },
-          {
-            day: '20/03 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 16/03',
-            theme: 'Adaptado do carrossel de 16/03'
           }
         ]
       },
@@ -634,13 +586,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático estratégico',
             theme: 'Preparação do mercado para novas soluções em proteção das mãos'
-          },
-          {
-            day: '27/03 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 23/03',
-            theme: 'Adaptado do post de 23/03'
           }
         ]
       },
@@ -674,7 +619,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
         'Foco: Evento, Tecnologia, Aplicação Real'
       ],
       linkedin: [
-        'Terça | Quinta | Sexta (Reaproveitado)',
+        'Terça | Quinta',
         'Foco: Técnico, Estratégico, Networking'
       ]
     },
@@ -706,13 +651,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático técnico',
             theme: 'Por que eventos técnicos são fundamentais para a evolução da SST'
-          },
-          {
-            day: '03/04 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 03/04 (Instagram)',
-            theme: 'Adaptado do post de 03/04 (Instagram)'
           }
         ]
       },
@@ -750,24 +688,17 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'Next Safety na Proteminas: conhecimento, tecnologia e diálogo técnico'
-          },
-          {
-            day: '10/04 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 06/04',
-            theme: 'Adaptado do carrossel de 06/04'
           }
         ]
       },
       {
-        title: 'SEMANA 3 (PROTEMINAS)',
+        title: 'SEMANA 3 (PROTEMINAS 14-16/04)',
         days: [
           {
             day: '13/04 – Segunda-feira',
             platform: 'meta',
             type: 'Estático pré-evento',
-            theme: 'Começa a Proteminas: tecnologia, proteção e troca de conhecimento'
+            theme: 'É amanhã: Proteminas reúne o setor para debater o futuro da proteção'
           },
           {
             day: '14/04 – Terça-feira',
@@ -794,13 +725,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'Conexão com o mercado: ouvir, entender e evoluir soluções'
-          },
-          {
-            day: '17/04 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 13/04',
-            theme: 'Adaptado do post de 13/04'
           }
         ]
       },
@@ -838,13 +762,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'O que fica após um evento técnico: aprendizado aplicado'
-          },
-          {
-            day: '24/04 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 20/04',
-            theme: 'Adaptado do carrossel de 20/04'
           }
         ]
       },
@@ -878,7 +795,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
         'Foco: SST, Risco Real, Decisão Técnica'
       ],
       linkedin: [
-        'Terça | Quinta | Sexta (Reaproveitado)',
+        'Terça | Quinta',
         'Foco: Responsabilidade Profissional, Estratégia, Eventos'
       ]
     },
@@ -897,13 +814,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'SST não é obrigação. É responsabilidade técnica.'
-          },
-          {
-            day: '01/05 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post institucional',
-            theme: 'O papel estratégico da SST nas organizações modernas'
           }
         ]
       },
@@ -941,13 +851,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático técnico',
             theme: 'A diferença entre EPI escolhido e EPI correto'
-          },
-          {
-            day: '08/05 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 04/05',
-            theme: 'Adaptado do carrossel de 04/05'
           }
         ]
       },
@@ -985,13 +888,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'SST como pilar de produtividade e continuidade operacional'
-          },
-          {
-            day: '15/05 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 11/05',
-            theme: 'Adaptado do post de 11/05'
           }
         ]
       },
@@ -1029,13 +925,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'SST em foco: conhecimento que move decisões'
-          },
-          {
-            day: '22/05 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 18/05',
-            theme: 'Adaptado do carrossel de 18/05'
           }
         ]
       },
@@ -1073,13 +962,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'SST se constrói com diálogo, técnica e responsabilidade'
-          },
-          {
-            day: '29/05 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 25/05',
-            theme: 'Adaptado do post de 25/05'
           }
         ]
       }
@@ -1095,7 +977,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
         'Foco: Pós-evento, Aprendizado, Maturidade'
       ],
       linkedin: [
-        'Terça | Quinta | Sexta (Reaproveitado)',
+        'Terça | Quinta',
         'Foco: Técnico, Estratégico, Exclusividade'
       ]
     },
@@ -1107,20 +989,20 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
     ],
     weeks: [
       {
-        title: 'SEMANA 1',
+        title: 'SEMANA 1 (EXPOSEG 01-03/06)',
         days: [
           {
             day: '01/06 – Segunda-feira',
             platform: 'meta',
             type: 'Estático institucional',
-            theme: 'O que os grandes eventos de SST nos ensinam'
+            theme: 'Começa hoje a Exposeg: um marco para a SST no ano'
           },
           {
             day: '02/06 – Terça-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Post técnico',
-            theme: 'Eventos técnicos como fonte real de evolução em SST'
+            theme: 'Acompanhando as inovações na Exposeg em tempo real'
           },
           {
             day: '03/06 – Quarta-feira',
@@ -1140,13 +1022,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático técnico',
             theme: 'Da teoria à prática: como o conhecimento vira proteção real'
-          },
-          {
-            day: '05/06 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 01/06',
-            theme: 'Adaptado do post de 01/06'
           }
         ]
       },
@@ -1184,13 +1059,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'Segurança real exige critérios claros'
-          },
-          {
-            day: '12/06 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 08/06',
-            theme: 'Adaptado do carrossel de 08/06'
           }
         ]
       },
@@ -1228,13 +1096,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'Exclusividade que se traduz em desempenho'
-          },
-          {
-            day: '19/06 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 15/06',
-            theme: 'Adaptado do post de 15/06'
           }
         ]
       },
@@ -1272,13 +1133,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'Decisões técnicas constroem ambientes mais seguros'
-          },
-          {
-            day: '26/06 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 22/06',
-            theme: 'Adaptado do carrossel de 22/06'
           }
         ]
       },
@@ -1312,7 +1166,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
         'Foco: Educação, Evergreen, Técnica'
       ],
       linkedin: [
-        'Terça | Quinta | Sexta (Reaproveitado)',
+        'Terça | Quinta',
         'Foco: Maturidade, Estratégia, Educação'
       ]
     },
@@ -1344,13 +1198,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático educacional',
             theme: 'Proteção eficiente começa pelo entendimento do risco'
-          },
-          {
-            day: '03/07 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do vídeo de 01/07',
-            theme: 'Adaptado do vídeo de 01/07'
           }
         ]
       },
@@ -1388,13 +1235,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático técnico',
             theme: 'Corte, abrasão, impacto e calor: como pensar em conjunto'
-          },
-          {
-            day: '10/07 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 06/07',
-            theme: 'Adaptado do carrossel de 06/07'
           }
         ]
       },
@@ -1432,13 +1272,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático educacional',
             theme: 'Erros comuns na escolha de luvas de segurança'
-          },
-          {
-            day: '17/07 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 13/07',
-            theme: 'Adaptado do post de 13/07'
           }
         ]
       },
@@ -1476,13 +1309,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'Proteção correta é resultado de conhecimento acumulado'
-          },
-          {
-            day: '24/07 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 20/07',
-            theme: 'Adaptado do carrossel de 20/07'
           }
         ]
       },
@@ -1520,13 +1346,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'Segurança sólida se constrói com constância'
-          },
-          {
-            day: '31/07 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 27/07',
-            theme: 'Adaptado do post de 27/07'
           }
         ]
       }
@@ -1534,8 +1353,8 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
   },
   {
     month: 'AGOSTO 2026',
-    theme: 'PRODUTO COM CONTEXTO (VENDA CONSULTIVA)',
-    objective: 'Apresentar produtos e tecnologias da Next Safety de forma consultiva e técnica, conectando cada solução a riscos reais, aplicações específicas e critérios de escolha — sem discurso comercial direto.',
+    theme: 'PRODUTO COM CONTEXTO',
+    objective: 'Mostrar que tecnologia só faz sentido quando aplicada ao risco real, utilizando a FISP como pano de fundo conceitual (tendências e futuro) para reforçar a venda consultiva.',
     overview: {
       meta: [
         'Segunda | Quarta | Sexta',
@@ -1543,7 +1362,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
       ],
       linkedin: [
         'Terça | Quinta | Sexta (Reaproveitado)',
-        'Foco: Venda Consultiva, Estratégia, Decisão Técnica'
+        'Foco: Visão estratégica, Antecipação FISP'
       ]
     },
     results: [
@@ -1559,41 +1378,41 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
           {
             day: '03/08 – Segunda-feira',
             platform: 'meta',
-            type: 'Carrossel educacional',
-            theme: 'Produto não é genérico: por que cada risco exige uma solução específica'
+            type: 'Estático',
+            theme: 'Tecnologia em luvas só importa quando resolve o risco real'
           },
           {
             day: '04/08 – Terça-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Post técnico',
-            theme: 'Por que a escolha do produto impacta diretamente a segurança operacional'
+            theme: 'Produto sem contexto não gera valor em SST'
           },
           {
             day: '05/08 – Quarta-feira',
             platform: 'meta',
-            type: 'Vídeo (IA – luva em aplicação real)',
-            theme: 'Quando a luva certa reduz riscos invisíveis'
+            type: 'Vídeo (IA – aplicação real)',
+            theme: 'Como a tecnologia embarcada nas luvas impacta a segurança no dia a dia'
           },
           {
             day: '06/08 – Quinta-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Texto estratégico',
-            theme: 'Venda consultiva em EPIs: o papel do conhecimento técnico'
+            theme: 'Por que tecnologia aplicada virou critério decisório em segurança do trabalho'
           },
           {
             day: '07/08 – Sexta-feira',
             platform: 'meta',
-            type: 'Estático técnico',
-            theme: 'Critérios técnicos antes de definir um modelo de luva'
+            type: 'Carrossel',
+            theme: 'Do laboratório ao chão de fábrica: como nasce uma luva de alto desempenho'
           },
           {
             day: '07/08 – Sexta-feira',
             platform: 'linkedin',
             repurposed: true,
-            type: 'Adaptado do carrossel de 03/08',
-            theme: 'Adaptado do carrossel de 03/08'
+            type: 'Post adaptado',
+            theme: 'Do laboratório ao chão de fábrica: como nasce uma luva de alto desempenho'
           }
         ]
       },
@@ -1603,41 +1422,41 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
           {
             day: '10/08 – Segunda-feira',
             platform: 'meta',
-            type: 'Carrossel educacional',
-            theme: 'Luvas para ambientes com óleo, graxa e umidade: o que observar'
+            type: 'Estático',
+            theme: 'Por que não existe “luva genérica” para riscos industriais'
           },
           {
             day: '11/08 – Terça-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Post técnico',
-            theme: 'Ambientes críticos exigem EPIs tecnicamente adequados'
+            theme: 'Como os critérios técnicos estão evoluindo na escolha de EPIs industriais'
           },
           {
             day: '12/08 – Quarta-feira',
             platform: 'meta',
-            type: 'Vídeo (IA – aplicação com óleo/graxa)',
-            theme: 'Grip e segurança em ambientes escorregadios'
+            type: 'Vídeo (IA – ergonomia)',
+            theme: 'O papel da ergonomia na produtividade e na segurança das mãos'
           },
           {
             day: '13/08 – Quinta-feira',
             platform: 'linkedin',
             exclusive: true,
-            type: 'Texto consultivo',
-            theme: 'Aplicação correta evita substituições prematuras de EPI'
+            type: 'Texto estratégico',
+            theme: 'O papel da inovação responsável no futuro da SST'
           },
           {
             day: '14/08 – Sexta-feira',
             platform: 'meta',
-            type: 'Estático técnico',
-            theme: 'Por que o banho da luva faz diferença na aplicação'
+            type: 'Carrossel',
+            theme: 'Tecnologia que acompanha a evolução dos riscos industriais'
           },
           {
             day: '14/08 – Sexta-feira',
             platform: 'linkedin',
             repurposed: true,
-            type: 'Adaptado do carrossel de 10/08',
-            theme: 'Adaptado do carrossel de 10/08'
+            type: 'Post adaptado',
+            theme: 'Tecnologia que acompanha a evolução dos riscos industriais'
           }
         ]
       },
@@ -1647,41 +1466,41 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
           {
             day: '17/08 – Segunda-feira',
             platform: 'meta',
-            type: 'Carrossel educacional',
-            theme: 'Tecnologia embarcada: o que realmente importa no uso diário'
+            type: 'Estático',
+            theme: 'Quando conforto, proteção e durabilidade precisam andar juntos'
           },
           {
             day: '18/08 – Terça-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Post técnico',
-            theme: 'Tecnologia aplicada como diferencial na proteção das mãos'
+            theme: 'O que grandes feiras revelam sobre o futuro da proteção das mãos'
           },
           {
             day: '19/08 – Quarta-feira',
             platform: 'meta',
-            type: 'Vídeo (IA – conforto, ajuste e respirabilidade)',
-            theme: 'Conforto prolongado também é segurança'
+            type: 'Vídeo (IA – diferencial técnico)',
+            theme: 'O que diferencia uma luva comum de uma luva de alta performance'
           },
           {
             day: '20/08 – Quinta-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Texto estratégico',
-            theme: 'Inovação em EPIs precisa resolver problemas reais'
+            theme: 'Por que o setor de SST exige cada vez mais profundidade técnica'
           },
           {
             day: '21/08 – Sexta-feira',
             platform: 'meta',
-            type: 'Estático institucional técnico',
-            theme: 'Quando tecnologia melhora produtividade e proteção'
+            type: 'Carrossel',
+            theme: 'Tendências globais em proteção das mãos na indústria'
           },
           {
             day: '21/08 – Sexta-feira',
             platform: 'linkedin',
             repurposed: true,
-            type: 'Adaptado do carrossel de 17/08',
-            theme: 'Adaptado do carrossel de 17/08'
+            type: 'Post adaptado',
+            theme: 'Inovação em EPI: o que está moldando o futuro da segurança industrial'
           }
         ]
       },
@@ -1691,41 +1510,41 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
           {
             day: '24/08 – Segunda-feira',
             platform: 'meta',
-            type: 'Carrossel educacional',
-            theme: 'Como escolher a luva certa considerando riscos combinados'
+            type: 'Estático',
+            theme: 'Produto bom é aquele que se adapta à realidade do trabalho'
           },
           {
             day: '25/08 – Terça-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Post técnico',
-            theme: 'Riscos combinados e o desafio da escolha correta de EPIs'
+            theme: 'FISP: por que ela se tornou o principal palco da SST no Brasil'
           },
           {
             day: '26/08 – Quarta-feira',
             platform: 'meta',
-            type: 'Vídeo (IA – múltiplas aplicações industriais)',
-            theme: 'Uma luva não resolve tudo: pensando em proteção combinada'
+            type: 'Vídeo (IA – resultado final)',
+            theme: 'Por que tecnologia aplicada faz diferença no resultado final'
           },
           {
             day: '27/08 – Quinta-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Texto estratégico',
-            theme: 'Produto certo reduz custo operacional e risco jurídico'
+            theme: 'Como empresas técnicas se preparam para eventos que definem o mercado'
           },
           {
             day: '28/08 – Sexta-feira',
             platform: 'meta',
-            type: 'Estático técnico',
-            theme: 'Decisão técnica correta começa na análise do risco'
+            type: 'Carrossel',
+            theme: 'Inovação em EPI: o que está moldando o futuro da segurança industrial'
           },
           {
             day: '28/08 – Sexta-feira',
             platform: 'linkedin',
             repurposed: true,
-            type: 'Adaptado do carrossel de 24/08',
-            theme: 'Adaptado do carrossel de 24/08'
+            type: 'Post adaptado',
+            theme: 'Produto bom é aquele que se adapta à realidade do trabalho'
           }
         ]
       },
@@ -1736,14 +1555,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             day: '31/08 – Segunda-feira',
             platform: 'meta',
             type: 'Estático institucional',
-            theme: 'Produto com contexto é proteção eficiente'
-          },
-          {
-            day: '01/09 – Terça-feira',
-            platform: 'linkedin',
-            exclusive: true,
-            type: 'Post de transição',
-            theme: 'Agosto encerra: preparando o mercado para aplicações por setor'
+            theme: 'Encerrando o mês com foco na evolução técnica'
           }
         ]
       }
@@ -1751,22 +1563,22 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
   },
   {
     month: 'SETEMBRO 2026',
-    theme: 'APLICAÇÕES POR SETOR (INDÚSTRIA, MANUTENÇÃO, QUÍMICA, LOGÍSTICA)',
-    objective: 'Demonstrar, de forma técnica e aplicada, como a escolha correta da luva varia conforme o setor, o risco e a operação, reforçando o papel da Next Safety como parceira técnica na especificação de EPIs.',
+    theme: 'AUTORIDADE REGIONAL',
+    objective: 'Fortalecer a conexão com o mercado do Sul, usando o SulSST como palco central para demonstrar autoridade técnica, proximidade e liderança regional (Conexão técnica + SulSST).',
     overview: {
       meta: [
         'Segunda | Quarta | Sexta',
-        'Foco: Setorização, Aplicação, Risco Específico'
+        'Foco: Regionalização, Setor Industrial, SulSST'
       ],
       linkedin: [
         'Terça | Quinta | Sexta (Reaproveitado)',
-        'Foco: Análise Técnica, Estratégia, Gestão de EPIs'
+        'Foco: Conexão regional → FISP (regional → nacional)'
       ]
     },
     results: [
-      'Conexão com setores específicos',
-      'Autoridade em aplicações críticas',
-      'Suporte ao evento SulSST',
+      'Conexão com mercado do Sul',
+      'Autoridade em setores regionais',
+      'Forte presença no SulSST',
       'Percepção de especialista'
     ],
     weeks: [
@@ -1775,36 +1587,42 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
         days: [
           {
             day: '01/09 – Terça-feira',
+            platform: 'meta',
+            type: 'Estático (Ajuste calendário)',
+            theme: 'Autoridade técnica se constrói estando onde o setor se desenvolve'
+          },
+          {
+            day: '01/09 – Terça-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Post técnico',
-            theme: 'A importância da análise setorial na escolha de EPIs'
+            theme: 'Autoridade técnica começa no diálogo regional'
           },
           {
             day: '02/09 – Quarta-feira',
             platform: 'meta',
-            type: 'Vídeo (IA – diferentes ambientes industriais)',
-            theme: 'Cada setor apresenta riscos diferentes para as mãos'
+            type: 'Vídeo (IA – eventos técnicos)',
+            theme: 'Por que eventos técnicos continuam sendo essenciais para a SST'
           },
           {
             day: '03/09 – Quinta-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Texto estratégico',
-            theme: 'Setores diferentes exigem abordagens técnicas diferentes'
+            theme: 'Por que eventos regionais são estratégicos para a evolução da SST'
           },
           {
             day: '04/09 – Sexta-feira',
             platform: 'meta',
-            type: 'Estático técnico',
-            theme: 'Por que não existe uma luva “universal”'
+            type: 'Carrossel',
+            theme: 'O papel dos eventos regionais na evolução da segurança do trabalho'
           },
           {
             day: '04/09 – Sexta-feira',
             platform: 'linkedin',
             repurposed: true,
-            type: 'Adaptado do post de 04/09 (Instagram)',
-            theme: 'Adaptado do post de 04/09 (Instagram)'
+            type: 'Post adaptado',
+            theme: 'O papel dos eventos regionais na evolução da segurança do trabalho'
           }
         ]
       },
@@ -1814,85 +1632,85 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
           {
             day: '07/09 – Segunda-feira',
             platform: 'meta',
-            type: 'Carrossel educacional',
-            theme: 'Luvas para manutenção industrial: o que considerar'
+            type: 'Estático',
+            theme: 'Conexão regional é o primeiro passo para liderança de mercado'
           },
           {
             day: '08/09 – Terça-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Post técnico',
-            theme: 'Manutenção industrial e os riscos mais negligenciados às mãos'
+            theme: 'SulSST e o fortalecimento técnico do mercado de segurança do trabalho'
           },
           {
             day: '09/09 – Quarta-feira',
             platform: 'meta',
-            type: 'Vídeo (IA – aplicação mecânica)',
-            theme: 'Proteção mecânica em atividades de manutenção'
+            type: 'Vídeo (IA – proximidade)',
+            theme: 'O que aprendemos ao estar próximos dos profissionais de SST'
           },
           {
             day: '10/09 – Quinta-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Texto consultivo',
-            theme: 'Como especificar EPIs corretamente para equipes de manutenção'
+            theme: 'Da escuta regional às grandes decisões do setor'
           },
           {
             day: '11/09 – Sexta-feira',
             platform: 'meta',
-            type: 'Estático técnico',
-            theme: 'Corte, abrasão, impacto e calor: riscos comuns na manutenção'
+            type: 'Carrossel',
+            theme: 'SulSST: por que esse tipo de evento fortalece o setor'
           },
           {
             day: '11/09 – Sexta-feira',
             platform: 'linkedin',
             repurposed: true,
-            type: 'Adaptado do carrossel de 07/09',
-            theme: 'Adaptado do carrossel de 07/09'
+            type: 'Post adaptado',
+            theme: 'SulSST: por que esse tipo de evento fortalece o setor'
           }
         ]
       },
       {
-        title: 'SEMANA 3',
+        title: 'SEMANA 3 (SULSST)',
         days: [
           {
             day: '14/09 – Segunda-feira',
             platform: 'meta',
-            type: 'Carrossel educacional',
-            theme: 'Proteção das mãos na linha de produção industrial'
+            type: 'Estático',
+            theme: 'Esta semana, o setor de SST se encontra no Sul do país'
           },
           {
             day: '15/09 – Terça-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Post técnico',
-            theme: 'EPIs e produtividade: uma relação direta na indústria'
+            theme: 'O valor estratégico da presença técnica em eventos regionais'
           },
           {
             day: '16/09 – Quarta-feira',
             platform: 'meta',
-            type: 'Vídeo (IA – uso contínuo e precisão)',
-            theme: 'Conforto e precisão na produção industrial'
+            type: 'Vídeo (IA – troca técnica)',
+            theme: 'O valor da troca técnica para a evolução da segurança do trabalho'
           },
           {
             day: '17/09 – Quinta-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Texto estratégico',
-            theme: 'Como a escolha correta de EPIs reduz paradas operacionais'
+            theme: 'O que o SulSST nos mostra sobre os próximos passos da SST'
           },
           {
             day: '18/09 – Sexta-feira',
             platform: 'meta',
-            type: 'Estático técnico',
-            theme: 'Produtividade também depende da luva correta'
+            type: 'Carrossel',
+            theme: 'Eventos regionais constroem o caminho para grandes palcos'
           },
           {
             day: '18/09 – Sexta-feira',
             platform: 'linkedin',
             repurposed: true,
-            type: 'Adaptado do carrossel de 14/09',
-            theme: 'Adaptado do carrossel de 14/09'
+            type: 'Post adaptado',
+            theme: 'Eventos regionais constroem o caminho para grandes palcos'
           }
         ]
       },
@@ -1902,41 +1720,41 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
           {
             day: '21/09 – Segunda-feira',
             platform: 'meta',
-            type: 'Carrossel educacional',
-            theme: 'Luvas para ambientes químicos: riscos e cuidados'
+            type: 'Estático',
+            theme: 'Do regional ao global: como a SST evolui no Brasil'
           },
           {
             day: '22/09 – Terça-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Post técnico',
-            theme: 'Desafios da proteção das mãos em ambientes químicos'
+            theme: 'Do regional ao nacional: como a autoridade técnica se consolida'
           },
           {
             day: '23/09 – Quarta-feira',
             platform: 'meta',
-            type: 'Vídeo (IA – contato com líquidos/químicos)',
-            theme: 'Proteção química começa pela escolha correta do material'
+            type: 'Vídeo (IA – conexão de eventos)',
+            theme: 'O que conecta eventos regionais às grandes feiras do setor'
           },
           {
             day: '24/09 – Quinta-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Texto estratégico',
-            theme: 'Critérios técnicos para EPIs em ambientes de alto risco'
+            theme: 'FISP 2026: quando o setor se encontra para definir o futuro'
           },
           {
             day: '25/09 – Sexta-feira',
             platform: 'meta',
-            type: 'Estático institucional',
-            theme: 'SST aplicada aos ambientes mais críticos'
+            type: 'Carrossel',
+            theme: 'Quando a autoridade técnica ultrapassa fronteiras regionais'
           },
           {
             day: '25/09 – Sexta-feira',
             platform: 'linkedin',
             repurposed: true,
-            type: 'Adaptado do carrossel de 21/09',
-            theme: 'Adaptado do carrossel de 21/09'
+            type: 'Post adaptado',
+            theme: 'Quando a autoridade técnica ultrapassa fronteiras regionais'
           }
         ]
       },
@@ -1947,20 +1765,20 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             day: '28/09 – Segunda-feira',
             platform: 'meta',
             type: 'Estático institucional',
-            theme: 'Aprendizados técnicos que fortalecem a SST'
+            theme: 'O legado dos eventos regionais para a maturidade técnica'
           },
           {
             day: '29/09 – Terça-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Post institucional',
-            theme: 'A importância do SulSST para o avanço técnico da SST no Brasil'
+            theme: 'Encerrando setembro com a certeza de que a proteção começa localmente'
           },
           {
             day: '30/09 – Quarta-feira',
             platform: 'meta',
-            type: 'Vídeo (IA – visão macro de aplicações)',
-            theme: 'Proteção das mãos como estratégia por setor'
+            type: 'Vídeo (IA – visão macro)',
+            theme: 'Preparando o terreno para o palco nacional em outubro'
           }
         ]
       }
@@ -1976,7 +1794,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
         'Foco: FISP, Tecnologia, Autoridade'
       ],
       linkedin: [
-        'Terça | Quinta | Sexta (Reaproveitado)',
+        'Terça | Quinta',
         'Foco: Posicionamento, Estratégia, Evento'
       ]
     },
@@ -2002,13 +1820,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'Por que a FISP é o principal encontro de SST do país'
-          },
-          {
-            day: '02/10 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post institucional de 02/10',
-            theme: 'Adaptado do post institucional de 02/10'
           }
         ]
       },
@@ -2046,13 +1857,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'FISP: tecnologia, proteção e decisões técnicas'
-          },
-          {
-            day: '09/10 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 05/10',
-            theme: 'Adaptado do carrossel de 05/10'
           }
         ]
       },
@@ -2090,13 +1894,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático técnico',
             theme: 'Quando conhecimento e tecnologia se encontram'
-          },
-          {
-            day: '16/10 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 12/10',
-            theme: 'Adaptado do post de 12/10'
           }
         ]
       },
@@ -2134,13 +1931,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'O que fica após o maior evento de SST do país'
-          },
-          {
-            day: '23/10 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 19/10',
-            theme: 'Adaptado do carrossel de 19/10'
           }
         ]
       },
@@ -2178,13 +1968,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'Encerrando um ciclo de autoridade técnica em 2026'
-          },
-          {
-            day: '30/10 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 26/10',
-            theme: 'Adaptado do post de 26/10'
           }
         ]
       }
@@ -2200,7 +1983,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
         'Foco: Autoridade, Estratégia, Futuro'
       ],
       linkedin: [
-        'Terça | Quinta | Sexta (Reaproveitado)',
+        'Terça | Quinta',
         'Foco: Maturidade, Análise, Visão de Longo Prazo'
       ]
     },
@@ -2245,13 +2028,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático técnico',
             theme: 'Quando conhecimento acumulado vira proteção real'
-          },
-          {
-            day: '06/11 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 02/11',
-            theme: 'Adaptado do post de 02/11'
           }
         ]
       },
@@ -2289,13 +2065,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'SST madura é construída com consistência, não com atalhos'
-          },
-          {
-            day: '13/11 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 09/11',
-            theme: 'Adaptado do carrossel de 09/11'
           }
         ]
       },
@@ -2333,13 +2102,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático estratégico',
             theme: 'O futuro da SST exige decisões mais técnicas hoje'
-          },
-          {
-            day: '20/11 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 16/11',
-            theme: 'Adaptado do carrossel de 16/11'
           }
         ]
       },
@@ -2377,13 +2139,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'Encerrando o ano com maturidade técnica e responsabilidade'
-          },
-          {
-            day: '27/11 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 23/11',
-            theme: 'Adaptado do post de 23/11'
           }
         ]
       },
@@ -2417,7 +2172,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
         'Foco: Memória institucional, Confiança, Continuidade'
       ],
       linkedin: [
-        'Terça | Quinta | Sexta (Reaproveitado)',
+        'Terça | Quinta',
         'Foco: Visão de longo prazo, Maturidade'
       ]
     },
@@ -2456,13 +2211,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'O que aprendemos sobre segurança das mãos em 2026'
-          },
-          {
-            day: '04/12 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 04/12 (Instagram)',
-            theme: 'Adaptado do post de 04/12 (Instagram)'
           }
         ]
       },
@@ -2500,13 +2248,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático estratégico',
             theme: 'Quando a segurança é tratada como prioridade, os resultados aparecem'
-          },
-          {
-            day: '11/12 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do post de 07/12',
-            theme: 'Adaptado do post de 07/12'
           }
         ]
       },
@@ -2544,13 +2285,6 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'meta',
             type: 'Estático institucional',
             theme: 'Encerramos 2026 com maturidade técnica'
-          },
-          {
-            day: '18/12 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Adaptado do carrossel de 14/12',
-            theme: 'Adaptado do carrossel de 14/12'
           }
         ]
       },
