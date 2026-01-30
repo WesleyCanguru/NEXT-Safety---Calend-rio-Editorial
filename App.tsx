@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Logo } from './components/Logo';
+import { AgencyLogo } from './components/AgencyLogo';
 import { AnnualOverview } from './components/AnnualOverview';
 import { MonthDetail } from './components/MonthDetail';
 import { ANNUAL_PLAN } from './constants'; // Importado para gerar o menu
@@ -33,8 +34,21 @@ const App: React.FC = () => {
         {/* Linha Superior: Logo e Botão Home */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="cursor-pointer" onClick={handleBackToHome}>
-              <Logo size="small" />
+            
+            {/* Área de Logos */}
+            <div className="flex items-center gap-4 sm:gap-6">
+              <div className="cursor-pointer" onClick={handleBackToHome}>
+                <Logo size="small" />
+              </div>
+              
+              {/* Separador vertical */}
+              <div className="h-8 w-px bg-gray-200"></div>
+              
+              {/* Logo Canguru + Strategy by */}
+              <div className="flex items-center gap-2 opacity-90 hover:opacity-100 transition-opacity" title="Agência Canguru Digital">
+                <span className="hidden sm:block text-[10px] text-gray-400 font-medium uppercase tracking-wider">Strategy by</span>
+                <AgencyLogo />
+              </div>
             </div>
             
             <button
@@ -57,8 +71,6 @@ const App: React.FC = () => {
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2 sm:py-3 -mx-4 px-4 sm:mx-0 sm:px-0">
               {ANNUAL_PLAN.months.map((m) => {
                 const isActive = selectedMonth === m.month;
-                // Extrai apenas as 3 primeiras letras para mobile se necessário, ou usa nome completo
-                // Aqui usaremos o nome completo, mas com whitespace-nowrap
                 
                 return (
                   <button
@@ -108,11 +120,19 @@ const App: React.FC = () => {
 
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 mt-auto py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2 opacity-60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+          
+          {/* Logos Footer */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 opacity-70 hover:opacity-100 transition-opacity">
              <Logo size="small" />
+             <span className="hidden sm:block text-gray-300 text-2xl font-light">|</span>
+             <div className="flex items-center gap-3">
+               <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Strategy by</span>
+               <AgencyLogo />
+             </div>
           </div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-medium">
+
+          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-medium text-center md:text-right">
             Planejamento Editorial 2026 • Confidencial
           </p>
         </div>
