@@ -278,7 +278,9 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'linkedin',
             exclusive: true,
             type: 'Texto técnico',
-            theme: 'MaxiFlex® AD-APT™ (Endurance)'
+            theme: 'MaxiFlex® AD-APT™ (Endurance)',
+            // ADICIONADO: Exemplo de imagem já carregada via código
+            initialImageUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=2070&auto=format&fit=crop' 
           },
           {
             day: '04/02 – Quarta-feira',
@@ -286,6 +288,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             type: 'Vídeo (Reel - Produto)',
             theme: 'Luva: MaxiFlex Ultimate',
             bullets: ['Destaque: Tecnologia AD-APT (Mãos secas e frescas)', 'Aplicação: Montagem precisa', 'Modelo: 42.874']
+            // SEM IMAGEM -> Aparecerá como "Em Produção"
           },
           {
             day: '05/02 – Quinta-feira',
