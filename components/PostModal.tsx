@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { DailyContent, PostData, PostComment, PostStatus, AdFormat } from '../types';
 import { useAuth, supabase } from '../lib/supabase';
-import { X, Send, Image as ImageIcon, CheckCircle2, AlertTriangle, MessageCircle, Clock, Save, Eye } from 'lucide-react';
+import { X, Send, Image as ImageIcon, CheckCircle2, AlertTriangle, MessageCircle, Clock, Save, Eye, UploadCloud, Trash2, History, Lock, Globe } from 'lucide-react';
 import { FeedMockup } from './mockups/FeedMockup';
 import { StoryMockup } from './mockups/StoryMockup';
 
@@ -20,42 +20,55 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
   
   // Form States
   const [caption, setCaption] = useState('');
-  // Inicializa com a imagem do banco OU a imagem direta do constants.ts
   const [imageUrl, setImageUrl] = useState(dayContent.initialImageUrl || '');
   const [newComment, setNewComment] = useState('');
 
-  // Fetch Data Mock (Since user hasn't set up Supabase tables yet, we simulate)
-  // In real implementation: fetch from Supabase 'posts' and 'comments'
   useEffect(() => {
-    // Simulação de Fetch
+    // Simulation: In a real app, this would fetch the persistent history from Supabase
     const mockFetch = async () => {
-      // Tentar buscar do Supabase se existisse
-      // const { data } = await supabase.from('posts').select('*').eq('date_key', dateKey).single();
+      // Regra padrão: Se não tem imagem (simulada), começa em "Draft" (Em Produção)
+      let initialStatus: PostStatus = 'draft';
       
-      // Mock inicial
+      // Simulações apenas para demonstração (se houver dados)
+      if (dayContent.exclusive) initialStatus = 'approved';
+      if (!dayContent.initialImageUrl && !imageUrl) initialStatus = 'draft';
+
       setPost({
         date_key: dateKey,
-        status: 'draft',
+        status: initialStatus, 
         image_url: dayContent.initialImageUrl || null,
         caption: null,
         last_updated: new Date().toISOString()
       });
-      setComments([]);
+      setComments([]); 
       setLoading(false);
     };
 
     mockFetch();
-  }, [dateKey, dayContent.initialImageUrl]);
+  }, [dateKey, dayContent]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageUrl('');
+  };
 
   const handleSavePost = async () => {
     if (!imageUrl || !caption) return;
-    
-    // Simulação de salvamento
     setPost(prev => ({
       ...prev!,
       image_url: imageUrl,
       caption: caption,
-      status: 'pending_approval' // Ao salvar, vira pendente
+      status: 'pending_approval'
     }));
   };
 
@@ -75,13 +88,9 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
     setComments([...comments, newCommentObj]);
     setNewComment('');
 
-    // Lógica de mudança de status automática
     if (userRole === 'team') {
-       // Equipe comentou: muda para Roxo (Internal Review)
        setPost(prev => ({ ...prev!, status: 'internal_review' }));
     } else if (userRole === 'approver') {
-       // Viviane comentou: muda para Laranja (Changes Requested) se for para Admin
-       // Se for resposta interna, mantém roxo? Vamos simplificar: Viviane comentou = Laranja
        if (visibilityToAdmin) {
          setPost(prev => ({ ...prev!, status: 'changes_requested' }));
        }
@@ -92,37 +101,43 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
     setPost(prev => ({ ...prev!, status: 'approved' }));
   };
 
-  // Filtragem de comentários baseada no papel
+  const handlePublish = () => {
+    setPost(prev => ({ ...prev!, status: 'published' }));
+  };
+
   const visibleComments = comments.filter(c => {
-    if (userRole === 'admin') return c.visible_to_admin; // Admin só vê o que é publico
-    return true; // Viviane e Equipe veem tudo
+    if (userRole === 'admin') return c.visible_to_admin;
+    return true;
   });
 
+  // --- LÓGICA DE CORES (Idêntica ao Calendário) ---
   const getStatusColor = (s: PostStatus) => {
     switch(s) {
-      case 'approved': return 'bg-green-100 text-green-700 border-green-200';
-      case 'changes_requested': return 'bg-orange-100 text-orange-700 border-orange-200';
-      case 'internal_review': return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'pending_approval': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'draft': return 'bg-gray-100 text-gray-600 border-gray-200';
+      case 'pending_approval': return 'bg-orange-100 text-orange-700 border-orange-200'; 
+      case 'changes_requested': return 'bg-red-100 text-red-700 border-red-200'; 
+      case 'internal_review': return 'bg-purple-100 text-purple-700 border-purple-200'; 
+      case 'approved': return 'bg-blue-100 text-blue-700 border-blue-200'; 
+      case 'published': return 'bg-green-100 text-green-700 border-green-200'; 
       default: return 'bg-gray-100 text-gray-500';
     }
   };
 
   const getStatusLabel = (s: PostStatus) => {
-    // Admin vê "Em Análise" mesmo se estiver "Review Interno"
     if (userRole === 'admin' && s === 'internal_review') return 'Aguardando Cliente';
     
     switch(s) {
-      case 'approved': return 'Aprovado';
+      case 'draft': return 'Em Produção';
+      case 'pending_approval': return 'Em Aprovação';
       case 'changes_requested': return 'Ajustes Solicitados';
       case 'internal_review': return 'Discussão Interna';
-      case 'pending_approval': return 'Em Aprovação';
+      case 'approved': return 'Aprovado / Pronto';
+      case 'published': return 'Publicado';
       default: return 'Em Produção';
     }
   };
 
-  // Mockup data transformer
-  const isStory = dayContent.type.toLowerCase().includes('vídeo') || dayContent.type.toLowerCase().includes('story');
+  const isStory = dayContent.type.toLowerCase().includes('vídeo') || dayContent.type.toLowerCase().includes('story') || dayContent.type.toLowerCase().includes('reel');
   
   const mockupData = {
     type: (isStory ? 'story' : 'feed') as AdFormat,
@@ -162,7 +177,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
                <div className="w-[320px] aspect-square bg-white rounded-xl shadow-xl border border-gray-200 flex flex-col items-center justify-center text-gray-400 p-4 text-center">
                  <ImageIcon size={48} className="mb-4 opacity-30" />
                  <span className="text-sm font-medium">Nenhuma imagem definida</span>
-                 <span className="text-xs opacity-60 mt-1">Cole a URL ao lado ou no constants.ts</span>
+                 <span className="text-xs opacity-60 mt-1">Faça o upload ao lado</span>
                </div>
              )}
           </div>
@@ -170,6 +185,11 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
           <div className="mt-8 text-center max-w-md">
              <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Tema / Pauta</h3>
              <p className="text-gray-800 font-medium">{dayContent.theme}</p>
+             {dayContent.bullets && (
+                <ul className="mt-3 text-xs text-gray-500 text-left list-disc pl-5 space-y-1">
+                  {dayContent.bullets.map((b, i) => <li key={i}>{b}</li>)}
+                </ul>
+             )}
           </div>
         </div>
 
@@ -177,20 +197,27 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
         <div className="w-full md:w-1/2 flex flex-col h-full bg-white">
           
           {/* Header Actions */}
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          {/* Added pr-12 to avoid overlap with absolute close button */}
+          <div className="p-6 pr-14 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
              <div>
                 <h2 className="font-bold text-gray-900 text-lg">{dayContent.day}</h2>
                 <span className="text-xs text-gray-500 uppercase font-medium">{dayContent.platform}</span>
              </div>
              
-             {/* Action Buttons based on Role */}
+             {/* Action Buttons based on Role & Status */}
              <div className="flex gap-2">
-                {userRole === 'approver' && (
-                  <>
+                {userRole === 'approver' && post?.status !== 'approved' && post?.status !== 'published' && (
+                    // Changed to GREEN button
                     <button onClick={handleApprove} className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm shadow-sm transition-all">
                        <CheckCircle2 size={16} /> Aprovar
                     </button>
-                  </>
+                )}
+                
+                {/* Admin can publish if approved */}
+                {userRole === 'admin' && post?.status === 'approved' && (
+                    <button onClick={handlePublish} className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm shadow-sm transition-all">
+                       <Globe size={16} /> Publicar
+                    </button>
                 )}
              </div>
           </div>
@@ -198,22 +225,43 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
           {/* Chat / Content Area */}
           <div className="flex-grow overflow-y-auto p-6 space-y-6">
              
-             {/* Admin Input Area (Only visible to admin or if content exists) */}
+             {/* Admin Input Area */}
              {(userRole === 'admin' || post?.caption) && (
                <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-100">
                   <h3 className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-3 flex items-center gap-2">
                      <Clock size={14} /> Conteúdo da Publicação
                   </h3>
                   
-                  {userRole === 'admin' && post?.status !== 'approved' ? (
+                  {userRole === 'admin' && post?.status !== 'approved' && post?.status !== 'published' ? (
                      <div className="space-y-4">
-                        <input 
-                          type="text" 
-                          placeholder="URL da Imagem (Ex: https://...)"
-                          value={imageUrl}
-                          onChange={e => setImageUrl(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-200 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
+                        <div>
+                           {imageUrl ? (
+                             <div className="relative group rounded-lg overflow-hidden border border-gray-200">
+                                <img src={imageUrl} alt="Preview" className="w-full h-32 object-cover opacity-80" />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                                   <button 
+                                     onClick={handleRemoveImage}
+                                     className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white rounded-md text-xs font-bold hover:bg-red-700"
+                                   >
+                                      <Trash2 size={14} /> Remover Imagem
+                                   </button>
+                                </div>
+                             </div>
+                           ) : (
+                             <label className="border-2 border-dashed border-blue-200 bg-blue-50/50 hover:bg-blue-50 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer transition-colors group">
+                                <input 
+                                  type="file" 
+                                  accept="image/*" 
+                                  onChange={handleImageUpload} 
+                                  className="hidden" 
+                                />
+                                <UploadCloud size={24} className="text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
+                                <span className="text-sm text-blue-800 font-bold">Clique para enviar imagem</span>
+                                <span className="text-xs text-blue-400 mt-1">PNG, JPG (Preview Imediato)</span>
+                             </label>
+                           )}
+                        </div>
+
                         <textarea 
                           placeholder="Escreva a legenda aqui..."
                           value={caption}
@@ -235,39 +283,44 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
                </div>
              )}
 
-             {/* Comments Feed */}
+             {/* Comments Feed - Permanent History */}
              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                   <MessageCircle size={16} className="text-gray-400" />
-                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide">
-                      {userRole === 'admin' ? 'Histórico de Alterações' : 'Comentários da Equipe'}
-                   </h3>
+                <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-4">
+                   <div className="flex items-center gap-2">
+                      <History size={16} className="text-gray-400" />
+                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                         Histórico Permanente
+                      </h3>
+                   </div>
+                   <span className="text-[10px] text-gray-300 font-medium bg-gray-50 px-2 py-1 rounded">
+                      Os comentários nunca são apagados
+                   </span>
                 </div>
                 
                 {visibleComments.length === 0 ? (
-                   <div className="text-center py-8 text-gray-400 text-sm italic">
-                      Nenhum comentário ainda.
+                   <div className="text-center py-8 text-gray-400 text-sm italic bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                      Nenhum registro histórico para esta data.
                    </div>
                 ) : (
                    visibleComments.map((comment) => (
                       <div key={comment.id} className={`flex gap-3 ${comment.author_role === 'admin' ? 'flex-row-reverse' : ''}`}>
-                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-sm ${
                             comment.author_role === 'admin' ? 'bg-brand-dark text-white' : 
                             comment.author_role === 'approver' ? 'bg-green-100 text-green-700' :
                             'bg-purple-100 text-purple-700'
                          }`}>
                             {comment.author_name.charAt(0)}
                          </div>
-                         <div className={`p-3 rounded-xl max-w-[80%] text-sm ${
-                            comment.author_role === 'admin' ? 'bg-gray-100 text-gray-800 rounded-tr-none' : 
+                         <div className={`p-3 rounded-xl max-w-[85%] text-sm shadow-sm ${
+                            comment.author_role === 'admin' ? 'bg-white text-gray-800 border border-gray-100 rounded-tr-none' : 
                             comment.author_role === 'approver' ? 'bg-green-50 text-green-900 border border-green-100 rounded-tl-none' :
                             'bg-purple-50 text-purple-900 border border-purple-100 rounded-tl-none'
                          }`}>
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-1 border-b border-black/5 pb-1">
                                <span className="font-bold text-xs">{comment.author_name}</span>
-                               <span className="text-[10px] opacity-60">10:42</span>
+                               <span className="text-[10px] opacity-50 ml-auto">10:42 • 02/02/26</span>
                             </div>
-                            {comment.content}
+                            <p className="leading-relaxed mt-1">{comment.content}</p>
                          </div>
                       </div>
                    ))
@@ -294,13 +347,8 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
                    <Send size={16} />
                 </button>
              </div>
-             {userRole === 'approver' && (
-               <div className="flex justify-end mt-2">
-                 <button onClick={() => handleSendComment(false)} className="text-[10px] text-purple-600 font-bold hover:underline">
-                    Enviar apenas para Equipe (Roxo)
-                 </button>
-               </div>
-             )}
+             
+             {/* Removed purple text link for approver as requested */}
           </div>
 
         </div>

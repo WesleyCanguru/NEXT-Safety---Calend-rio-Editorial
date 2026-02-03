@@ -109,11 +109,12 @@ export interface MonthlyDetailedPlan {
 export type UserRole = 'admin' | 'approver' | 'team';
 
 export type PostStatus = 
-  | 'draft'               // Cinza (Ninguém subiu nada)
-  | 'pending_approval'    // Azul (Enviado pelo Admin)
-  | 'internal_review'     // Roxo (Comentário da Equipe - Admin vê Azul)
-  | 'changes_requested'   // Laranja (Viviane pediu ajuste)
-  | 'approved';           // Verde (Viviane aprovou)
+  | 'draft'               // Cinza (Em Produção)
+  | 'pending_approval'    // Laranja (Em Aprovação)
+  | 'changes_requested'   // Vermelho (Ajustes Solicitados)
+  | 'internal_review'     // Roxo (Discussão Interna)
+  | 'approved'            // Azul (Aprovado e pronto)
+  | 'published';          // Verde (Publicado)
 
 export interface PostComment {
   id: string;
