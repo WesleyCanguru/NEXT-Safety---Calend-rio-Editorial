@@ -1,4 +1,5 @@
 
+
 import { AdSetData, AnnualStrategy, PlatformStrategy, WeeklyScheduleRow, MonthlyDetailedPlan } from './types';
 
 export const ANNUAL_PLAN: AnnualStrategy = {
@@ -273,18 +274,11 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
         title: 'SEMANA 1 - A REFERÊNCIA EM PRECISÃO',
         days: [
           {
-            day: '02/02 – Segunda-feira',
-            platform: 'meta',
-            type: 'Estático / Carrossel',
-            theme: 'Critérios para escolher uma luva de precisão',
-            bullets: ['Respirabilidade 360º', 'Durabilidade vs. Preço']
-          },
-          {
             day: '03/02 – Terça-feira',
             platform: 'linkedin',
             exclusive: true,
             type: 'Texto técnico',
-            theme: 'O custo oculto da falta de respirabilidade nas mãos dos operadores'
+            theme: 'MaxiFlex® AD-APT™ (Endurance)'
           },
           {
             day: '04/02 – Quarta-feira',
@@ -298,20 +292,14 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'linkedin',
             exclusive: true,
             type: 'Texto analítico',
-            theme: 'Por que a tecnologia AD-APT reduziu dermatites na indústria'
+            theme: 'MaxiFlex Ultimate'
           },
           {
             day: '06/02 – Sexta-feira',
             platform: 'meta',
-            type: 'Estático institucional',
-            theme: 'Next Safety: Parceira técnica ATG no Brasil'
-          },
-          {
-            day: '06/02 – Sexta-feira',
-            platform: 'linkedin',
-            repurposed: true,
-            type: 'Post adaptado',
-            theme: 'MaxiFlex Ultimate: O padrão global em precisão'
+            type: 'Estático / Carrossel',
+            theme: 'Critérios para escolher uma luva de precisão',
+            bullets: ['Respirabilidade 360º', 'Durabilidade vs. Preço']
           }
         ]
       },

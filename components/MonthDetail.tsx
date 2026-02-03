@@ -68,7 +68,6 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
     
     // Simulações para visualização
     if (day.exclusive) return 'approved';
-    if (index === 1) return 'changes_requested';
     
     // Default agora é draft (Cinza) mesmo para vídeos, até que mude de fato
     return 'draft';
