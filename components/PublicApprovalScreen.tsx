@@ -10,6 +10,8 @@ import { CheckCircle2, AlertTriangle, Send, User, Loader2, XCircle } from 'lucid
 export const PublicApprovalScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [postData, setPostData] = useState<PostData | null>(null);
+  
+  // O conteúdo base pode vir do estático OU ser montado dinamicamente via banco
   const [dayContent, setDayContent] = useState<DailyContent | null>(null);
   const [error, setError] = useState('');
   
@@ -35,54 +37,86 @@ export const PublicApprovalScreen: React.FC = () => {
 
     const loadData = async () => {
       try {
-        // 1. Find Static Content from Constants
-        let foundContent: DailyContent | null = null;
-        // Logic to reverse lookup content from DETAILED_MONTHLY_PLANS based on dateKey (format: DD-MM-YYYY)
-        // dateKey example: 03-02-2026
-        const [day, month, year] = dateKey.split('-');
-        const searchKey = `${day}/${month}`;
-        
-        for (const plan of DETAILED_MONTHLY_PLANS) {
-           for (const week of plan.weeks) {
-              for (const d of week.days) {
-                 if (d.day.includes(searchKey)) {
-                    foundContent = d;
-                    break;
-                 }
-              }
-           }
-        }
-
-        if (!foundContent) {
-           setError('Conteúdo não encontrado no planejamento.');
-           setLoading(false);
-           return;
-        }
-        setDayContent(foundContent);
-
-        // 2. Fetch Live Data from Supabase
-        const { data } = await supabase
+        // 1. Tentar buscar dados reais no Supabase (Prioridade Máxima)
+        const { data: dbData, error: dbError } = await supabase
           .from('posts')
           .select('*')
           .eq('date_key', dateKey)
           .single();
 
-        if (data) {
-           setPostData(data);
-        } else {
-           // If no post record exists, create a dummy one based on static content
-           setPostData({
+        // 2. Tentar buscar dados no Planejamento Estático (Fallback para posts não salvos)
+        let staticContent: DailyContent | null = null;
+        
+        // dateKey format expected: DD-MM-YYYY-platform (ex: 03-02-2026-linkedin)
+        const parts = dateKey.split('-');
+        
+        if (parts.length >= 3) {
+            const day = parts[0];
+            const month = parts[1];
+            const searchKey = `${day}/${month}`;
+            
+            // Procura no JSON gigante
+            for (const plan of DETAILED_MONTHLY_PLANS) {
+               for (const week of plan.weeks) {
+                  for (const d of week.days) {
+                     // Verifica se o dia bate. d.day geralmente é "03/02 – Terça..."
+                     if (d.day.startsWith(searchKey)) {
+                        // Verifica se a plataforma bate (se estiver no ID)
+                        const platformInKey = parts.length > 3 ? parts[3] : null;
+                        if (!platformInKey || d.platform === platformInKey) {
+                           staticContent = d;
+                           break;
+                        }
+                     }
+                  }
+                  if (staticContent) break;
+               }
+               if (staticContent) break;
+            }
+        }
+
+        // 3. Decisão do que mostrar
+        if (dbData) {
+            // Cenário A: Post existe no banco (editado ou criado)
+            setPostData(dbData);
+            
+            // Se achou estático, usa como base. Se não, cria base dinâmica com dados do banco
+            if (staticContent) {
+                setDayContent(staticContent);
+            } else {
+                // Post Avulso (não estava no plano original)
+                // Tenta inferir a data e plataforma do ID
+                const [d, m, y, plat] = dateKey.split('-');
+                const displayDate = `${d}/${m}/${y}`;
+                const displayPlat = (plat === 'linkedin' ? 'linkedin' : 'meta');
+
+                setDayContent({
+                    day: displayDate,
+                    platform: displayPlat,
+                    type: dbData.type || 'Post Extra',
+                    theme: dbData.theme || 'Sem tema definido',
+                    bullets: dbData.bullets || [],
+                    initialImageUrl: dbData.image_url || undefined
+                });
+            }
+        } else if (staticContent) {
+            // Cenário B: Post nunca foi salvo no banco, mas existe no plano (Draft Virtual)
+            setPostData({
               date_key: dateKey,
-              status: foundContent.exclusive ? 'approved' : 'draft',
-              image_url: foundContent.initialImageUrl || null,
+              status: staticContent.exclusive ? 'approved' : 'draft', // Assume draft se não exclusivo
+              image_url: staticContent.initialImageUrl || null,
               caption: null,
               last_updated: new Date().toISOString()
            });
+           setDayContent(staticContent);
+        } else {
+            // Cenário C: Não existe nem no banco nem no plano
+            throw new Error('Publicação não encontrada.');
         }
 
       } catch (err) {
         console.error(err);
-        setError('Erro ao carregar publicação.');
+        setError('Publicação não encontrada ou link incorreto.');
       } finally {
         setLoading(false);
       }
@@ -126,12 +160,12 @@ export const PublicApprovalScreen: React.FC = () => {
            .upsert({
               date_key: dateKey,
               status: 'approved',
-              image_url: postData?.image_url, // Ensure we don't lose data if upserting new
+              image_url: postData?.image_url || dayContent?.initialImageUrl, // Ensure we preserve image
               caption: postData?.caption,
               // Maintain existing overrides if they exist in state
-              theme: postData?.theme,
-              type: postData?.type,
-              bullets: postData?.bullets,
+              theme: postData?.theme || dayContent?.theme,
+              type: postData?.type || dayContent?.type,
+              bullets: postData?.bullets || dayContent?.bullets,
               last_updated: new Date().toISOString()
            }, { onConflict: 'date_key' });
 
@@ -164,12 +198,12 @@ export const PublicApprovalScreen: React.FC = () => {
            .upsert({
               date_key: dateKey,
               status: 'changes_requested',
-              image_url: postData?.image_url,
+              image_url: postData?.image_url || dayContent?.initialImageUrl,
               caption: postData?.caption,
               // Maintain existing overrides if they exist in state
-              theme: postData?.theme,
-              type: postData?.type,
-              bullets: postData?.bullets,
+              theme: postData?.theme || dayContent?.theme,
+              type: postData?.type || dayContent?.type,
+              bullets: postData?.bullets || dayContent?.bullets,
               last_updated: new Date().toISOString()
            }, { onConflict: 'date_key' });
 
@@ -195,18 +229,41 @@ export const PublicApprovalScreen: React.FC = () => {
      }
   };
 
-  if (loading || !dayContent) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><Loader2 className="animate-spin text-blue-600" size={40} /></div>;
-  if (error) return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-red-600 font-bold">{error}</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><Loader2 className="animate-spin text-blue-600" size={40} /></div>;
+  
+  if (error || !dayContent) return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-brand-dark p-6 text-center">
+          <XCircle size={48} className="text-red-400 mb-4" />
+          <h2 className="text-xl font-bold mb-2">Link Indisponível</h2>
+          <p className="text-gray-500">{error || 'Não foi possível carregar os dados desta publicação.'}</p>
+      </div>
+  );
 
-  const isVideo = postData?.image_url?.match(/\.(mp4|webm|ogg)$/i);
+  const isVideo = (postData?.image_url || dayContent.initialImageUrl)?.match(/\.(mp4|webm|ogg)$/i);
   const isLinkedin = dayContent.platform === 'linkedin';
 
-  // Apply Overrides
+  // Apply Overrides (DB wins, then Static)
   const effectiveDayContent: DailyContent = {
      ...dayContent,
      theme: postData?.theme || dayContent.theme,
      type: postData?.type || dayContent.type,
      bullets: postData?.bullets || dayContent.bullets
+  };
+  
+  const displayImage = postData?.image_url || dayContent.initialImageUrl || '';
+  const displayCaption = postData?.caption || '';
+
+  // Helpers de Tradução
+  const getStatusLabel = (s?: string) => {
+    const map: Record<string, string> = {
+        'draft': 'Rascunho (Em Produção)',
+        'pending_approval': 'Aprovação Pendente',
+        'changes_requested': 'Ajustes Solicitados',
+        'internal_review': 'Discussão Interna',
+        'approved': 'Aprovado',
+        'published': 'Publicado'
+    };
+    return map[s || 'draft'] || s;
   };
 
   return (
@@ -247,15 +304,15 @@ export const PublicApprovalScreen: React.FC = () => {
                       {isLinkedin ? (
                          <LinkedInView 
                            dayContent={effectiveDayContent} 
-                           caption={postData?.caption || ''} 
-                           imageUrl={postData?.image_url || ''} 
+                           caption={displayCaption} 
+                           imageUrl={displayImage} 
                            isVideo={!!isVideo} 
                          />
                       ) : (
                          <InstagramView 
                            dayContent={effectiveDayContent} 
-                           caption={postData?.caption || ''} 
-                           imageUrl={postData?.image_url || ''} 
+                           caption={displayCaption} 
+                           imageUrl={displayImage} 
                            isVideo={!!isVideo} 
                          />
                       )}
@@ -267,7 +324,7 @@ export const PublicApprovalScreen: React.FC = () => {
                            postData?.status === 'changes_requested' ? 'bg-red-100 text-red-700 border-red-200' : 
                            'bg-gray-100 text-gray-600 border-gray-200'
                          }`}>
-                         Status Atual: {postData?.status === 'approved' ? 'Aprovado' : postData?.status === 'changes_requested' ? 'Ajustes Solicitados' : 'Em Análise'}
+                         Status: {getStatusLabel(postData?.status)}
                       </span>
                    </div>
                 </div>
@@ -277,8 +334,8 @@ export const PublicApprovalScreen: React.FC = () => {
                    
                    {/* Context Box */}
                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                      <h2 className="text-lg font-bold text-gray-900 mb-1">{effectiveDayContent.day}</h2>
-                      <p className="text-sm text-gray-500 mb-6">{effectiveDayContent.theme}</p>
+                      <h2 className="text-lg font-bold text-gray-900 mb-1">{effectiveDayContent.day.split(' – ')[0]}</h2>
+                      <p className="text-sm text-gray-500 mb-6 font-medium">{effectiveDayContent.theme}</p>
 
                       {!showCommentBox && !showNamePrompt && (
                          <div className="flex flex-col gap-3">
@@ -306,7 +363,7 @@ export const PublicApprovalScreen: React.FC = () => {
                               type="text" 
                               value={userName}
                               onChange={e => setUserName(e.target.value)}
-                              placeholder="Ex: Steven, Viviane..."
+                              placeholder="Ex: Viviane..."
                               className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 outline-none"
                             />
                             <div className="flex gap-2">
@@ -343,8 +400,8 @@ export const PublicApprovalScreen: React.FC = () => {
                    </div>
 
                    <p className="text-xs text-gray-400 text-center leading-relaxed">
-                      Ao aprovar, a publicação entrará na fila de agendamento.<br/>
-                      Ao solicitar ajustes, a equipe será notificada imediatamente.
+                      Ao aprovar, a publicação será marcada como pronta.<br/>
+                      Ao solicitar ajustes, a equipe será notificada.
                    </p>
                 </div>
              </div>

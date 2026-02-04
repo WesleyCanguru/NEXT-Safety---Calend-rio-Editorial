@@ -161,6 +161,13 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
     }
   };
 
+  const handleCopyLink = () => {
+    const link = `${window.location.origin}?mode=public&id=${dateKey}`;
+    navigator.clipboard.writeText(link);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
   const handleSavePost = async () => {
     if (!postDate) {
         alert("Por favor, selecione uma data.");
@@ -382,6 +389,17 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
                  </div>
                  {userRole === 'admin' && (
                      <div className="flex gap-2">
+                        {/* Copy Link Button - RESTORED */}
+                        {!isNew && (
+                            <button 
+                                onClick={handleCopyLink}
+                                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded border border-gray-200 transition-all"
+                                title="Copiar Link de Aprovação Público"
+                            >
+                                {copiedLink ? <Check size={16} className="text-green-600" /> : <Link size={16} />}
+                            </button>
+                        )}
+
                         {!isNew && (
                             <button onClick={handleDeletePost} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded border border-transparent hover:border-red-100 transition-all" title="Excluir Post">
                                 <Trash2 size={16} />
