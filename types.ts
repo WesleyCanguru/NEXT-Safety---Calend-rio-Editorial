@@ -114,7 +114,8 @@ export type PostStatus =
   | 'changes_requested'   // Vermelho (Ajustes Solicitados)
   | 'internal_review'     // Roxo (Discussão Interna)
   | 'approved'            // Azul (Aprovado e pronto)
-  | 'published';          // Verde (Publicado)
+  | 'published'           // Verde (Publicado)
+  | 'deleted';            // Removido (Lógica para ocultar posts estáticos)
 
 export interface PostComment {
   id: string;
@@ -128,9 +129,14 @@ export interface PostComment {
 
 export interface PostData {
   id?: string;
-  date_key: string; // ID único baseado na data + plataforma (ex: "02/02/2026-linkedin")
+  date_key: string; // ID único baseado na data + plataforma (ex: "02-02-2026-linkedin")
   image_url: string | null;
   caption: string | null;
   status: PostStatus;
   last_updated: string;
+  
+  // Overrides do Planejamento (Editáveis pelo Admin)
+  theme?: string;
+  type?: string;
+  bullets?: string[];
 }

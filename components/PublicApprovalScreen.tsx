@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { DETAILED_MONTHLY_PLANS } from '../constants';
-import { PostData, PostStatus } from '../types';
+import { PostData, PostStatus, DailyContent } from '../types';
 import { InstagramView, LinkedInView } from './PlatformViews';
 import { Logo } from './Logo';
 import { CheckCircle2, AlertTriangle, Send, User, Loader2, XCircle } from 'lucide-react';
@@ -10,7 +10,7 @@ import { CheckCircle2, AlertTriangle, Send, User, Loader2, XCircle } from 'lucid
 export const PublicApprovalScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [postData, setPostData] = useState<PostData | null>(null);
-  const [dayContent, setDayContent] = useState<any>(null);
+  const [dayContent, setDayContent] = useState<DailyContent | null>(null);
   const [error, setError] = useState('');
   
   // Interaction State
@@ -36,7 +36,7 @@ export const PublicApprovalScreen: React.FC = () => {
     const loadData = async () => {
       try {
         // 1. Find Static Content from Constants
-        let foundContent = null;
+        let foundContent: DailyContent | null = null;
         // Logic to reverse lookup content from DETAILED_MONTHLY_PLANS based on dateKey (format: DD-MM-YYYY)
         // dateKey example: 03-02-2026
         const [day, month, year] = dateKey.split('-');
@@ -128,6 +128,10 @@ export const PublicApprovalScreen: React.FC = () => {
               status: 'approved',
               image_url: postData?.image_url, // Ensure we don't lose data if upserting new
               caption: postData?.caption,
+              // Maintain existing overrides if they exist in state
+              theme: postData?.theme,
+              type: postData?.type,
+              bullets: postData?.bullets,
               last_updated: new Date().toISOString()
            }, { onConflict: 'date_key' });
 
@@ -162,6 +166,10 @@ export const PublicApprovalScreen: React.FC = () => {
               status: 'changes_requested',
               image_url: postData?.image_url,
               caption: postData?.caption,
+              // Maintain existing overrides if they exist in state
+              theme: postData?.theme,
+              type: postData?.type,
+              bullets: postData?.bullets,
               last_updated: new Date().toISOString()
            }, { onConflict: 'date_key' });
 
@@ -187,11 +195,19 @@ export const PublicApprovalScreen: React.FC = () => {
      }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><Loader2 className="animate-spin text-blue-600" size={40} /></div>;
+  if (loading || !dayContent) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><Loader2 className="animate-spin text-blue-600" size={40} /></div>;
   if (error) return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-red-600 font-bold">{error}</div>;
 
   const isVideo = postData?.image_url?.match(/\.(mp4|webm|ogg)$/i);
-  const isLinkedin = dayContent?.platform === 'linkedin';
+  const isLinkedin = dayContent.platform === 'linkedin';
+
+  // Apply Overrides
+  const effectiveDayContent: DailyContent = {
+     ...dayContent,
+     theme: postData?.theme || dayContent.theme,
+     type: postData?.type || dayContent.type,
+     bullets: postData?.bullets || dayContent.bullets
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
@@ -230,14 +246,14 @@ export const PublicApprovalScreen: React.FC = () => {
                    <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-200 mb-4">
                       {isLinkedin ? (
                          <LinkedInView 
-                           dayContent={dayContent} 
+                           dayContent={effectiveDayContent} 
                            caption={postData?.caption || ''} 
                            imageUrl={postData?.image_url || ''} 
                            isVideo={!!isVideo} 
                          />
                       ) : (
                          <InstagramView 
-                           dayContent={dayContent} 
+                           dayContent={effectiveDayContent} 
                            caption={postData?.caption || ''} 
                            imageUrl={postData?.image_url || ''} 
                            isVideo={!!isVideo} 
@@ -261,8 +277,8 @@ export const PublicApprovalScreen: React.FC = () => {
                    
                    {/* Context Box */}
                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                      <h2 className="text-lg font-bold text-gray-900 mb-1">{dayContent.day}</h2>
-                      <p className="text-sm text-gray-500 mb-6">{dayContent.theme}</p>
+                      <h2 className="text-lg font-bold text-gray-900 mb-1">{effectiveDayContent.day}</h2>
+                      <p className="text-sm text-gray-500 mb-6">{effectiveDayContent.theme}</p>
 
                       {!showCommentBox && !showNamePrompt && (
                          <div className="flex flex-col gap-3">
