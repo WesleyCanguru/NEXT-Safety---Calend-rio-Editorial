@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Logo } from './components/Logo';
 import { AgencyLogo } from './components/AgencyLogo';
 import { AnnualOverview } from './components/AnnualOverview';
 import { MonthDetail } from './components/MonthDetail';
 import { LoginScreen } from './components/LoginScreen';
+import { PublicApprovalScreen } from './components/PublicApprovalScreen';
 import { ANNUAL_PLAN } from './constants'; 
 import { Map, ChevronRight, LogOut } from 'lucide-react';
 import { AuthProvider, useAuth } from './lib/supabase';
@@ -169,6 +170,20 @@ const MainApp: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  // Simple routing logic to check for Public Link
+  const [isPublicMode, setIsPublicMode] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'public' && params.get('id')) {
+       setIsPublicMode(true);
+    }
+  }, []);
+
+  if (isPublicMode) {
+     return <PublicApprovalScreen />;
+  }
+
   return (
     <AuthProvider>
       <AppContent />
