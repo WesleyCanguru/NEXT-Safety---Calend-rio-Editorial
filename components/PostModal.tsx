@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DailyContent, PostData, PostComment, PostStatus } from '../types';
 import { useAuth, supabase } from '../lib/supabase';
-import { X, Send, Image as ImageIcon, CheckCircle2, AlertTriangle, MessageCircle, Clock, Save, Eye, UploadCloud, Trash2, History, Lock, Globe, Edit3, RefreshCw, FileVideo, Heart, Bookmark, MoreHorizontal, Share2, Link, Copy, Check, LayoutTemplate, Calendar, Facebook, Linkedin } from 'lucide-react';
+import { X, Send, Image as ImageIcon, CheckCircle2, AlertTriangle, MessageCircle, Clock, Save, Eye, UploadCloud, Trash2, History, Lock, Globe, Edit3, RefreshCw, FileVideo, Heart, Bookmark, MoreHorizontal, Share2, Link, Copy, Check, LayoutTemplate, Calendar, Facebook, Linkedin, ChevronDown } from 'lucide-react';
 import { InstagramView, LinkedInView } from './PlatformViews';
 
 interface PostModalProps {
@@ -26,6 +26,15 @@ const POST_TYPES = [
   "Carrossel",
   "Carrossel educacional",
   "Carrossel técnico"
+];
+
+const STATUS_OPTIONS: { value: PostStatus; label: string }[] = [
+    { value: 'draft', label: 'Rascunho' },
+    { value: 'pending_approval', label: 'Em Aprovação' },
+    { value: 'changes_requested', label: 'Ajustes Solicitados' },
+    { value: 'internal_review', label: 'Discussão Interna' },
+    { value: 'approved', label: 'Aprovado' },
+    { value: 'published', label: 'Publicado' }
 ];
 
 export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClose, onUpdate, isNew = false, defaultDate = '' }) => {
@@ -58,6 +67,9 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
   // NEW: Date & Platform (For Move/Create)
   const [postDate, setPostDate] = useState(''); // YYYY-MM-DD
   const [platform, setPlatform] = useState<'meta' | 'linkedin'>('meta');
+  
+  // Manual Status Change (Admin only)
+  const [manualStatus, setManualStatus] = useState<PostStatus>('draft');
 
   const [newComment, setNewComment] = useState('');
 
@@ -72,7 +84,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
          setPlatform(dayContent.platform);
          setIsEditing(true); // Force edit mode for new posts
       } else {
-         // Key format: DD-MM-YYYY-platform
+         // Key format: DD-MM-YYYY-platform-suffix
          if (dateKey !== 'new') {
              const parts = dateKey.split('-');
              if (parts.length >= 3) {
@@ -93,6 +105,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
 
         if (postData) {
             setPost(postData);
+            setManualStatus(postData.status);
             setCaption(postData.caption || '');
             setImageUrl(postData.image_url || dayContent.initialImageUrl || '');
             setEditedTheme(postData.theme || dayContent.theme);
@@ -112,6 +125,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
                 last_updated: new Date().toISOString()
             };
             setPost(newPost as PostData);
+            setManualStatus('draft');
             setImageUrl(dayContent.initialImageUrl || '');
             if (userRole === 'admin') setIsEditing(true);
         }
@@ -131,6 +145,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
              last_updated: new Date().toISOString()
           };
           setPost(dummyPost as PostData);
+          setManualStatus('draft');
       }
       setLoading(false);
     };
@@ -179,16 +194,22 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
 
       // 1. Generate Target Key
       const [y, m, d] = postDate.split('-');
-      const newKey = `${d}-${m}-${y}-${platform}`;
+      let newKey = `${d}-${m}-${y}-${platform}`;
 
-      // 2. Logic for MOVE or CREATE
+      // 2. Logic for Create New (Unlimited Posts)
+      // Se é um post NOVO, adicionamos um timestamp para garantir unicidade
+      // Isso permite ter 10 posts no dia 03/02 na mesma plataforma
+      if (isNew) {
+         newKey = `${newKey}-${Date.now()}`;
+      }
+
+      // 3. Logic for MOVE
       const isMove = !isNew && newKey !== dateKey;
 
       if (isMove) {
           if (confirm(`Atenção: Você está alterando a data ou a plataforma.\nDeseja mover este post para ${d}/${m} (${platform})?`)) {
              
              // A. MARK OLD KEY AS DELETED
-             // Usamos upsert aqui porque o 'velho' pode não existir no banco (se for um post estático que estamos "apagando")
              const { error: deleteError } = await supabase.from('posts').upsert({
                  date_key: dateKey,
                  status: 'deleted',
@@ -197,21 +218,32 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
              
              if (deleteError) throw deleteError;
              
+             // Se estamos movendo, vamos tratar o novo destino como um novo post único para evitar conflito com estáticos existentes
+             newKey = `${d}-${m}-${y}-${platform}-${Date.now()}`;
+
           } else {
               setLoading(false);
               return;
           }
       }
 
-      // 3. Determine Status
-      let statusToSave: PostStatus = post?.status || 'draft';
-      
-      // Se estava deletado e estamos salvando, reativa como rascunho
-      if (statusToSave === 'deleted') statusToSave = 'draft';
+      // 4. Determine Status
+      let statusToSave: PostStatus = manualStatus; // Começa com o status manual definido pelo admin
 
-      if (statusToSave !== 'approved' && statusToSave !== 'published') {
-         const hasCreative = (imageUrl && imageUrl !== dayContent.initialImageUrl) || (caption && caption.trim().length > 0);
-         statusToSave = hasCreative ? 'pending_approval' : 'draft';
+      // Se não for admin alterando manualmente, aplica lógica automática
+      if (userRole !== 'admin' || !isEditing) {
+          statusToSave = post?.status || 'draft';
+          if (statusToSave === 'deleted') statusToSave = 'draft';
+
+          if (statusToSave !== 'approved' && statusToSave !== 'published') {
+            const hasCreative = (imageUrl && imageUrl !== dayContent.initialImageUrl) || (caption && caption.trim().length > 0);
+            statusToSave = hasCreative ? 'pending_approval' : 'draft';
+          }
+      }
+      
+      // Override se admin mudou o select explicitamente (já está em manualStatus)
+      if (userRole === 'admin' && isEditing) {
+          statusToSave = manualStatus;
       }
 
       const payload = {
@@ -225,8 +257,10 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
         last_updated: new Date().toISOString()
       };
 
-      // 4. CHECK AND SAVE (Explicit Logic to avoid 409 Conflict)
-      // Verifica se o destino JÁ existe
+      // 5. CHECK AND SAVE (Explicit Logic)
+      // Se for novo ou movido (com timestamp), é garantido ser insert.
+      // Se for edição de existente, é update.
+      
       const { data: existingDestination } = await supabase
         .from('posts')
         .select('id')
@@ -236,17 +270,10 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
       let error;
 
       if (existingDestination) {
-         // Se existe, ATUALIZA
-         const { error: updateError } = await supabase
-            .from('posts')
-            .update(payload)
-            .eq('date_key', newKey);
+         const { error: updateError } = await supabase.from('posts').update(payload).eq('date_key', newKey);
          error = updateError;
       } else {
-         // Se não existe, INSERE
-         const { error: insertError } = await supabase
-            .from('posts')
-            .insert(payload);
+         const { error: insertError } = await supabase.from('posts').insert(payload);
          error = insertError;
       }
 
@@ -257,17 +284,15 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
 
       if (onUpdate) onUpdate();
       
-      // Se foi um movimento (troca de data), fecha o modal pois o contexto mudou
-      if (isMove) {
+      if (isMove || isNew) {
           onClose();
       } else {
-          // Se foi só edição, fecha o modo de edição mas mantem preview
           setIsEditing(false);
       }
 
     } catch (error) {
       console.error(error);
-      alert('Erro ao salvar. Verifique se já não existe um post nesta data/plataforma.');
+      alert('Erro ao salvar.');
     } finally {
       setLoading(false);
     }
@@ -278,7 +303,6 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
       try {
           setLoading(true);
           
-          // Soft delete logic: Explicitly upsert status = 'deleted' to current key
           const { error } = await supabase.from('posts').upsert({
               date_key: dateKey,
               status: 'deleted',
@@ -288,7 +312,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
           if (error) throw error;
 
           if (onUpdate) onUpdate();
-          onClose(); // Fecha o modal após excluir
+          onClose(); 
       } catch (e) {
           console.error(e);
           alert("Erro ao excluir. Tente novamente.");
@@ -303,11 +327,9 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
       try {
           const { error } = await supabase.from('comments').delete().eq('id', commentId);
           if (error) throw error;
-          // Update local state
           setComments(prev => prev.filter(c => c.id !== commentId));
       } catch (err) {
           alert('Erro ao excluir comentário.');
-          console.error(err);
       }
   };
   
@@ -335,7 +357,6 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
             await supabase.from('posts').update({ status: 'changes_requested' }).eq('date_key', dateKey);
         }
 
-        // Add real comment to state
         if (savedComment) {
             setComments(prev => [...prev, savedComment as PostComment]);
         }
@@ -344,7 +365,6 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
         if (onUpdate) onUpdate();
         
     } catch (err) {
-        console.error(err);
         alert('Erro ao enviar comentário.');
     }
   };
@@ -353,13 +373,6 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
       await supabase.from('posts').update({ status: 'approved' }).eq('date_key', dateKey);
       setPost(prev => ({ ...prev!, status: 'approved' }));
       if (onUpdate) onUpdate();
-  };
-  const handlePublish = async () => {
-    if(confirm('Marcar como publicado?')) {
-        await supabase.from('posts').update({ status: 'published' }).eq('date_key', dateKey);
-        setPost(prev => ({ ...prev!, status: 'published' }));
-        if (onUpdate) onUpdate();
-    }
   };
 
   // Helper Translation
@@ -379,7 +392,6 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
   // Helper consts
   const isVideo = imageUrl?.match(/\.(mp4|webm|ogg)$/i);
   const effectiveDayContent = { ...dayContent, theme: editedTheme, type: editedType, bullets: editedBullets ? editedBullets.split('\n') : [] };
-  // Use state platform if creating/editing, otherwise dayContent platform
   const currentPlatform = (isNew || isEditing) ? platform : dayContent.platform;
 
   return (
@@ -413,7 +425,6 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
         {/* RIGHT: Edit */}
         <div className="w-full md:w-[40%] flex flex-col h-full bg-white relative border-l border-gray-200">
            
-           {/* Added pr-12 to prevent overlap with the absolute Close X button */}
            <div className="p-5 border-b border-gray-100 flex flex-col gap-4 bg-gray-50/50 pr-12">
               <div className="flex justify-between items-start">
                  <div>
@@ -426,7 +437,6 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
                  </div>
                  {userRole === 'admin' && (
                      <div className="flex gap-2">
-                        {/* Copy Link Button - RESTORED */}
                         {!isNew && (
                             <button 
                                 onClick={handleCopyLink}
@@ -472,6 +482,26 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
              {userRole === 'admin' && isEditing && (
                  <div className="p-5 border-b border-gray-100 bg-blue-50/30 overflow-y-auto max-h-[60%] custom-scrollbar">
                     
+                    {/* MANUAL STATUS CHANGE */}
+                    <div className="bg-white p-4 rounded-lg border border-blue-100 shadow-sm mb-4">
+                        <h3 className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-3 flex items-center gap-1"><AlertTriangle size={14} /> Status da Publicação</h3>
+                        <div className="relative">
+                            <select 
+                                value={manualStatus} 
+                                onChange={(e) => setManualStatus(e.target.value as PostStatus)}
+                                className="w-full appearance-none bg-white border border-gray-300 text-gray-700 py-2 px-3 rounded leading-tight focus:outline-none focus:border-blue-500 font-medium text-sm"
+                            >
+                                {STATUS_OPTIONS.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                <ChevronDown size={14} />
+                            </div>
+                        </div>
+                        <p className="text-[10px] text-gray-500 mt-2">Alterar manualmente o status caso necessário (Sobrescreve a lógica automática).</p>
+                    </div>
+
                     {/* Metadata Edit (Date/Platform) */}
                     <div className="bg-white p-4 rounded-lg border border-blue-100 shadow-sm mb-4">
                         <h3 className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-3 flex items-center gap-1"><Calendar size={14} /> Agendamento</h3>
@@ -534,20 +564,28 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
              {!isNew && (
                  <div className="flex-grow overflow-y-auto p-5 bg-gray-50 custom-scrollbar flex flex-col gap-4">
                      {comments.map((comment) => (
-                        <div key={comment.id} className={`flex gap-2 max-w-[90%] ${comment.author_role === 'admin' ? 'self-end flex-row-reverse' : 'self-start'}`}>
-                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm flex-shrink-0 ${comment.author_role === 'admin' ? 'bg-brand-dark' : comment.author_role === 'approver' ? 'bg-green-600' : 'bg-purple-600'}`}>{comment.author_name.charAt(0)}</div>
-                           <div className={`p-3 rounded-xl text-sm shadow-sm relative group ${comment.author_role === 'admin' ? 'bg-white rounded-tr-none' : comment.author_role === 'approver' ? 'bg-green-100 text-green-900 rounded-tl-none' : 'bg-purple-100 rounded-tl-none'}`}>
-                              <p>{comment.content}</p>
-                              {/* DELETE BUTTON FOR ADMIN */}
-                              {userRole === 'admin' && (
-                                <button 
-                                    onClick={() => handleDeleteComment(comment.id)}
-                                    className="absolute -top-2 -right-2 bg-white text-gray-400 hover:text-red-500 rounded-full p-1 shadow-sm border border-gray-100 opacity-0 group-hover:opacity-100 transition-all"
-                                    title="Excluir comentário"
-                                >
-                                    <Trash2 size={12} />
-                                </button>
-                              )}
+                        <div key={comment.id} className={`flex flex-col gap-1 max-w-[90%] ${comment.author_role === 'admin' ? 'self-end' : 'self-start'}`}>
+                           
+                           {/* Author Name Header */}
+                           <div className={`text-xs font-bold text-gray-500 px-1 ${comment.author_role === 'admin' ? 'text-right' : 'text-left'}`}>
+                              {comment.author_name}
+                           </div>
+
+                           <div className={`flex gap-2 ${comment.author_role === 'admin' ? 'flex-row-reverse' : 'flex-row'}`}>
+                               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm flex-shrink-0 ${comment.author_role === 'admin' ? 'bg-brand-dark' : comment.author_role === 'approver' ? 'bg-green-600' : 'bg-purple-600'}`}>{comment.author_name.charAt(0)}</div>
+                               <div className={`p-3 rounded-xl text-sm shadow-sm relative group ${comment.author_role === 'admin' ? 'bg-white rounded-tr-none' : comment.author_role === 'approver' ? 'bg-green-100 text-green-900 rounded-tl-none' : 'bg-purple-100 rounded-tl-none'}`}>
+                                  <p>{comment.content}</p>
+                                  {/* DELETE BUTTON FOR ADMIN */}
+                                  {userRole === 'admin' && (
+                                    <button 
+                                        onClick={() => handleDeleteComment(comment.id)}
+                                        className="absolute -top-2 -right-2 bg-white text-gray-400 hover:text-red-500 rounded-full p-1 shadow-sm border border-gray-100 opacity-0 group-hover:opacity-100 transition-all"
+                                        title="Excluir comentário"
+                                    >
+                                        <Trash2 size={12} />
+                                    </button>
+                                  )}
+                               </div>
                            </div>
                         </div>
                      ))}

@@ -100,9 +100,12 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
       if (processedKeys.has(post.date_key)) return; // Já processado via estático
 
       // Verificar se o post pertence ao mês atual visualizado
-      // Key format: DD-MM-YYYY-platform
-      const [d, m, y, ...platParts] = post.date_key.split('-');
-      const platform = platParts.join('-'); // linkedin or meta
+      // Key format: DD-MM-YYYY-platform[-suffix]
+      const parts = post.date_key.split('-');
+      const d = parts[0];
+      const m = parts[1];
+      const y = parts[2];
+      const platform = parts[3] as 'meta' | 'linkedin'; // Always 4th part
       
       const postMonthName = new Date(parseInt(y), parseInt(m) - 1, parseInt(d))
         .toLocaleString('pt-BR', { month: 'long' })
@@ -115,7 +118,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
       // Criar um objeto DailyContent "fake" para o post novo
       const newContent: DailyContent = {
         day: `${dateStr} – (Novo)`,
-        platform: platform as 'meta' | 'linkedin',
+        platform: platform,
         type: post.type || 'Post Novo',
         theme: post.theme || 'Sem tema definido',
         bullets: post.bullets || [],
