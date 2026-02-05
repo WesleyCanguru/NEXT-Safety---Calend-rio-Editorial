@@ -32,8 +32,8 @@ const STATUS_OPTIONS: { value: PostStatus; label: string }[] = [
     { value: 'draft', label: 'Rascunho' },
     { value: 'pending_approval', label: 'Em Aprovação' },
     { value: 'changes_requested', label: 'Ajustes Solicitados' },
-    { value: 'internal_review', label: 'Discussão Interna' },
     { value: 'approved', label: 'Aprovado' },
+    { value: 'scheduled', label: 'Programado' },
     { value: 'published', label: 'Publicado' }
 ];
 
@@ -235,7 +235,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
           statusToSave = post?.status || 'draft';
           if (statusToSave === 'deleted') statusToSave = 'draft';
 
-          if (statusToSave !== 'approved' && statusToSave !== 'published') {
+          if (statusToSave !== 'approved' && statusToSave !== 'published' && statusToSave !== 'scheduled') {
             const hasCreative = (imageUrl && imageUrl !== dayContent.initialImageUrl) || (caption && caption.trim().length > 0);
             statusToSave = hasCreative ? 'pending_approval' : 'draft';
           }
@@ -258,8 +258,6 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
       };
 
       // 5. CHECK AND SAVE (Explicit Logic)
-      // Se for novo ou movido (com timestamp), é garantido ser insert.
-      // Se for edição de existente, é update.
       
       const { data: existingDestination } = await supabase
         .from('posts')
@@ -383,6 +381,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
         'changes_requested': 'Ajustes Solicitados',
         'internal_review': 'Discussão Interna',
         'approved': 'Aprovado',
+        'scheduled': 'Programado',
         'published': 'Publicado',
         'deleted': 'Excluído'
     };

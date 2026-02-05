@@ -198,6 +198,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
       case 'changes_requested': return 'Ajustes';
       case 'internal_review': return 'Discussão';
       case 'approved': return 'Aprovado';
+      case 'scheduled': return 'Agendado';
       case 'published': return 'Publicado';
       default: return 'Em Produção';
     }
@@ -210,6 +211,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
       case 'changes_requested': return 'bg-red-100 border-red-200 hover:bg-red-200';
       case 'internal_review': return 'bg-purple-100 border-purple-200 hover:bg-purple-200';
       case 'approved': return 'bg-blue-100 border-blue-200 hover:bg-blue-200';
+      case 'scheduled': return 'bg-purple-100 border-purple-200 hover:bg-purple-200'; // ROXO AGORA É AGENDADO
       case 'published': return 'bg-green-100 border-green-200 hover:bg-green-200';
       default: return 'bg-gray-50 border-gray-100';
     }

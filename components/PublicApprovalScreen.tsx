@@ -261,6 +261,7 @@ export const PublicApprovalScreen: React.FC = () => {
         'changes_requested': 'Ajustes Solicitados',
         'internal_review': 'Discussão Interna',
         'approved': 'Aprovado',
+        'scheduled': 'Programado',
         'published': 'Publicado'
     };
     return map[s || 'draft'] || s;
