@@ -332,7 +332,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
 
     // Empty Start
     for (let i = 0; i < firstDayOfWeek; i++) {
-      calendarCells.push(<div key={`empty-start-${i}`} className="bg-gray-50/30 border-b border-r border-gray-100 min-h-[140px]"></div>);
+      calendarCells.push(<div key={`empty-start-${i}`} className="bg-gray-50/30 border-b border-r border-gray-100 min-h-[200px]"></div>);
     }
 
     // Days
@@ -348,7 +348,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
       });
 
       calendarCells.push(
-        <div key={`day-${d}`} className="bg-white border-b border-r border-gray-100 min-h-[140px] p-2 relative group hover:bg-gray-50/50">
+        <div key={`day-${d}`} className="bg-white border-b border-r border-gray-100 min-h-[200px] p-2 relative group hover:bg-gray-50/50">
           <div className="flex justify-between items-start mb-2">
             <span className={`text-sm font-semibold ${dayEvents.length > 0 ? 'text-gray-900' : 'text-gray-400'}`}>{d}</span>
             {userRole === 'admin' && (
@@ -362,7 +362,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
             )}
           </div>
           
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 max-h-[180px] overflow-y-auto custom-scrollbar pr-1">
             {dayEvents.map((group, idx) => {
                const statusColor = getStatusColorClass(group.status);
                const hasMeta = group.platforms.includes('meta');
@@ -372,7 +372,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                 <div 
                   key={idx}
                   onClick={() => handleOpenPost({ content: group.content, key: group.primaryKey })}
-                  className={`p-2 rounded-lg border shadow-sm cursor-pointer hover:scale-[1.02] ${statusColor} relative group/card`}
+                  className={`p-2 rounded-lg border shadow-sm cursor-pointer hover:scale-[1.02] ${statusColor} relative group/card shrink-0`}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5">
@@ -415,7 +415,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
     const remainingCells = 7 - (totalCells % 7);
     if (remainingCells < 7) {
       for (let i = 0; i < remainingCells; i++) {
-        calendarCells.push(<div key={`empty-end-${i}`} className="bg-gray-50/30 border-b border-r border-gray-100 min-h-[140px]"></div>);
+        calendarCells.push(<div key={`empty-end-${i}`} className="bg-gray-50/30 border-b border-r border-gray-100 min-h-[200px]"></div>);
       }
     }
 

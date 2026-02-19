@@ -46,6 +46,9 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
   const [post, setPost] = useState<PostData | null>(null);
   const [comments, setComments] = useState<PostComment[]>([]);
   
+  // Para gerenciar mudança de data (evitar duplicação)
+  const [originalKeys, setOriginalKeys] = useState<string[]>([]);
+  
   // UI States
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -94,6 +97,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
          setPreviewPlatform(dayContent.platform);
          setIsEditing(true);
          setManualStatus('draft');
+         setOriginalKeys([]); // Novo post não tem chaves antigas
          
          // Dummy post for new
          setPost({ date_key: 'temp', status: 'draft', last_updated: new Date().toISOString() } as PostData);
@@ -145,6 +149,9 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
          let metaCap = '';
          let linkedCap = '';
 
+         // Guardar chaves originais para caso de "Move" (Alteração de data)
+         const foundKeys = [dateKey];
+
          if (currentPlat === 'meta') {
              metaCap = primaryData.caption || '';
          } else {
@@ -155,8 +162,10 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
              platformsFound.push(otherPlat);
              if (otherPlat === 'meta') metaCap = otherPostData.caption || '';
              else linkedCap = otherPostData.caption || '';
+             foundKeys.push(otherPostData.date_key);
          }
-
+         
+         setOriginalKeys(foundKeys); // Armazena chaves originais
          setSelectedPlatforms(platformsFound);
          setCaptionMeta(metaCap);
          setCaptionLinkedin(linkedCap);
@@ -255,6 +264,26 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
           statusToSave = manualStatus;
       }
 
+      // --- CHECAGEM DE MUDANÇA DE DATA (MOVER POST) ---
+      // Se não é novo, verificamos se a data mudou comparando com a dateKey original
+      if (!isNew && originalKeys.length > 0) {
+          // Extrair a parte da data da primeira chave original (formato DD-MM-YYYY-...)
+          const originalDatePart = originalKeys[0].split('-').slice(0, 3).join('-');
+          const newDatePart = `${d}-${m}-${y}`;
+
+          if (originalDatePart !== newDatePart) {
+              // A Data Mudou! Precisamos "deletar" os posts da data antiga.
+              // Percorre todas as chaves originais (ex: Meta e LinkedIn da data antiga) e marca como deleted
+              for (const oldKey of originalKeys) {
+                  await supabase.from('posts').upsert({
+                      date_key: oldKey,
+                      status: 'deleted',
+                      last_updated: new Date().toISOString()
+                  }, { onConflict: 'date_key' });
+              }
+          }
+      }
+
       // Loop through selected platforms and save independently
       for (const plat of selectedPlatforms) {
           // Generate key logic
@@ -265,19 +294,18 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
           if (isNew) {
              targetKey = `${targetKey}-${Date.now()}`;
           } else {
-              // Se estamos editando um post existente e a plataforma bate com a original, usa a original
-              // (Isso lida com posts extras que têm sufixos numéricos na chave)
-              const originalIsPlat = dateKey.includes(plat);
-              const originalDateParts = dateKey.split('-');
-              const originalDateStr = `${originalDateParts[2]}-${originalDateParts[1]}-${originalDateParts[0]}`; // YYYY-MM-DD
+              // Se estamos editando e a data for a mesma, tentamos preservar a chave original 
+              // (para o caso de posts com sufixos).
+              // Mas se a data mudou (tratado acima), targetKey será a nova data padrão.
               
-              if (originalIsPlat && originalDateStr === postDate) {
-                  targetKey = dateKey;
-              } else if (!isNew && !originalIsPlat) {
-                   // Caso estejamos "criando" a contraparte (ex: abriu Meta, selecionou Linkedin),
-                   // usamos a chave padrão. Se já existir um post no dia padrão, vai sobrescrever (upsert).
-                   // Se quiser suportar múltiplos posts por dia no Linkedin ao criar via modal, precisaria de lógica extra.
-                   // Por simplicidade, assumimos 1 post principal por dia por plataforma nessa criação automática.
+              const [oy, om, od] = postDate.split('-');
+              const currentTargetDateStr = `${od}-${om}-${oy}`; // DD-MM-YYYY
+              
+              // Verifica se alguma das chaves originais corresponde a essa plataforma E a essa data
+              const existingKeyForPlat = originalKeys.find(k => k.includes(plat) && k.startsWith(currentTargetDateStr));
+              
+              if (existingKeyForPlat) {
+                  targetKey = existingKeyForPlat;
               }
           }
 
@@ -326,12 +354,18 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
       if (!confirm("Tem certeza que deseja excluir esta publicação?")) return;
       try {
           setLoading(true);
-          const { error } = await supabase.from('posts').upsert({
-              date_key: dateKey,
-              status: 'deleted',
-              last_updated: new Date().toISOString()
-          }, { onConflict: 'date_key' });
-          if (error) throw error;
+          // Se houver múltiplas (grupo), deleta todas
+          const keysToDelete = originalKeys.length > 0 ? originalKeys : [dateKey];
+          
+          for (const k of keysToDelete) {
+             const { error } = await supabase.from('posts').upsert({
+                date_key: k,
+                status: 'deleted',
+                last_updated: new Date().toISOString()
+             }, { onConflict: 'date_key' });
+             if (error) throw error;
+          }
+
           if (onUpdate) onUpdate();
           onClose(); 
       } catch (e) {
