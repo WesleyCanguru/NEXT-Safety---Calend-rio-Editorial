@@ -266,12 +266,14 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
 
       // --- CHECAGEM DE MUDANÇA DE DATA (MOVER POST) ---
       // Se não é novo, verificamos se a data mudou comparando com a dateKey original
+      let dateChanged = false;
       if (!isNew && originalKeys.length > 0) {
           // Extrair a parte da data da primeira chave original (formato DD-MM-YYYY-...)
           const originalDatePart = originalKeys[0].split('-').slice(0, 3).join('-');
           const newDatePart = `${d}-${m}-${y}`;
 
           if (originalDatePart !== newDatePart) {
+              dateChanged = true;
               // A Data Mudou! Precisamos "deletar" os posts da data antiga.
               // Percorre todas as chaves originais (ex: Meta e LinkedIn da data antiga) e marca como deleted
               for (const oldKey of originalKeys) {
@@ -289,14 +291,13 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
           // Generate key logic
           let targetKey = `${d}-${m}-${y}-${plat}`;
           
-          // Se for NEW, adiciona timestamp pra evitar colisão
-          // Se for EDIÇÃO, tenta manter a chave original SE for a mesma data/plat, senão gera nova
-          if (isNew) {
+          // Se for NEW ou se a DATA MUDOU, adiciona timestamp pra evitar colisão e garantir unicidade
+          // Isso resolve o problema de sobrescrever posts existentes no destino
+          if (isNew || dateChanged) {
              targetKey = `${targetKey}-${Date.now()}`;
           } else {
               // Se estamos editando e a data for a mesma, tentamos preservar a chave original 
               // (para o caso de posts com sufixos).
-              // Mas se a data mudou (tratado acima), targetKey será a nova data padrão.
               
               const [oy, om, od] = postDate.split('-');
               const currentTargetDateStr = `${od}-${om}-${oy}`; // DD-MM-YYYY
@@ -328,6 +329,17 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
 
           const { error } = await supabase.from('posts').upsert(payload, { onConflict: 'date_key' });
           if (error) throw error;
+
+          // --- MIGRAÇÃO DE COMENTÁRIOS ---
+          // Se a data mudou, precisamos mover os comentários da chave antiga para a nova
+          if (dateChanged && !isNew) {
+              const oldKeyForPlat = originalKeys.find(k => k.includes(plat));
+              if (oldKeyForPlat) {
+                  await supabase.from('comments')
+                      .update({ post_id: targetKey })
+                      .eq('post_id', oldKeyForPlat);
+              }
+          }
       }
 
       // Update Local State for immediate feedback (Partial)
