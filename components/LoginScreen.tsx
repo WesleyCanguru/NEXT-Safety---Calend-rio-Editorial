@@ -3,9 +3,13 @@ import React, { useState } from 'react';
 import { Logo } from './Logo';
 import { AgencyLogo } from './AgencyLogo';
 import { useAuth } from '../lib/supabase';
-import { Lock, ArrowRight, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { Lock, ArrowRight, ShieldCheck, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
-export const LoginScreen: React.FC = () => {
+interface LoginScreenProps {
+  onBack?: () => void;
+}
+
+export const LoginScreen: React.FC<LoginScreenProps> = ({ onBack }) => {
   const { login } = useAuth();
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -40,6 +44,16 @@ export const LoginScreen: React.FC = () => {
   return (
     <div className="min-h-screen bg-background-light flex flex-col items-center justify-center p-4 relative overflow-hidden">
       
+      {/* Back Button */}
+      {onBack && (
+        <button 
+          onClick={onBack}
+          className="absolute top-6 left-6 z-20 flex items-center gap-2 text-gray-500 hover:text-brand-dark transition-colors font-medium text-sm bg-white/50 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-200 hover:border-gray-300"
+        >
+          <ArrowLeft size={16} /> Voltar
+        </button>
+      )}
+
       {/* Background decoration */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 opacity-50">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100 rounded-full blur-[100px]"></div>

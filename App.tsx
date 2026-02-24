@@ -6,13 +6,18 @@ import { AnnualOverview } from './components/AnnualOverview';
 import { MonthDetail } from './components/MonthDetail';
 import { LoginScreen } from './components/LoginScreen';
 import { PublicApprovalScreen } from './components/PublicApprovalScreen';
+import { LandingPage } from './components/LandingPage';
 import { ANNUAL_PLAN } from './constants'; 
-import { Map, ChevronRight, LogOut } from 'lucide-react';
+import { Map, ChevronRight, LogOut, Home } from 'lucide-react';
 import { AuthProvider, useAuth } from './lib/supabase';
 
 type ViewState = 'home' | 'month-detail';
 
-const MainApp: React.FC = () => {
+interface MainAppProps {
+  onBack?: () => void;
+}
+
+const MainApp: React.FC<MainAppProps> = ({ onBack }) => {
   const [view, setView] = useState<ViewState>('home');
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const { userRole, logout } = useAuth();
@@ -69,6 +74,17 @@ const MainApp: React.FC = () => {
                 <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Logado como</span>
                 <span className="text-xs font-bold text-blue-600">{getRoleLabel()}</span>
               </div>
+
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200"
+                  title="Voltar para Home"
+                >
+                  <Home size={14} />
+                  <span className="hidden sm:inline">Início</span>
+                </button>
+              )}
 
               <button
                 onClick={handleBackToHome}
@@ -169,6 +185,17 @@ const MainApp: React.FC = () => {
   );
 };
 
+const AppContent: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+  const [showLanding, setShowLanding] = useState(true);
+
+  if (showLanding) {
+    return <LandingPage onEnterEditorial={() => setShowLanding(false)} />;
+  }
+
+  return isAuthenticated ? <MainApp onBack={() => setShowLanding(true)} /> : <LoginScreen onBack={() => setShowLanding(true)} />;
+}
+
 const App: React.FC = () => {
   // Simple routing logic to check for Public Link
   const [isPublicMode, setIsPublicMode] = useState(false);
@@ -190,10 +217,5 @@ const App: React.FC = () => {
     </AuthProvider>
   );
 };
-
-const AppContent: React.FC = () => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <MainApp /> : <LoginScreen />;
-}
 
 export default App;
