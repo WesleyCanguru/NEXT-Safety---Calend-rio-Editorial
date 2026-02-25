@@ -446,8 +446,8 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
   },
   {
     month: 'MARÇO 2026',
-    theme: 'AUTORIDADE & RISCOS COMPLEXOS',
-    objective: 'Aprofundar em luvas para riscos combinados (Químico+Corte, Impacto+Corte) e reforçar a linha NexSafe e Mack.',
+    theme: 'ROBUSTEZ, COMPARAÇÃO E AUTORIDADE DE CAMPO',
+    objective: 'Introduzir Linha Mack, trabalhar impacto e robustez, inserir química e conectar com evento de 05/03.',
     overview: {
       meta: [
         'Segunda: Educacional Complexo',
@@ -649,8 +649,8 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
   },
   {
     month: 'ABRIL 2026',
-    theme: 'INOVAÇÃO & ESPECIALIDADES (PROTEMINAS)',
-    objective: 'Focar em produtos inovadores e específicos durante o mês da feira Proteminas. Destaque para MaxiDex (Vírus) e PuraChem.',
+    theme: 'ESPECIALIDADES, EVENTO E POSICIONAMENTO NACIONAL',
+    objective: 'Foco em MaxiDex, Proteminas, início oficial da comunicação FISP e especialidades técnicas.',
     overview: {
       meta: [
         'Segunda: Tendências',
