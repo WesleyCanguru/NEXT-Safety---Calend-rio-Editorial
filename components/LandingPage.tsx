@@ -83,45 +83,55 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterEditorial }) =>
             </div>
           </div>
 
-          {/* Card 2: Tráfego Pago */}
-          <a 
-            href="https://app.reportei.com/report/NgEMYfee91ZFGr6xheMOnLnuNChwwyw9" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="group bg-white rounded-2xl p-6 shadow-md border border-gray-100 hover:shadow-lg hover:border-green-200 transition-all flex flex-col h-full"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center text-green-600 group-hover:bg-green-600 group-hover:text-white transition-colors">
-                <Zap size={20} />
-              </div>
-              <ArrowRight size={16} className="text-gray-300 group-hover:text-green-600 transform group-hover:-rotate-45 transition-all" />
+          {/* Dashboards Section Wrapper */}
+          <div className="md:col-span-2 flex flex-col gap-4">
+            <div className="flex items-center gap-2 px-1">
+               <BarChart3 size={20} className="text-gray-400" />
+               <h3 className="text-xl font-bold text-gray-800">Dashboards</h3>
             </div>
-            
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Tráfego Pago</h3>
-            <p className="text-gray-500 text-xs leading-relaxed flex-grow">
-              Dashboard de performance de anúncios. Acompanhe ROI, CPC e conversões das campanhas ativas.
-            </p>
-          </a>
 
-          {/* Card 3: Tráfego Orgânico */}
-          <a 
-            href="https://app.reportei.com/report/NgEMYfee91ZFGr6xheMOnLnuNChwwyw9" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="group bg-white rounded-2xl p-6 shadow-md border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all flex flex-col h-full"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                <TrendingUp size={20} />
-              </div>
-              <ArrowRight size={16} className="text-gray-300 group-hover:text-purple-600 transform group-hover:-rotate-45 transition-all" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+              {/* Card 2: Tráfego Pago */}
+              <a 
+                href="https://app.reportei.com/report/NgEMYfee91ZFGr6xheMOnLnuNChwwyw9" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="group bg-white rounded-2xl p-6 shadow-md border border-gray-100 hover:shadow-lg hover:border-green-200 transition-all flex flex-col h-full"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center text-green-600 group-hover:bg-green-600 group-hover:text-white transition-colors">
+                    <Zap size={20} />
+                  </div>
+                  <ArrowRight size={16} className="text-gray-300 group-hover:text-green-600 transform group-hover:-rotate-45 transition-all" />
+                </div>
+                
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Tráfego Pago</h3>
+                <p className="text-gray-500 text-xs leading-relaxed flex-grow">
+                  Dashboard de performance de anúncios. Acompanhe ROI, CPC e conversões das campanhas ativas.
+                </p>
+              </a>
+
+              {/* Card 3: Tráfego Orgânico */}
+              <a 
+                href="https://app.reportei.com/report/NgEMYfee91ZFGr6xheMOnLnuNChwwyw9" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="group bg-white rounded-2xl p-6 shadow-md border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all flex flex-col h-full"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                    <TrendingUp size={20} />
+                  </div>
+                  <ArrowRight size={16} className="text-gray-300 group-hover:text-purple-600 transform group-hover:-rotate-45 transition-all" />
+                </div>
+                
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Tráfego Orgânico</h3>
+                <p className="text-gray-500 text-xs leading-relaxed flex-grow">
+                  Relatório de crescimento orgânico. Alcance, engajamento e crescimento de seguidores.
+                </p>
+              </a>
             </div>
-            
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Tráfego Orgânico</h3>
-            <p className="text-gray-500 text-xs leading-relaxed flex-grow">
-              Relatório de crescimento orgânico. Alcance, engajamento e crescimento de seguidores.
-            </p>
-          </a>
+          </div>
 
           {/* Info Box */}
           <div className="md:col-span-2 bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-6 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden">
