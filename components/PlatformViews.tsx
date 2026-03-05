@@ -9,6 +9,7 @@ interface PlatformViewProps {
   imageUrl: string | null;
   isVideo: boolean | null;
   isUploading?: boolean;
+  onImageClick?: (url: string) => void;
 }
 
 export const MediaRenderer: React.FC<{ 
@@ -17,7 +18,8 @@ export const MediaRenderer: React.FC<{
   isUploading?: boolean; 
   aspectRatioClass: string;
   helpText?: string;
-}> = ({ imageUrl, isVideo, isUploading, aspectRatioClass, helpText }) => {
+  onImageClick?: (url: string) => void;
+}> = ({ imageUrl, isVideo, isUploading, aspectRatioClass, helpText, onImageClick }) => {
   if (!imageUrl) {
     // If auto, default to a square or 4:5 placeholder for better UI
     const placeholderClass = aspectRatioClass === 'aspect-auto' ? 'aspect-[4/5]' : aspectRatioClass;
@@ -36,7 +38,7 @@ export const MediaRenderer: React.FC<{
 
   if (isVideo) {
     return (
-      <div className={`w-full ${aspectRatioClass} bg-black flex items-center justify-center overflow-hidden`}>
+      <div className={`w-full ${aspectRatioClass} bg-black flex items-center justify-center overflow-hidden cursor-pointer`} onClick={() => onImageClick && onImageClick(imageUrl)}>
         <video 
           src={imageUrl} 
           className="w-full h-full object-cover" 
@@ -50,7 +52,7 @@ export const MediaRenderer: React.FC<{
   // Image Handling
   if (aspectRatioClass === 'aspect-auto') {
       return (
-        <div className="w-full bg-gray-100 overflow-hidden flex items-center justify-center">
+        <div className="w-full bg-gray-100 overflow-hidden flex items-center justify-center cursor-pointer" onClick={() => onImageClick && onImageClick(imageUrl)}>
           <img 
             src={imageUrl} 
             className="w-full h-auto object-contain max-h-[600px]" 
@@ -61,7 +63,7 @@ export const MediaRenderer: React.FC<{
   }
 
   return (
-    <div className={`w-full ${aspectRatioClass} bg-gray-100 overflow-hidden`}>
+    <div className={`w-full ${aspectRatioClass} bg-gray-100 overflow-hidden cursor-pointer`} onClick={() => onImageClick && onImageClick(imageUrl)}>
       <img 
         src={imageUrl} 
         className="w-full h-full object-cover" 
@@ -71,7 +73,7 @@ export const MediaRenderer: React.FC<{
   );
 };
 
-export const InstagramView: React.FC<PlatformViewProps> = ({ dayContent, caption, imageUrl, isVideo, isUploading }) => {
+export const InstagramView: React.FC<PlatformViewProps> = ({ dayContent, caption, imageUrl, isVideo, isUploading, onImageClick }) => {
   const isVerticalVideo = dayContent.type.toLowerCase().includes('vídeo') || dayContent.type.toLowerCase().includes('reel');
   const aspectRatioClass = isVerticalVideo ? 'aspect-[9/16]' : 'aspect-[4/5]';
 
@@ -92,7 +94,7 @@ export const InstagramView: React.FC<PlatformViewProps> = ({ dayContent, caption
 
       {/* Media */}
       <div className="w-full">
-        <MediaRenderer imageUrl={imageUrl} isVideo={isVideo} isUploading={isUploading} aspectRatioClass={aspectRatioClass} />
+        <MediaRenderer imageUrl={imageUrl} isVideo={isVideo} isUploading={isUploading} aspectRatioClass={aspectRatioClass} onImageClick={onImageClick} />
       </div>
 
       {/* Actions */}
@@ -120,7 +122,7 @@ export const InstagramView: React.FC<PlatformViewProps> = ({ dayContent, caption
   );
 };
 
-export const LinkedInView: React.FC<PlatformViewProps> = ({ dayContent, caption, imageUrl, isVideo, isUploading }) => {
+export const LinkedInView: React.FC<PlatformViewProps> = ({ dayContent, caption, imageUrl, isVideo, isUploading, onImageClick }) => {
   const isVerticalVideo = dayContent.type.toLowerCase().includes('vídeo') || dayContent.type.toLowerCase().includes('reel');
   
   // Logic: 
@@ -165,6 +167,7 @@ export const LinkedInView: React.FC<PlatformViewProps> = ({ dayContent, caption,
           isUploading={isUploading} 
           aspectRatioClass={aspectRatioClass} 
           helpText="1920x1080 (Wide) ou 1080x1920 (Vertical)"
+          onImageClick={onImageClick}
         />
       </div>
 

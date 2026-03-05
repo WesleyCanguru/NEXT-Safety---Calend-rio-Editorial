@@ -33,6 +33,15 @@ export const PublicApprovalScreen: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Lightbox State
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
+  const handleImageClick = (url: string) => {
+      setLightboxImage(url);
+      setLightboxOpen(true);
+  };
+
   // Get ID from URL
   const queryParams = new URLSearchParams(window.location.search);
   const dateKey = queryParams.get('id');
@@ -343,6 +352,19 @@ export const PublicApprovalScreen: React.FC = () => {
 
        <main className="flex-grow flex flex-col items-center p-4 sm:p-8">
           
+          {lightboxOpen && lightboxImage && (
+              <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setLightboxOpen(false)}>
+                  <button className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors" onClick={() => setLightboxOpen(false)}>
+                      <XCircle size={32} />
+                  </button>
+                  {lightboxImage.match(/\.(mp4|webm|ogg)$/i) ? (
+                      <video src={lightboxImage} controls className="max-w-full max-h-[90vh] rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
+                  ) : (
+                      <img src={lightboxImage} alt="Full size" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
+                  )}
+              </div>
+          )}
+
           {successMessage ? (
              <div className="w-full max-w-lg bg-green-50 border border-green-200 rounded-xl p-8 text-center animate-in zoom-in-95">
                 <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -381,13 +403,17 @@ export const PublicApprovalScreen: React.FC = () => {
                        </div>
                    )}
 
-                   <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-200 mb-4 transition-all duration-300">
+                   <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-200 mb-4 transition-all duration-300 relative group">
+                      <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 text-white text-xs px-2 py-1 rounded pointer-events-none">
+                         Clique para ampliar
+                      </div>
                       {activeTab === 'linkedin' ? (
                          <LinkedInView 
                            dayContent={effectiveContent} 
                            caption={displayCaption} 
                            imageUrl={displayImage} 
                            isVideo={!!isVideo} 
+                           onImageClick={handleImageClick}
                          />
                       ) : (
                          <InstagramView 
@@ -395,6 +421,7 @@ export const PublicApprovalScreen: React.FC = () => {
                            caption={displayCaption} 
                            imageUrl={displayImage} 
                            isVideo={!!isVideo} 
+                           onImageClick={handleImageClick}
                          />
                       )}
                    </div>
@@ -418,9 +445,15 @@ export const PublicApprovalScreen: React.FC = () => {
                       <h2 className="text-lg font-bold text-gray-900 mb-1">{effectiveContent.day.split(' – ')[0]}</h2>
                       <p className="text-sm text-gray-500 mb-6 font-medium">{effectiveContent.theme}</p>
                       
-                      {hasMultiple && (
-                          <div className="mb-6 p-3 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700 font-medium text-center">
+                      {hasMultiple ? (
+                          <div className="mb-6 p-3 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700 font-medium text-center flex items-center justify-center gap-2">
+                              <CheckCircle2 size={14} />
                               Esta aprovação se aplica a ambas as plataformas (Instagram e LinkedIn).
+                          </div>
+                      ) : (
+                          <div className={`mb-6 p-3 border rounded-lg text-xs font-bold text-center flex items-center justify-center gap-2 ${primaryContent.platform === 'meta' ? 'bg-purple-50 border-purple-100 text-purple-700' : 'bg-blue-50 border-blue-100 text-blue-700'}`}>
+                              {primaryContent.platform === 'meta' ? <Instagram size={14} /> : <Linkedin size={14} />}
+                              Publicação exclusiva para {primaryContent.platform === 'meta' ? 'Instagram' : 'LinkedIn'}.
                           </div>
                       )}
 
