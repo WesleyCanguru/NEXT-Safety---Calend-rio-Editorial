@@ -52,3 +52,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 };
 
 export const useAuth = () => useContext(AuthContext);
+
+export const parseImageUrl = (url: string | string[] | null): string | string[] | null => {
+  if (!url) return null;
+  if (Array.isArray(url)) return url;
+  try {
+    // Check if it's a JSON array string
+    if (typeof url === 'string' && url.trim().startsWith('[') && url.trim().endsWith(']')) {
+      const parsed = JSON.parse(url);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {
+    // Ignore error, return as string
+  }
+  return url;
+};
+
+export const stringifyImageUrl = (url: string | string[] | null): string | null => {
+  if (!url) return null;
+  if (Array.isArray(url)) return JSON.stringify(url);
+  return url;
+};

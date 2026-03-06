@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { DailyContent, PostData, PostComment, PostStatus } from '../types';
-import { useAuth, supabase } from '../lib/supabase';
+import { useAuth, supabase, parseImageUrl, stringifyImageUrl } from '../lib/supabase';
 import { X, Send, Image as ImageIcon, CheckCircle2, AlertTriangle, Save, UploadCloud, Trash2, Edit3, RefreshCw, Link, Check, Calendar, Instagram, Linkedin, ChevronDown, Layers, Copy, LayoutTemplate } from 'lucide-react';
 import { InstagramView, LinkedInView } from './PlatformViews';
 
@@ -141,7 +141,10 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
 
          setPost(primaryData as PostData);
          setManualStatus(primaryData.status);
-         setImageUrl(primaryData.image_url || dayContent.initialImageUrl || '');
+         
+         const parsedUrl = parseImageUrl(primaryData.image_url || dayContent.initialImageUrl || '');
+         setImageUrl(parsedUrl || '');
+         
          setEditedTheme(primaryData.theme || dayContent.theme);
          setEditedType(primaryData.type || dayContent.type);
          setEditedBullets(primaryData.bullets ? primaryData.bullets.join('\n') : (dayContent.bullets ? dayContent.bullets.join('\n') : ''));
@@ -365,7 +368,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
 
           const payload = {
             date_key: targetKey,
-            image_url: imageUrl,
+            image_url: stringifyImageUrl(imageUrl),
             caption: finalCaption,
             status: statusToSave,
             theme: editedTheme,

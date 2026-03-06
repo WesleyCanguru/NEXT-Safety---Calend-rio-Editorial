@@ -84,7 +84,7 @@ export interface DailyContent {
   bullets?: string[];
   exclusive?: boolean;
   repurposed?: boolean;
-  initialImageUrl?: string; // Novo campo para link direto
+  initialImageUrl?: string | string[]; // Novo campo para link direto
 }
 
 export interface WeeklyContent {

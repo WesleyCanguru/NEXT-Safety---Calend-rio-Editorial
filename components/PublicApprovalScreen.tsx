@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, parseImageUrl } from '../lib/supabase';
 import { DETAILED_MONTHLY_PLANS } from '../constants';
 import { PostData, PostStatus, DailyContent, PostComment } from '../types';
 import { InstagramView, LinkedInView } from './PlatformViews';
@@ -82,6 +82,9 @@ export const PublicApprovalScreen: React.FC = () => {
 
       // 3. Monta Objeto Final
       if (dbData) {
+          // Parse image_url if it's a stringified array
+          const parsedImage = parseImageUrl(dbData.image_url);
+          
           // Existe no banco
           const content = staticContent || {
                 day: `${parts[0]}/${parts[1]}`,
@@ -89,15 +92,15 @@ export const PublicApprovalScreen: React.FC = () => {
                 type: dbData.type || 'Post',
                 theme: dbData.theme || 'Sem tema',
                 bullets: dbData.bullets || [],
-                initialImageUrl: dbData.image_url || undefined
+                initialImageUrl: (parsedImage as string | string[] | undefined)
           };
-          return { post: dbData as PostData, content };
+          return { post: { ...dbData, image_url: parsedImage } as PostData, content };
       } else if (staticContent) {
           // Apenas estático
           const dummyPost: PostData = {
               date_key: key,
               status: staticContent.exclusive ? 'approved' : 'draft',
-              image_url: staticContent.initialImageUrl || null,
+              image_url: parseImageUrl(staticContent.initialImageUrl) || null,
               caption: null,
               last_updated: new Date().toISOString()
           };
