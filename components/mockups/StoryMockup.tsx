@@ -7,7 +7,7 @@ interface StoryMockupProps {
 }
 
 export const StoryMockup: React.FC<StoryMockupProps> = ({ data }) => {
-  const isVideo = data.mainImage?.match(/\.(mp4|webm|ogg)$/i);
+  const isVideo = typeof data.mainImage === 'string' ? data.mainImage.match(/\.(mp4|webm|ogg)$/i) : false;
 
   return (
     <div className="relative w-[360px] aspect-[9/16] bg-black rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden border-[6px] border-gray-900 flex flex-col mx-auto group">
@@ -23,14 +23,14 @@ export const StoryMockup: React.FC<StoryMockupProps> = ({ data }) => {
          {data.mainImage ? (
             isVideo ? (
                <video 
-                 src={data.mainImage} 
+                 src={data.mainImage as string} 
                  className="w-full h-full object-cover" 
                  controls 
                  playsInline
                />
             ) : (
                <img 
-                 src={data.mainImage} 
+                 src={data.mainImage as string} 
                  alt="Story Ad Creative" 
                  className="w-full h-full object-cover"
                />

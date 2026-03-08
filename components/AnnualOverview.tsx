@@ -1,15 +1,58 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ANNUAL_PLAN } from '../constants';
 import { MonthCard } from './MonthCard';
 import { DistributionAnalysis } from './DistributionAnalysis';
 import { Compass, CheckCircle2 } from 'lucide-react';
+import { useAuth, supabase } from '../lib/supabase';
 
 interface AnnualOverviewProps {
   onSelectMonth: (month: string) => void;
 }
 
 export const AnnualOverview: React.FC<AnnualOverviewProps> = ({ onSelectMonth }) => {
+  const { activeClient } = useAuth();
+  const [postCounts, setPostCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const fetchPostCounts = async () => {
+      if (!activeClient) return;
+
+      const { data, error } = await supabase
+        .from('posts')
+        .select('date_key')
+        .eq('client_id', activeClient.id)
+        .neq('status', 'deleted');
+
+      if (error) {
+        console.error('Error fetching post counts:', error);
+        return;
+      }
+
+      const counts: Record<string, number> = {};
+      data.forEach((post) => {
+        // date_key format: DD-MM-YYYY-platform
+        const parts = post.date_key.split('-');
+        if (parts.length >= 3) {
+          const monthStr = parts[1]; // MM
+          // Map MM to month name used in ANNUAL_PLAN
+          const monthMap: Record<string, string> = {
+            '01': 'JANEIRO', '02': 'FEVEREIRO', '03': 'MARÇO', '04': 'ABRIL',
+            '05': 'MAIO', '06': 'JUNHO', '07': 'JULHO', '08': 'AGOSTO',
+            '09': 'SETEMBRO', '10': 'OUTUBRO', '11': 'NOVEMBRO', '12': 'DEZEMBRO'
+          };
+          const monthName = monthMap[monthStr];
+          if (monthName) {
+            counts[monthName] = (counts[monthName] || 0) + 1;
+          }
+        }
+      });
+      setPostCounts(counts);
+    };
+
+    fetchPostCounts();
+  }, [activeClient]);
+
   return (
     <div className="animate-in fade-in duration-500">
       
@@ -59,13 +102,18 @@ export const AnnualOverview: React.FC<AnnualOverviewProps> = ({ onSelectMonth })
           Calendário 2026
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {ANNUAL_PLAN.months.map((monthData, index) => (
-            <MonthCard 
-              key={index} 
-              data={monthData} 
-              onClick={() => onSelectMonth(monthData.month)}
-            />
-          ))}
+          {ANNUAL_PLAN.months.map((monthData, index) => {
+            const monthName = monthData.month.split(' ')[0].toUpperCase();
+            const postCount = postCounts[monthName] || 0;
+            return (
+              <MonthCard 
+                key={index} 
+                data={monthData} 
+                onClick={() => onSelectMonth(monthData.month)}
+                postCount={postCount}
+              />
+            );
+          })}
         </div>
       </div>
       

@@ -8,7 +8,7 @@ interface FeedMockupProps {
 }
 
 export const FeedMockup: React.FC<FeedMockupProps> = ({ data }) => {
-  const isVideo = data.mainImage?.match(/\.(mp4|webm|ogg)$/i);
+  const isVideo = typeof data.mainImage === 'string' ? data.mainImage.match(/\.(mp4|webm|ogg)$/i) : false;
 
   return (
     <div className="relative w-[320px] aspect-square bg-white rounded-md shadow-lg overflow-hidden border border-gray-200 flex flex-col mx-auto">
@@ -32,7 +32,7 @@ export const FeedMockup: React.FC<FeedMockupProps> = ({ data }) => {
            isVideo ? (
              <div className="w-full h-full relative">
                 <video 
-                  src={data.mainImage} 
+                  src={data.mainImage as string} 
                   className="w-full h-full object-cover" 
                   controls 
                   playsInline
@@ -40,7 +40,7 @@ export const FeedMockup: React.FC<FeedMockupProps> = ({ data }) => {
                 {/* Play Button Overlay (Visible only before play if we were customizing controls, simply relying on browser controls for now for reliability) */}
              </div>
            ) : (
-             <img src={data.mainImage} className="w-full h-full object-cover" alt="Feed Post" />
+             <img src={data.mainImage as string} className="w-full h-full object-cover" alt="Feed Post" />
            )
         ) : (
           <>

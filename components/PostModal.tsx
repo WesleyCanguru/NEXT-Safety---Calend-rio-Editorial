@@ -38,7 +38,7 @@ const STATUS_OPTIONS: { value: PostStatus; label: string }[] = [
 ];
 
 export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClose, onUpdate, isNew = false, defaultDate = '' }) => {
-  const { userRole } = useAuth();
+  const { userRole, activeClient } = useAuth();
   const canComment = !!userRole;
   const commentsEndRef = useRef<HTMLDivElement>(null);
   
@@ -118,6 +118,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
             .from('posts')
             .select('*')
             .eq('date_key', dateKey)
+            .eq('client_id', activeClient?.id)
             .maybeSingle();
 
          // Load COUNTERPART post data (se abri o Meta, tenta achar o Linkedin do mesmo dia)
@@ -132,6 +133,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
             .from('posts')
             .select('*')
             .eq('date_key', otherKey)
+            .eq('client_id', activeClient?.id)
             .maybeSingle();
 
          // Populate State
@@ -333,6 +335,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
               for (const oldKey of originalKeys) {
                   await supabase.from('posts').upsert({
                       date_key: oldKey,
+                      client_id: activeClient?.id,
                       status: 'deleted',
                       last_updated: new Date().toISOString()
                   }, { onConflict: 'date_key' });
@@ -368,6 +371,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
 
           const payload = {
             date_key: targetKey,
+            client_id: activeClient?.id,
             image_url: stringifyImageUrl(imageUrl),
             caption: finalCaption,
             status: statusToSave,
@@ -422,6 +426,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
           for (const k of keysToDelete) {
              const { error } = await supabase.from('posts').upsert({
                 date_key: k,
+                client_id: activeClient?.id,
                 status: 'deleted',
                 last_updated: new Date().toISOString()
              }, { onConflict: 'date_key' });
@@ -466,7 +471,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
   };
 
   const handleApprove = async () => {
-      await supabase.from('posts').update({ status: 'approved' }).eq('date_key', dateKey);
+      await supabase.from('posts').update({ status: 'approved' }).eq('date_key', dateKey).eq('client_id', activeClient?.id);
       setPost(prev => ({ ...prev!, status: 'approved' }));
       if (onUpdate) onUpdate();
   };

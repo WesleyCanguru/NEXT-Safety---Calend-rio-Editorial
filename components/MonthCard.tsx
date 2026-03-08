@@ -6,6 +6,7 @@ import { CalendarDays, MapPin, Target, Pin } from 'lucide-react';
 interface MonthCardProps {
   data: MonthPlan;
   onClick?: () => void;
+  postCount?: number;
 }
 
 const colorStyles: Record<MonthColor, { border: string; bg: string; text: string; badge: string }> = {
@@ -35,7 +36,7 @@ const colorStyles: Record<MonthColor, { border: string; bg: string; text: string
   }
 };
 
-export const MonthCard: React.FC<MonthCardProps> = ({ data, onClick }) => {
+export const MonthCard: React.FC<MonthCardProps> = ({ data, onClick, postCount = 0 }) => {
   const style = colorStyles[data.color];
 
   return (
@@ -57,6 +58,12 @@ export const MonthCard: React.FC<MonthCardProps> = ({ data, onClick }) => {
               {data.title}
             </h3>
           </div>
+          {postCount > 0 && (
+            <div className="flex flex-col items-center justify-center bg-gray-50 border border-gray-100 rounded-lg px-3 py-1.5 shadow-sm">
+              <span className="text-lg font-black text-gray-800 leading-none">{postCount}</span>
+              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mt-0.5">Posts</span>
+            </div>
+          )}
         </div>
 
         {/* Function */}

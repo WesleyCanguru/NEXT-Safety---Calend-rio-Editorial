@@ -6,7 +6,7 @@ import { DailyContent } from '../types';
 interface PlatformViewProps {
   dayContent: DailyContent;
   caption: string;
-  imageUrl: string | null;
+  imageUrl: string | string[] | null;
   isVideo: boolean | null;
   isUploading?: boolean;
   onImageClick?: (url: string) => void;
@@ -34,6 +34,19 @@ export const MediaRenderer: React.FC<{
         )}
         <span className="text-sm font-medium">{isUploading ? 'Enviando mídia...' : 'Aguardando Upload'}</span>
         <span className="text-xs mt-2 opacity-60 text-center px-4">{helpText || '1080x1350 (Img) ou 1080x1920 (Vídeo)'}</span>
+      </div>
+    );
+  }
+
+  if (isVideo) {
+    return (
+      <div className={`w-full ${aspectRatioClass} bg-black flex items-center justify-center overflow-hidden cursor-pointer`} onClick={() => onImageClick && onImageClick(imageUrl as string)}>
+        <video 
+          src={imageUrl as string} 
+          className="w-full h-full object-cover" 
+          controls 
+          playsInline
+        />
       </div>
     );
   }
@@ -90,25 +103,12 @@ export const MediaRenderer: React.FC<{
       );
   }
 
-  if (isVideo) {
-    return (
-      <div className={`w-full ${aspectRatioClass} bg-black flex items-center justify-center overflow-hidden cursor-pointer`} onClick={() => onImageClick && onImageClick(imageUrl)}>
-        <video 
-          src={imageUrl} 
-          className="w-full h-full object-cover" 
-          controls 
-          playsInline
-        />
-      </div>
-    );
-  }
-
   // Image Handling
   if (aspectRatioClass === 'aspect-auto') {
       return (
-        <div className="w-full bg-gray-100 overflow-hidden flex items-center justify-center cursor-pointer" onClick={() => onImageClick && onImageClick(imageUrl)}>
+        <div className="w-full bg-gray-100 overflow-hidden flex items-center justify-center cursor-pointer" onClick={() => onImageClick && onImageClick(imageUrl as string)}>
           <img 
-            src={imageUrl} 
+            src={imageUrl as string} 
             className="w-full h-auto object-contain max-h-[600px]" 
             alt="Post Content" 
           />
@@ -117,9 +117,9 @@ export const MediaRenderer: React.FC<{
   }
 
   return (
-    <div className={`w-full ${aspectRatioClass} bg-gray-100 overflow-hidden cursor-pointer`} onClick={() => onImageClick && onImageClick(imageUrl)}>
+    <div className={`w-full ${aspectRatioClass} bg-gray-100 overflow-hidden cursor-pointer`} onClick={() => onImageClick && onImageClick(imageUrl as string)}>
       <img 
-        src={imageUrl} 
+        src={imageUrl as string} 
         className="w-full h-full object-cover" 
         alt="Post Content" 
       />

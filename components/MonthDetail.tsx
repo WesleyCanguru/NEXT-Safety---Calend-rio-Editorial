@@ -27,7 +27,7 @@ interface GroupedPost {
 }
 
 export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) => {
-  const { userRole } = useAuth();
+  const { userRole, activeClient } = useAuth();
   
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
@@ -58,7 +58,8 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
     
     const { data } = await supabase
       .from('posts')
-      .select('*');
+      .select('*')
+      .eq('client_id', activeClient?.id);
 
     const postsMap: Record<string, PostData> = {};
     if (data) {
@@ -256,6 +257,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
               
               const payload = {
                   date_key: newKey,
+                  client_id: activeClient?.id,
                   status: dbPost?.status || 'draft',
                   theme: dbPost?.theme || postGroup.theme,
                   type: dbPost?.type || postGroup.type,
@@ -273,6 +275,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
               // We must provide enough data to satisfy constraints if this is a new insert (hiding a static post)
               const deletePayload = {
                   date_key: oldKey,
+                  client_id: activeClient?.id,
                   status: 'deleted',
                   last_updated: new Date().toISOString(),
                   // Include other fields just in case they are required
@@ -348,6 +351,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
              
              const payload: any = {
                 date_key: key,
+                client_id: activeClient?.id,
                 status: 'published',
                 last_updated: new Date().toISOString(),
              };

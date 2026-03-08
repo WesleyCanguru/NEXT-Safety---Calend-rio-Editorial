@@ -141,3 +141,16 @@ export interface PostData {
   type?: string;
   bullets?: string[];
 }
+
+export interface Client {
+  id: string;
+  name: string;
+  segment: string | null;
+  responsible: string | null;
+  email: string | null;
+  instagram: string | null;
+  color: string;
+  initials: string;
+  logo_url: string | null;
+  is_active: boolean;
+}

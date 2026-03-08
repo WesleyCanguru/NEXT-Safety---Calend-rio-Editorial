@@ -323,7 +323,7 @@ export const PublicApprovalScreen: React.FC = () => {
      bullets: safePost.bullets || safeContent.bullets
   };
 
-  const displayImage = safePost.image_url || safeContent.initialImageUrl || '';
+  const displayImage = safePost.image_url || safeContent.initialImageUrl || null;
   const displayCaption = safePost.caption || '';
 
   const getStatusLabel = (s?: string) => {
@@ -361,10 +361,10 @@ export const PublicApprovalScreen: React.FC = () => {
                   <button className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors" onClick={() => setLightboxOpen(false)}>
                       <XCircle size={32} />
                   </button>
-                  {lightboxImage.match(/\.(mp4|webm|ogg)$/i) ? (
+                  {typeof lightboxImage === 'string' && lightboxImage.match(/\.(mp4|webm|ogg)$/i) ? (
                       <video src={lightboxImage} controls className="max-w-full max-h-[90vh] rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
                   ) : (
-                      <img src={lightboxImage} alt="Full size" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
+                      <img src={lightboxImage as string} alt="Full size" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
                   )}
               </div>
           )}
