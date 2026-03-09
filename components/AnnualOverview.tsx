@@ -5,6 +5,7 @@ import { DistributionAnalysis } from './DistributionAnalysis';
 import { Compass, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react';
 import { useAuth, supabase } from '../lib/supabase';
 import { useEditorialData, MONTH_NAMES } from '../hooks/useEditorialData';
+import { getAnnualOverviewTemplate } from '../constants';
 import { motion } from 'motion/react';
 
 interface AnnualOverviewProps {
@@ -80,47 +81,10 @@ export const AnnualOverview: React.FC<AnnualOverviewProps> = ({ onSelectMonth })
       .single();
 
     if (error && error.code === 'PGRST116') {
-      const getAnnualOverviewTemplate = (segment: string) => {
-        const s = segment.toLowerCase();
-        if (s.includes('advocacia') || s.includes('jurídico') || s.includes('direito')) {
-          return {
-            title: 'Planejamento Jurídico 2026',
-            description: 'Estratégia focada em autoridade técnica, ética e captação qualificada para o setor jurídico.',
-            pillar1_title: 'Autoridade Técnica',
-            pillar1_description: 'Conteúdo informativo que demonstra domínio sobre temas jurídicos complexos.',
-            pillar2_title: 'Ética e Confiança',
-            pillar2_description: 'Comunicação alinhada aos preceitos da OAB, focada em construir credibilidade.',
-            pillar3_title: 'Educação do Cliente',
-            pillar3_description: 'Simplificação de termos jurídicos para aproximar o escritório do público-alvo.'
-          };
-        }
-        if (s.includes('saúde') || s.includes('médico') || s.includes('clínica') || s.includes('dentista')) {
-          return {
-            title: 'Planejamento Saúde & Bem-estar 2026',
-            description: 'Estratégia focada em humanização, autoridade médica e educação para a saúde.',
-            pillar1_title: 'Humanização',
-            pillar1_description: 'Conexão real com pacientes através de histórias e bastidores da prática clínica.',
-            pillar2_title: 'Autoridade Médica',
-            pillar2_description: 'Conteúdo baseado em evidências para educar e prevenir doenças.',
-            pillar3_title: 'Experiência do Paciente',
-            pillar3_description: 'Foco na jornada do paciente, do agendamento ao pós-consulta.'
-          };
-        }
-        return {
-          title: 'Planejamento Anual 2026',
-          description: 'Visão geral da estratégia de conteúdo para o ano, focada em construir autoridade e engajamento para a sua marca.',
-          pillar1_title: 'Foco em Resultados Reais',
-          pillar1_description: 'Estratégias orientadas por dados e conversão.',
-          pillar2_title: 'Consistência Estratégica',
-          pillar2_description: 'Presença constante e alinhada com a marca.',
-          pillar3_title: 'Presença Multi-plataforma',
-          pillar3_description: 'Conteúdo adaptado para cada canal de impacto.'
-        };
-      };
       const template = getAnnualOverviewTemplate(activeClient.segment || '');
       const { data: newData } = await supabase
         .from('client_annual_overview')
-        .insert([{ client_id: activeClient.id, year: 2026, ...template }])
+        .upsert([{ client_id: activeClient.id, year: 2026, ...template }], { onConflict: 'client_id,year' })
         .select()
         .single();
       if (newData) setOverview(newData);
@@ -133,7 +97,7 @@ export const AnnualOverview: React.FC<AnnualOverviewProps> = ({ onSelectMonth })
     if (!overview || !isAdmin) return;
     const { error } = await supabase
       .from('client_annual_overview')
-      .update({ [field]: value, updated_at: new Date().toISOString() })
+      .update({ [field]: value })
       .eq('id', overview.id);
     
     if (!error) {

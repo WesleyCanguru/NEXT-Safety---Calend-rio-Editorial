@@ -43,7 +43,7 @@ const MainApp: React.FC<MainAppProps> = () => {
   const getRoleLabel = () => {
     switch(userRole) {
       case 'admin': return 'Canguru Digital';
-      case 'approver': return 'Viviane (Diretora)';
+      case 'approver': return activeClient?.responsible || 'Viviane (Diretora)';
       case 'team': return 'Equipe Canguru';
       default: return '';
     }

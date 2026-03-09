@@ -456,7 +456,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
     const newCommentObj = { 
         post_id: dateKey, 
         author_role: userRole, 
-        author_name: userRole === 'admin' ? 'Canguru' : userRole === 'approver' ? 'Viviane' : 'Equipe', 
+        author_name: userRole === 'admin' ? 'Canguru' : userRole === 'approver' ? (activeClient?.responsible || 'Viviane') : 'Equipe', 
         content: newComment, 
         visible_to_admin: true 
     };
