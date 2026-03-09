@@ -31,11 +31,13 @@ interface OnboardingStep {
 interface ClientHomeProps {
   onNavigateToOnboarding: () => void;
   onNavigateToMapa: () => void;
+  onNavigateToBriefings: () => void;
 }
 
 export const ClientHome: React.FC<ClientHomeProps> = ({
   onNavigateToOnboarding,
   onNavigateToMapa,
+  onNavigateToBriefings,
 }) => {
   const { activeClient } = useAuth();
   const [phases, setPhases] = useState<OnboardingPhase[]>([]);
@@ -278,9 +280,8 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
             <span className="text-xs font-semibold leading-tight">Mapa Editorial</span>
           </button>
           <button
-            disabled
-            title="Em breve"
-            className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gray-50 text-gray-300 cursor-not-allowed text-center"
+            onClick={onNavigateToBriefings}
+            className="flex flex-col items-center gap-2 p-4 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 transition-colors text-center"
           >
             <AlertCircle size={22} />
             <span className="text-xs font-semibold leading-tight">Briefings</span>
@@ -294,7 +295,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
             <span className="text-xs font-semibold leading-tight">Aprovações</span>
           </button>
         </div>
-        <p className="text-xs text-gray-400 text-center mt-3">Briefings e Aprovações em breve</p>
+        <p className="text-xs text-gray-400 text-center mt-3">Aprovações em breve</p>
       </div>
     </div>
   );

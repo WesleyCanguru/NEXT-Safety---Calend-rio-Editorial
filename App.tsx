@@ -9,11 +9,12 @@ import { LandingPage } from './components/LandingPage';
 import { ClientSelectorScreen } from './components/ClientSelectorScreen';
 import { OnboardingView } from './components/OnboardingView';
 import { ClientHome } from './components/ClientHome';
+import { BriefingsView } from './components/BriefingsView';
 import { useEditorialData, MONTH_NAMES } from './hooks/useEditorialData';
-import { Map, ChevronRight, LogOut, Home, Building2, ClipboardList, LayoutDashboard } from 'lucide-react';
+import { Map, ChevronRight, LogOut, Home, Building2, ClipboardList, LayoutDashboard, FileText } from 'lucide-react';
 import { AuthProvider, useAuth } from './lib/supabase';
 
-type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard';
+type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings';
 
 interface MainAppProps {
   onBack?: () => void;
@@ -137,6 +138,20 @@ const MainApp: React.FC<MainAppProps> = ({ onBack }) => {
               </button>
 
               <button
+                onClick={() => setView('briefings')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${
+                  view === 'briefings'
+                    ? 'bg-brand-dark text-white shadow-md'
+                    : 'bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200'
+                }`}
+              >
+                <FileText size={14} />
+                <span className="hidden sm:inline">Briefings</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
                 onClick={logout}
                 className="p-2 rounded-md bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors"
                 title="Sair"
@@ -189,10 +204,13 @@ const MainApp: React.FC<MainAppProps> = ({ onBack }) => {
              </div>
           )}
 
-          {view === 'dashboard' ? (
+          {view === 'briefings' ? (
+            <BriefingsView />
+          ) : view === 'dashboard' ? (
             <ClientHome
               onNavigateToOnboarding={() => setView('onboarding')}
               onNavigateToMapa={() => setView('home')}
+              onNavigateToBriefings={() => setView('briefings')}
             />
           ) : view === 'onboarding' ? (
             <OnboardingView />
