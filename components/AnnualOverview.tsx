@@ -11,10 +11,139 @@ interface AnnualOverviewProps {
   onSelectMonth: (month: string) => void;
 }
 
+const EditableText: React.FC<{
+  value: string;
+  onSave: (val: string) => void;
+  isAdmin: boolean;
+  className?: string;
+  multiline?: boolean;
+}> = ({ value, onSave, isAdmin, className = '', multiline = false }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempValue, setTempValue] = useState(value);
+
+  useEffect(() => {
+    setTempValue(value);
+  }, [value]);
+
+  if (!isAdmin) return <span className={className}>{value}</span>;
+
+  if (isEditing) {
+    const InputComponent = multiline ? 'textarea' : 'input';
+    return (
+      <InputComponent
+        autoFocus
+        value={tempValue}
+        onChange={(e) => setTempValue(e.target.value)}
+        onBlur={() => {
+          setIsEditing(false);
+          if (tempValue !== value) onSave(tempValue);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !multiline) {
+            setIsEditing(false);
+            if (tempValue !== value) onSave(tempValue);
+          }
+          if (e.key === 'Escape') {
+            setIsEditing(false);
+            setTempValue(value);
+          }
+        }}
+        className={`bg-white/10 text-white border border-white/20 rounded px-2 py-1 outline-none w-full ${className}`}
+      />
+    );
+  }
+
+  return (
+    <span 
+      onClick={() => setIsEditing(true)} 
+      className={`cursor-pointer hover:bg-white/5 rounded px-1 -mx-1 transition-colors ${className}`}
+    >
+      {value || <span className="italic opacity-50">Clique para editar...</span>}
+    </span>
+  );
+};
+
 export const AnnualOverview: React.FC<AnnualOverviewProps> = ({ onSelectMonth }) => {
-  const { activeClient } = useAuth();
+  const { activeClient, userRole } = useAuth();
   const [postCounts, setPostCounts] = useState<Record<string, number>>({});
   const { monthlyPlans, loading } = useEditorialData();
+  const [overview, setOverview] = useState<any>(null);
+  const isAdmin = userRole === 'admin';
+
+  const fetchOverview = async () => {
+    if (!activeClient) return;
+    const { data, error } = await supabase
+      .from('client_annual_overview')
+      .select('*')
+      .eq('client_id', activeClient.id)
+      .eq('year', 2026)
+      .single();
+
+    if (error && error.code === 'PGRST116') {
+      const getAnnualOverviewTemplate = (segment: string) => {
+        const s = segment.toLowerCase();
+        if (s.includes('advocacia') || s.includes('jurídico') || s.includes('direito')) {
+          return {
+            title: 'Planejamento Jurídico 2026',
+            description: 'Estratégia focada em autoridade técnica, ética e captação qualificada para o setor jurídico.',
+            pillar1_title: 'Autoridade Técnica',
+            pillar1_description: 'Conteúdo informativo que demonstra domínio sobre temas jurídicos complexos.',
+            pillar2_title: 'Ética e Confiança',
+            pillar2_description: 'Comunicação alinhada aos preceitos da OAB, focada em construir credibilidade.',
+            pillar3_title: 'Educação do Cliente',
+            pillar3_description: 'Simplificação de termos jurídicos para aproximar o escritório do público-alvo.'
+          };
+        }
+        if (s.includes('saúde') || s.includes('médico') || s.includes('clínica') || s.includes('dentista')) {
+          return {
+            title: 'Planejamento Saúde & Bem-estar 2026',
+            description: 'Estratégia focada em humanização, autoridade médica e educação para a saúde.',
+            pillar1_title: 'Humanização',
+            pillar1_description: 'Conexão real com pacientes através de histórias e bastidores da prática clínica.',
+            pillar2_title: 'Autoridade Médica',
+            pillar2_description: 'Conteúdo baseado em evidências para educar e prevenir doenças.',
+            pillar3_title: 'Experiência do Paciente',
+            pillar3_description: 'Foco na jornada do paciente, do agendamento ao pós-consulta.'
+          };
+        }
+        return {
+          title: 'Planejamento Anual 2026',
+          description: 'Visão geral da estratégia de conteúdo para o ano, focada em construir autoridade e engajamento para a sua marca.',
+          pillar1_title: 'Foco em Resultados Reais',
+          pillar1_description: 'Estratégias orientadas por dados e conversão.',
+          pillar2_title: 'Consistência Estratégica',
+          pillar2_description: 'Presença constante e alinhada com a marca.',
+          pillar3_title: 'Presença Multi-plataforma',
+          pillar3_description: 'Conteúdo adaptado para cada canal de impacto.'
+        };
+      };
+      const template = getAnnualOverviewTemplate(activeClient.segment || '');
+      const { data: newData } = await supabase
+        .from('client_annual_overview')
+        .insert([{ client_id: activeClient.id, year: 2026, ...template }])
+        .select()
+        .single();
+      if (newData) setOverview(newData);
+    } else if (data) {
+      setOverview(data);
+    }
+  };
+
+  const handleUpdateField = async (field: string, value: string) => {
+    if (!overview || !isAdmin) return;
+    const { error } = await supabase
+      .from('client_annual_overview')
+      .update({ [field]: value, updated_at: new Date().toISOString() })
+      .eq('id', overview.id);
+    
+    if (!error) {
+      setOverview({ ...overview, [field]: value });
+    }
+  };
+
+  useEffect(() => {
+    fetchOverview();
+  }, [activeClient]);
 
   useEffect(() => {
     const fetchPostCounts = async () => {
@@ -107,12 +236,20 @@ export const AnnualOverview: React.FC<AnnualOverviewProps> = ({ onSelectMonth })
             </div>
             
             <h1 className="text-5xl md:text-7xl font-bold tracking-tighter leading-[0.9] mb-8">
-              Planejamento <br />
-              <span className="serif italic font-normal text-gray-400">Anual 2026</span>
+              <EditableText 
+                value={overview?.title || 'Planejamento Anual 2026'} 
+                onSave={(val) => handleUpdateField('title', val)} 
+                isAdmin={isAdmin}
+              />
             </h1>
             
             <p className="text-gray-400 text-lg font-medium leading-relaxed max-w-md">
-              Visão geral da estratégia de conteúdo para o ano, focada em construir autoridade e engajamento para a sua marca.
+              <EditableText 
+                value={overview?.description || 'Visão geral da estratégia de conteúdo para o ano, focada em construir autoridade e engajamento para a sua marca.'} 
+                onSave={(val) => handleUpdateField('description', val)} 
+                isAdmin={isAdmin}
+                multiline
+              />
             </p>
           </div>
 
@@ -120,18 +257,31 @@ export const AnnualOverview: React.FC<AnnualOverviewProps> = ({ onSelectMonth })
           <div className="lg:w-1/2 flex flex-col justify-center">
             <div className="grid grid-cols-1 gap-8">
               {[
-                { label: 'Pilar 01', title: 'Foco em Resultados Reais', desc: 'Estratégias orientadas por dados e conversão.' },
-                { label: 'Pilar 02', title: 'Consistência Estratégica', desc: 'Presença constante e alinhada com a marca.' },
-                { label: 'Pilar 03', title: 'Presença Multi-plataforma', desc: 'Conteúdo adaptado para cada canal de impacto.' }
+                { label: 'Pilar 01', title: overview?.pillar1_title || 'Foco em Resultados Reais', desc: overview?.pillar1_description || 'Estratégias orientadas por dados e conversão.', fieldTitle: 'pillar1_title', fieldDesc: 'pillar1_description' },
+                { label: 'Pilar 02', title: overview?.pillar2_title || 'Consistência Estratégica', desc: overview?.pillar2_description || 'Presença constante e alinhada com a marca.', fieldTitle: 'pillar2_title', fieldDesc: 'pillar2_description' },
+                { label: 'Pilar 03', title: overview?.pillar3_title || 'Presença Multi-plataforma', desc: overview?.pillar3_description || 'Conteúdo adaptado para cada canal de impacto.', fieldTitle: 'pillar3_title', fieldDesc: 'pillar3_description' }
               ].map((pilar, idx) => (
                 <div key={idx} className="flex items-start gap-6 group">
                   <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all duration-500 border border-white/5">
                     <CheckCircle2 size={20} className="text-gray-400 group-hover:text-white transition-colors" />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 flex-1">
                     <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500">{pilar.label}</p>
-                    <p className="text-lg font-bold text-white">{pilar.title}</p>
-                    <p className="text-sm text-gray-400 font-medium">{pilar.desc}</p>
+                    <p className="text-lg font-bold text-white">
+                      <EditableText 
+                        value={pilar.title} 
+                        onSave={(val) => handleUpdateField(pilar.fieldTitle, val)} 
+                        isAdmin={isAdmin}
+                      />
+                    </p>
+                    <p className="text-sm text-gray-400 font-medium">
+                      <EditableText 
+                        value={pilar.desc} 
+                        onSave={(val) => handleUpdateField(pilar.fieldDesc, val)} 
+                        isAdmin={isAdmin}
+                        multiline
+                      />
+                    </p>
                   </div>
                 </div>
               ))}

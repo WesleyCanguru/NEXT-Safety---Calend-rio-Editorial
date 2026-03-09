@@ -50,6 +50,7 @@ export function useEditorialData() {
         .select('*')
         .eq('client_id', activeClient.id)
         .eq('year', 2026)
+        .gte('month', new Date().getMonth() + 1)
         .order('month'),
       supabase
         .from('client_weekly_schedules')

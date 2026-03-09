@@ -60,6 +60,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logo_url: null,
         is_active: true,
         services: [] as string[],
+        social_networks: [] as string[],
+        traffic_platforms: [] as string[],
         reportei_url: null,
       };
       setActiveClientState(nextSafety);

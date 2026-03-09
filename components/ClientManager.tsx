@@ -14,11 +14,14 @@ const COLORS = [
   '#FFEDD5', '#CCFBF1', '#F5F3FF', '#FDF2F8'
 ];
 const AVAILABLE_SERVICES = ["Social Media", "Tráfego Pago", "Website", "Identidade Visual", "Papelaria", "E-mail Marketing"];
+const AVAILABLE_SOCIAL_NETWORKS = ["Instagram", "Facebook", "LinkedIn", "TikTok", "YouTube", "Pinterest", "Twitter/X"];
+const AVAILABLE_TRAFFIC_PLATFORMS = ["Google Ads", "Meta Ads (Facebook/Instagram)", "LinkedIn Ads", "TikTok Ads", "YouTube Ads", "Pinterest Ads"];
 
 export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [form, setForm] = useState({
@@ -31,6 +34,8 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
     color: '#1e40af',
     initials: '',
     services: [] as string[],
+    social_networks: [] as string[],
+    traffic_platforms: [] as string[],
     password: '',
     logo_url: '',
   });
@@ -51,74 +56,156 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
     if (!form.name.trim() || !form.initials.trim()) return;
     setSaving(true);
     try {
-      // 1. Inserir cliente
-      const { data: clientData, error } = await supabase
-        .from('clients')
-        .insert([{
-          name: form.name.trim(),
-          segment: form.segment.trim() || null,
-          responsible: form.responsible.trim() || null,
-          email: form.email.trim() || null,
-          instagram: form.instagram.trim() || null,
-          reportei_url: form.reportei_url.trim() || null,
-          color: form.color,
-          initials: form.initials.trim().toUpperCase().slice(0, 2),
-          services: form.services,
-          logo_url: form.logo_url || null,
-        }])
-        .select()
-        .single();
+      const clientPayload = {
+        name: form.name.trim(),
+        segment: form.segment.trim() || null,
+        responsible: form.responsible.trim() || null,
+        email: form.email.trim() || null,
+        instagram: form.instagram.trim() || null,
+        reportei_url: form.reportei_url.trim() || null,
+        color: form.color,
+        initials: form.initials.trim().toUpperCase().slice(0, 2),
+        services: form.services,
+        social_networks: form.social_networks,
+        traffic_platforms: form.traffic_platforms,
+        logo_url: form.logo_url || null,
+      };
 
-      if (error) throw error;
+      let clientData;
 
-      // 2. Chamar RPCs de estrutura padrão
-      await supabase.rpc('create_default_editorial_structure', {
-        p_client_id: clientData.id
-      });
+      if (editingClientId) {
+        // Update
+        const { data, error } = await supabase
+          .from('clients')
+          .update(clientPayload)
+          .eq('id', editingClientId)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        clientData = data;
+      } else {
+        // Insert
+        const { data, error } = await supabase
+          .from('clients')
+          .insert([clientPayload])
+          .select()
+          .single();
 
-      await supabase.rpc('create_default_onboarding_structure', {
-        p_client_id: clientData.id
-      });
+        if (error) throw error;
+        clientData = data;
 
-      // 3. Criar usuário de acesso se preenchido
+        // 2. Chamar RPCs de estrutura padrão (apenas para novos)
+        await supabase.rpc('create_default_editorial_structure', {
+          p_client_id: clientData.id
+        });
+
+        await supabase.rpc('create_default_onboarding_structure', {
+          p_client_id: clientData.id
+        });
+
+        // 3. Inicializar Planejamento Anual
+        const getAnnualOverviewTemplate = (segment: string) => {
+          const s = segment.toLowerCase();
+          if (s.includes('advocacia') || s.includes('jurídico') || s.includes('direito')) {
+            return {
+              title: 'Planejamento Jurídico 2026',
+              description: 'Estratégia focada em autoridade técnica, ética e captação qualificada para o setor jurídico.',
+              pillar1_title: 'Autoridade Técnica',
+              pillar1_description: 'Conteúdo informativo que demonstra domínio sobre temas jurídicos complexos.',
+              pillar2_title: 'Ética e Confiança',
+              pillar2_description: 'Comunicação alinhada aos preceitos da OAB, focada em construir credibilidade.',
+              pillar3_title: 'Educação do Cliente',
+              pillar3_description: 'Simplificação de termos jurídicos para aproximar o escritório do público-alvo.'
+            };
+          }
+          if (s.includes('saúde') || s.includes('médico') || s.includes('clínica') || s.includes('dentista')) {
+            return {
+              title: 'Planejamento Saúde & Bem-estar 2026',
+              description: 'Estratégia focada em humanização, autoridade médica e educação para a saúde.',
+              pillar1_title: 'Humanização',
+              pillar1_description: 'Conexão real com pacientes através de histórias e bastidores da prática clínica.',
+              pillar2_title: 'Autoridade Médica',
+              pillar2_description: 'Conteúdo baseado em evidências para educar e prevenir doenças.',
+              pillar3_title: 'Experiência do Paciente',
+              pillar3_description: 'Foco na jornada do paciente, do agendamento ao pós-consulta.'
+            };
+          }
+          return {
+            title: 'Planejamento Anual 2026',
+            description: 'Visão geral da estratégia de conteúdo para o ano, focada em construir autoridade e engajamento para a sua marca.',
+            pillar1_title: 'Foco em Resultados Reais',
+            pillar1_description: 'Estratégias orientadas por dados e conversão.',
+            pillar2_title: 'Consistência Estratégica',
+            pillar2_description: 'Presença constante e alinhada com a marca.',
+            pillar3_title: 'Presença Multi-plataforma',
+            pillar3_description: 'Conteúdo adaptado para cada canal de impacto.'
+          };
+        };
+
+        const template = getAnnualOverviewTemplate(form.segment.trim());
+        await supabase.from('client_annual_overview').insert([{
+          client_id: clientData.id,
+          year: 2026,
+          ...template
+        }]);
+      }
+
+      // 4. Criar usuário de acesso se preenchido (apenas se não existir ou se quiser atualizar senha)
       let userCreated = false;
       if (form.password.trim()) {
         const hashedPassword = await hashPassword(form.password.trim());
-        // Usamos um username gerado automaticamente pois a tabela pode exigir, 
-        // mas o login agora é apenas por senha.
-        const placeholderUsername = `user_${form.initials.toLowerCase()}_${Date.now().toString().slice(-4)}`;
         
-        const { error: userError } = await supabase
-          .from('client_users')
-          .insert([{
-            client_id: clientData.id,
-            username: placeholderUsername,
-            password_hash: hashedPassword,
-            role: 'approver',
-            is_active: true
-          }]);
-        
-        if (!userError) userCreated = true;
+        if (editingClientId) {
+          // Tentar atualizar ou inserir se não existir
+          const { data: existingUser } = await supabase
+            .from('client_users')
+            .select('id')
+            .eq('client_id', editingClientId)
+            .single();
+          
+          if (existingUser) {
+            await supabase
+              .from('client_users')
+              .update({ password_hash: hashedPassword })
+              .eq('id', existingUser.id);
+          } else {
+            const placeholderUsername = `user_${form.initials.toLowerCase()}_${Date.now().toString().slice(-4)}`;
+            await supabase
+              .from('client_users')
+              .insert([{
+                client_id: editingClientId,
+                username: placeholderUsername,
+                password_hash: hashedPassword,
+                role: 'approver',
+                is_active: true
+              }]);
+          }
+          userCreated = true;
+        } else {
+          const placeholderUsername = `user_${form.initials.toLowerCase()}_${Date.now().toString().slice(-4)}`;
+          const { error: userError } = await supabase
+            .from('client_users')
+            .insert([{
+              client_id: clientData.id,
+              username: placeholderUsername,
+              password_hash: hashedPassword,
+              role: 'approver',
+              is_active: true
+            }]);
+          
+          if (!userError) userCreated = true;
+        }
       }
 
-      let msg = userCreated 
-        ? `Cliente "${form.name}" cadastrado com senha de acesso!`
-        : `Cliente "${form.name}" cadastrado com sucesso!`;
+      let msg = editingClientId
+        ? `Cliente "${form.name}" atualizado com sucesso!`
+        : userCreated 
+          ? `Cliente "${form.name}" cadastrado com senha de acesso!`
+          : `Cliente "${form.name}" cadastrado com sucesso!`;
       
       setSuccessMsg(msg);
-      setForm({ 
-        name: '', 
-        segment: '', 
-        responsible: '', 
-        email: '', 
-        instagram: '', 
-        reportei_url: '',
-        color: '#1e40af', 
-        initials: '', 
-        services: [],
-        password: '',
-        logo_url: '',
-      });
+      resetForm();
       setShowForm(false);
       fetchClients();
       setTimeout(() => setSuccessMsg(''), 5000);
@@ -126,6 +213,46 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
       console.error('Erro ao salvar cliente:', err);
     }
     setSaving(false);
+  };
+
+  const resetForm = () => {
+    setForm({ 
+      name: '', 
+      segment: '', 
+      responsible: '', 
+      email: '', 
+      instagram: '', 
+      reportei_url: '',
+      color: '#1e40af', 
+      initials: '', 
+      services: [],
+      social_networks: [],
+      traffic_platforms: [],
+      password: '',
+      logo_url: '',
+    });
+    setEditingClientId(null);
+  };
+
+  const handleEdit = (client: Client) => {
+    setForm({
+      name: client.name,
+      segment: client.segment || '',
+      responsible: client.responsible || '',
+      email: client.email || '',
+      instagram: client.instagram || '',
+      reportei_url: client.reportei_url || '',
+      color: client.color,
+      initials: client.initials,
+      services: client.services || [],
+      social_networks: client.social_networks || [],
+      traffic_platforms: client.traffic_platforms || [],
+      password: '', // Não carregamos a senha
+      logo_url: client.logo_url || '',
+    });
+    setEditingClientId(client.id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const autoInitials = (name: string) => {
@@ -168,11 +295,14 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
             <p className="text-sm text-gray-500">{clients.length} cliente(s) cadastrado(s)</p>
           </div>
           <button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => {
+              if (showForm) resetForm();
+              setShowForm(!showForm);
+            }}
             className="ml-auto flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors"
           >
             <Plus size={16} />
-            Novo Cliente
+            {showForm ? 'Fechar' : 'Novo Cliente'}
           </button>
         </div>
 
@@ -187,7 +317,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
         {/* Formulário de novo cliente */}
         {showForm && (
           <div className="mb-8 p-6 bg-white rounded-2xl border border-gray-200 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-800 mb-5">Novo Cliente</h2>
+            <h2 className="text-lg font-bold text-gray-800 mb-5">{editingClientId ? 'Editar Cliente' : 'Novo Cliente'}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
               <div className="sm:col-span-2">
@@ -209,6 +339,52 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
                 <input type="text" value={form.segment} onChange={e => setForm(f => ({...f, segment: e.target.value}))}
                   placeholder="Ex: Tecnologia / SaaS"
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Redes Sociais Ativas</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {AVAILABLE_SOCIAL_NETWORKS.map(network => (
+                    <label key={network} className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={form.social_networks.includes(network)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setForm(f => ({ ...f, social_networks: [...f.social_networks, network] }));
+                          } else {
+                            setForm(f => ({ ...f, social_networks: f.social_networks.filter(s => s !== network) }));
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{network}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Plataformas de Tráfego Pago</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {AVAILABLE_TRAFFIC_PLATFORMS.map(platform => (
+                    <label key={platform} className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={form.traffic_platforms.includes(platform)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setForm(f => ({ ...f, traffic_platforms: [...f.traffic_platforms, platform] }));
+                          } else {
+                            setForm(f => ({ ...f, traffic_platforms: f.traffic_platforms.filter(p => p !== platform) }));
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{platform}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div>
@@ -362,9 +538,12 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
             <div className="flex gap-3 mt-6">
               <button onClick={handleSave} disabled={saving || !form.name || !form.initials}
                 className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-semibold text-sm transition-colors">
-                {saving ? 'Salvando...' : <><Check size={15} /> Salvar Cliente</>}
+                {saving ? 'Salvando...' : <><Check size={15} /> {editingClientId ? 'Atualizar Cliente' : 'Salvar Cliente'}</>}
               </button>
-              <button onClick={() => setShowForm(false)}
+              <button onClick={() => {
+                resetForm();
+                setShowForm(false);
+              }}
                 className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-semibold text-sm transition-colors">
                 <X size={15} /> Cancelar
               </button>
@@ -400,9 +579,19 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
                     </div>
                   )}
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${client.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                  {client.is_active ? 'Ativo' : 'Inativo'}
-                </span>
+                <div className="flex-shrink-0 flex gap-2">
+                  <button 
+                    onClick={() => handleEdit(client)}
+                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                    title="Editar Cliente"
+                  >
+                    <Plus size={18} className="rotate-45" /> {/* Usando Plus rotacionado como ícone de edição improvisado ou apenas texto */}
+                    <span className="text-[10px] font-bold uppercase tracking-wider ml-1">Editar</span>
+                  </button>
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium h-fit ${client.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {client.is_active ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
