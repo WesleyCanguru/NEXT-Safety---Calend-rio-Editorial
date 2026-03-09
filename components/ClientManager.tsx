@@ -8,6 +8,7 @@ interface ClientManagerProps {
 }
 
 const COLORS = ['#1e40af','#16a34a','#dc2626','#9333ea','#d97706','#0891b2','#be185d','#475569'];
+const AVAILABLE_SERVICES = ["Social Media", "Tráfego Pago", "Website", "Identidade Visual", "Papelaria", "E-mail Marketing"];
 
 export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -23,6 +24,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
     instagram: '',
     color: '#1e40af',
     initials: '',
+    services: [] as string[],
   });
 
   const fetchClients = async () => {
@@ -49,6 +51,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
           instagram: form.instagram.trim() || null,
           color: form.color,
           initials: form.initials.trim().toUpperCase().slice(0, 2),
+          services: form.services,
         }])
         .select()
         .single();
@@ -61,7 +64,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
       });
 
       setSuccessMsg(`Cliente "${form.name}" cadastrado com estrutura editorial criada!`);
-      setForm({ name: '', segment: '', responsible: '', email: '', instagram: '', color: '#1e40af', initials: '' });
+      setForm({ name: '', segment: '', responsible: '', email: '', instagram: '', color: '#1e40af', initials: '', services: [] });
       setShowForm(false);
       fetchClients();
       setTimeout(() => setSuccessMsg(''), 5000);
@@ -176,8 +179,31 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
                 </div>
               </div>
 
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Serviços Contratados</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {AVAILABLE_SERVICES.map(service => (
+                    <label key={service} className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={form.services.includes(service)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setForm(f => ({ ...f, services: [...f.services, service] }));
+                          } else {
+                            setForm(f => ({ ...f, services: f.services.filter(s => s !== service) }));
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{service}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               {/* Preview */}
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+              <div className="sm:col-span-2 flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm"
                   style={{ backgroundColor: form.color }}>
                   {form.initials || '?'}
@@ -213,6 +239,15 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 text-sm">{client.name}</p>
                   <p className="text-xs text-gray-400">{client.segment || '—'} {client.responsible ? `• ${client.responsible}` : ''}</p>
+                  {client.services && client.services.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {client.services.map(service => (
+                        <span key={service} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-medium border border-gray-200">
+                          {service}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${client.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                   {client.is_active ? 'Ativo' : 'Inativo'}
