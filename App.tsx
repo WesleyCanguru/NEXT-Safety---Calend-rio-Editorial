@@ -11,11 +11,12 @@ import { OnboardingView } from './components/OnboardingView';
 import { ClientHome } from './components/ClientHome';
 import { BriefingsView } from './components/BriefingsView';
 import { DocumentsView } from './components/DocumentsView';
+import { PaidTrafficView } from './components/PaidTrafficView';
 import { useEditorialData, MONTH_NAMES } from './hooks/useEditorialData';
-import { Map, ChevronRight, LogOut, Home, Building2, ClipboardList, LayoutDashboard, FileText, FolderOpen } from 'lucide-react';
+import { Map, ChevronRight, LogOut, Home, Building2, ClipboardList, LayoutDashboard, FileText, FolderOpen, TrendingUp } from 'lucide-react';
 import { AuthProvider, useAuth } from './lib/supabase';
 
-type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'documents';
+type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'documents' | 'paid-traffic';
 
 interface MainAppProps {
   onBack?: () => void;
@@ -161,6 +162,18 @@ const MainApp: React.FC<MainAppProps> = ({ onBack }) => {
                 <FolderOpen size={14} />
                 <span className="hidden sm:inline">Documentos</span>
               </button>
+
+              <button
+                onClick={() => setView('paid-traffic')}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  view === 'paid-traffic'
+                    ? 'bg-orange-100 text-orange-700'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                <TrendingUp size={16} />
+                Tráfego Pago
+              </button>
             </div>
 
             <div className="flex items-center gap-3">
@@ -217,7 +230,9 @@ const MainApp: React.FC<MainAppProps> = ({ onBack }) => {
              </div>
           )}
 
-          {view === 'documents' ? (
+          {view === 'paid-traffic' ? (
+            <PaidTrafficView />
+          ) : view === 'documents' ? (
             <DocumentsView />
           ) : view === 'briefings' ? (
             <BriefingsView />
@@ -227,6 +242,7 @@ const MainApp: React.FC<MainAppProps> = ({ onBack }) => {
               onNavigateToMapa={() => setView('home')}
               onNavigateToBriefings={() => setView('briefings')}
               onNavigateToDocuments={() => setView('documents')}
+              onNavigateToPaidTraffic={() => setView('paid-traffic')}
             />
           ) : view === 'onboarding' ? (
             <OnboardingView />

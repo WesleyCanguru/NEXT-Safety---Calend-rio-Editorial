@@ -34,6 +34,7 @@ interface ClientHomeProps {
   onNavigateToMapa: () => void;
   onNavigateToBriefings: () => void;
   onNavigateToDocuments: () => void;
+  onNavigateToPaidTraffic: () => void;
 }
 
 export const ClientHome: React.FC<ClientHomeProps> = ({
@@ -41,6 +42,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
   onNavigateToMapa,
   onNavigateToBriefings,
   onNavigateToDocuments,
+  onNavigateToPaidTraffic,
 }) => {
   const { activeClient } = useAuth();
   const [phases, setPhases] = useState<OnboardingPhase[]>([]);
@@ -267,7 +269,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
             Ações Rápidas
           </h2>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <button
             onClick={onNavigateToOnboarding}
             className="flex flex-col items-center gap-2 p-4 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors text-center"
@@ -295,6 +297,13 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
           >
             <FolderOpen size={22} />
             <span className="text-xs font-semibold leading-tight">Documentos</span>
+          </button>
+          <button
+            onClick={onNavigateToPaidTraffic}
+            className="flex flex-col items-center gap-2 p-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 transition-colors text-center"
+          >
+            <TrendingUp size={22} />
+            <span className="text-xs font-semibold leading-tight">Tráfego Pago</span>
           </button>
         </div>
         <p className="text-xs text-gray-400 text-center mt-3">Mais funcionalidades em breve</p>
