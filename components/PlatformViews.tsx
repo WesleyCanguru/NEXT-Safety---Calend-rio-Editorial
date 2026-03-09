@@ -138,10 +138,10 @@ export const InstagramView: React.FC<PlatformViewProps> = ({ dayContent, caption
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 to-purple-600">
             <div className="w-full h-full rounded-full border-2 border-white bg-gray-200 overflow-hidden">
-               <img src="https://i.postimg.cc/rF1nBX8m/Next-Safety-Logo-(1080-x-1080-px)-(Redondo.png" alt="Avatar" className="w-full h-full object-cover" />
+               <img src="https://i.postimg.cc/ZRYDpRWD/Rebranding-Canguru-Digital-(5000-x-2500-px).png" alt="Avatar" className="w-full h-full object-cover" />
             </div>
           </div>
-          <span className="text-sm font-semibold text-gray-900">next_safety</span>
+          <span className="text-sm font-semibold text-gray-900">canguru_digital</span>
         </div>
         <MoreHorizontal size={20} className="text-gray-600" />
       </div>
@@ -165,7 +165,7 @@ export const InstagramView: React.FC<PlatformViewProps> = ({ dayContent, caption
         
         {/* Caption */}
         <div className="text-sm text-gray-900 leading-normal">
-          <span className="font-semibold mr-2">next_safety</span>
+          <span className="font-semibold mr-2">canguru_digital</span>
           <span className="whitespace-pre-line">
             {caption || <span className="text-gray-400 italic font-normal">[Sua legenda aparecerá aqui...]</span>}
           </span>
@@ -193,11 +193,11 @@ export const LinkedInView: React.FC<PlatformViewProps> = ({ dayContent, caption,
       {/* Header */}
       <div className="p-3 flex items-start gap-3">
          <div className="w-10 h-10 rounded-sm bg-gray-200 overflow-hidden">
-             <img src="https://i.postimg.cc/0N2BGW1M/Next-Safety-Logo-(1080-x-1080-px).png" alt="Logo" className="w-full h-full object-cover" />
+             <img src="https://i.postimg.cc/ZRYDpRWD/Rebranding-Canguru-Digital-(5000-x-2500-px).png" alt="Logo" className="w-full h-full object-cover" />
          </div>
          <div>
             <div className="flex items-center gap-1">
-               <span className="text-sm font-bold text-gray-900">NEXT SAFETY - EPI</span>
+               <span className="text-sm font-bold text-gray-900">Canguru Digital</span>
                <span className="text-gray-500 text-xs">• 1º</span>
             </div>
             <p className="text-xs text-gray-500">2.131 seguidores</p>

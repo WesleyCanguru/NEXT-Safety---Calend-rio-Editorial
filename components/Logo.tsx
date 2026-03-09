@@ -14,8 +14,8 @@ export const Logo: React.FC<LogoProps> = ({ size = 'large', className = '' }) =>
   return (
     <div className={`flex items-center ${className}`}>
       <img
-        src="https://i.postimg.cc/pXb0TrJ7/Next-Safety-Logo.png"
-        alt="NEXT Safety Logo"
+        src="https://i.postimg.cc/ZRYDpRWD/Rebranding-Canguru-Digital-(5000-x-2500-px).png"
+        alt="Canguru Digital Logo"
         className={`${widthClass} h-auto object-contain`}
       />
     </div>

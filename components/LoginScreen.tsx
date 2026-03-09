@@ -62,7 +62,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onBack }) => {
 
       <div className="relative z-10 w-full max-w-sm">
         <div className="mb-10 text-center flex justify-center">
-          <Logo size="large" />
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <AgencyLogo className="h-20" />
+          </div>
         </div>
 
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50 p-8">
@@ -117,7 +119,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onBack }) => {
           </form>
           
           <div className="mt-6 pt-6 border-t border-gray-100 flex justify-center opacity-60">
-             <AgencyLogo className="h-6 opacity-80 grayscale hover:grayscale-0 transition-all duration-500" />
+             <span className="text-xs font-medium text-gray-400 uppercase tracking-widest">Canguru Digital</span>
           </div>
         </div>
         

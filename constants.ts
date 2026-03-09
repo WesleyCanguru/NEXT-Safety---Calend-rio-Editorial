@@ -260,7 +260,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             day: '27/02 – Sexta-feira',
             platform: 'meta',
             type: 'Estático institucional estratégico',
-            theme: 'Next Safety: Portfólio completo para riscos mecânicos'
+            theme: 'Canguru Digital: Portfólio completo para riscos mecânicos'
           },
           {
             day: '27/02 – Sexta-feira',
@@ -367,7 +367,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             platform: 'linkedin',
             exclusive: true,
             type: 'Texto consultivo',
-            theme: 'NexSafe: A resposta da Next Safety para o mercado brasileiro'
+            theme: 'NexSafe: A resposta da Canguru Digital para o mercado brasileiro'
           },
           {
             day: '13/03 – Sexta-feira',
@@ -563,7 +563,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             day: '10/04 – Sexta-feira',
             platform: 'meta',
             type: 'Estático institucional',
-            theme: 'Next Safety na Proteminas: Venha conhecer a MaxiDex'
+            theme: 'Canguru Digital na Proteminas: Venha conhecer a MaxiDex'
           },
           {
             day: '10/04 – Sexta-feira',
@@ -653,7 +653,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             day: '24/04 – Sexta-feira',
             platform: 'meta',
             type: 'Estático institucional',
-            theme: 'Next Safety: Soluções que duram mais'
+            theme: 'Canguru Digital: Soluções que duram mais'
           },
           {
             day: '24/04 – Sexta-feira',
@@ -761,7 +761,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             day: '15/05 – Sexta-feira',
             platform: 'meta',
             type: 'Estático Institucional',
-            theme: 'Next Safety na estrada: Levando tecnologia para todos os polos'
+            theme: 'Canguru Digital na estrada: Levando tecnologia para todos os polos'
           }
         ]
       },
@@ -778,7 +778,7 @@ export const DETAILED_MONTHLY_PLANS: MonthlyDetailedPlan[] = [
             day: '22/05 – Sexta-feira',
             platform: 'meta',
             type: 'Estático',
-            theme: 'O papel da Next Safety na educação do mercado'
+            theme: 'O papel da Canguru Digital na educação do mercado'
           }
         ]
       },

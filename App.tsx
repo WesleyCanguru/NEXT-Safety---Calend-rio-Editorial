@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Logo } from './components/Logo';
-import { AgencyLogo } from './components/AgencyLogo';
 import { AnnualOverview } from './components/AnnualOverview';
 import { MonthDetail } from './components/MonthDetail';
 import { LoginScreen } from './components/LoginScreen';
@@ -13,11 +12,12 @@ import { BriefingsView } from './components/BriefingsView';
 import { DocumentsView } from './components/DocumentsView';
 import { PaidTrafficView } from './components/PaidTrafficView';
 import WebsiteView from './components/WebsiteView';
+import AdminView from './components/AdminView';
 import { useEditorialData, MONTH_NAMES } from './hooks/useEditorialData';
-import { Map, ChevronRight, LogOut, Home, Building2, ClipboardList, LayoutDashboard, FileText, FolderOpen, TrendingUp, Globe } from 'lucide-react';
+import { Map, ChevronRight, LogOut, Home, Building2, ClipboardList, LayoutDashboard, FileText, FolderOpen, TrendingUp, Globe, Shield } from 'lucide-react';
 import { AuthProvider, useAuth } from './lib/supabase';
 
-type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'documents' | 'paid-traffic' | 'website';
+type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'documents' | 'paid-traffic' | 'website' | 'admin';
 
 interface MainAppProps {
   onBack?: () => void;
@@ -45,7 +45,7 @@ const MainApp: React.FC<MainAppProps> = ({ onBack }) => {
     switch(userRole) {
       case 'admin': return 'Canguru Digital';
       case 'approver': return 'Viviane (Diretora)';
-      case 'team': return 'Equipe Next';
+      case 'team': return 'Equipe Canguru';
       default: return '';
     }
   }
@@ -63,16 +63,22 @@ const MainApp: React.FC<MainAppProps> = ({ onBack }) => {
             {/* Área de Logos */}
             <div className="flex items-center gap-4 sm:gap-6">
               <div className="cursor-pointer" onClick={() => setView('dashboard')}>
-                <Logo size="small" />
+                {activeClient?.logo_url ? (
+                  <img 
+                    src={activeClient.logo_url} 
+                    alt={activeClient.name} 
+                    className="h-10 w-auto object-contain" 
+                  />
+                ) : (
+                  <span className="text-lg font-bold text-primary">{activeClient?.name}</span>
+                )}
               </div>
               
-              {/* Separador vertical */}
-              <div className="h-8 w-px bg-gray-200"></div>
+              <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
               
-              {/* Logo Canguru + Strategy by */}
-              <div className="flex items-center gap-2 opacity-90 hover:opacity-100 transition-opacity" title="Agência Canguru Digital">
-                <span className="hidden sm:block text-[10px] text-gray-400 font-medium uppercase tracking-wider">Strategy by</span>
-                <AgencyLogo />
+              <div className="flex items-center gap-2 opacity-80">
+                <span className="text-[10px] uppercase tracking-widest text-gray-400 font-medium hidden sm:block">Strategy by</span>
+                <Logo size="small" />
               </div>
             </div>
             
@@ -93,103 +99,20 @@ const MainApp: React.FC<MainAppProps> = ({ onBack }) => {
                 </button>
               )}
 
-              {onBack && (
+              {userRole === 'admin' && (
                 <button
-                  onClick={onBack}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200"
-                  title="Voltar para Home"
+                  onClick={() => setView('admin')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${
+                    view === 'admin'
+                      ? 'bg-brand-dark text-white shadow-md'
+                      : 'bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200'
+                  }`}
                 >
-                  <Home size={14} />
-                  <span className="hidden sm:inline">Início</span>
+                  <Shield size={14} />
+                  <span className="hidden sm:inline">Admin</span>
                 </button>
               )}
 
-              <button
-                onClick={() => setView('dashboard')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${
-                  view === 'dashboard'
-                    ? 'bg-brand-dark text-white shadow-md'
-                    : 'bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200'
-                }`}
-              >
-                <LayoutDashboard size={14} />
-                <span className="hidden sm:inline">Painel</span>
-              </button>
-
-              <button
-                onClick={handleBackToHome}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${
-                  view === 'home'
-                    ? 'bg-brand-dark text-white shadow-md'
-                    : 'bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200'
-                }`}
-              >
-                <Map size={14} />
-                <span className="hidden sm:inline">Mapa</span>
-              </button>
-
-              <button
-                onClick={() => setView('onboarding')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${
-                  view === 'onboarding'
-                    ? 'bg-brand-dark text-white shadow-md'
-                    : 'bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200'
-                }`}
-              >
-                <ClipboardList size={14} />
-                <span className="hidden sm:inline">Onboarding</span>
-              </button>
-
-              <button
-                onClick={() => setView('briefings')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${
-                  view === 'briefings'
-                    ? 'bg-brand-dark text-white shadow-md'
-                    : 'bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200'
-                }`}
-              >
-                <FileText size={14} />
-                <span className="hidden sm:inline">Briefings</span>
-              </button>
-
-              <button
-                onClick={() => setView('documents')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${
-                  view === 'documents'
-                    ? 'bg-brand-dark text-white shadow-md'
-                    : 'bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200'
-                }`}
-              >
-                <FolderOpen size={14} />
-                <span className="hidden sm:inline">Documentos</span>
-              </button>
-
-              <button
-                onClick={() => setView('paid-traffic')}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  view === 'paid-traffic'
-                    ? 'bg-orange-100 text-orange-700'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-              >
-                <TrendingUp size={16} />
-                Tráfego Pago
-              </button>
-
-              <button
-                onClick={() => setView('website')}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  view === 'website'
-                    ? 'bg-brand-dark text-white shadow-md'
-                    : 'bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200'
-                }`}
-              >
-                <Globe size={14} />
-                <span className="hidden sm:inline">Website</span>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-3">
               <button
                 onClick={logout}
                 className="p-2 rounded-md bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors"
@@ -201,33 +124,35 @@ const MainApp: React.FC<MainAppProps> = ({ onBack }) => {
           </div>
         </div>
 
-        {/* Linha Inferior: Navegação dos Meses (Scroll Horizontal) */}
-        <div className="border-t border-gray-100 bg-white/50 backdrop-blur-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2 sm:py-3 -mx-4 px-4 sm:mx-0 sm:px-0">
-              {monthlyPlans.map((plan) => {
-                const monthName = MONTH_NAMES[plan.month - 1];
-                const isActive = selectedMonth === monthName;
-                
-                return (
-                  <button
-                    key={plan.id}
-                    onClick={() => handleSelectMonth(monthName)}
-                    className={`
-                      whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wide transition-all border
-                      ${isActive 
-                        ? 'bg-blue-600 border-blue-600 text-white shadow-md transform scale-105' 
-                        : 'bg-white border-gray-200 text-gray-400 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50'
-                      }
-                    `}
-                  >
-                    {monthName}
-                  </button>
-                );
-              })}
+        {/* Linha Inferior: Navegação dos Meses (Scroll Horizontal) - Apenas no Mapa Editorial */}
+        {(view === 'home' || view === 'month-detail') && (
+          <div className="border-t border-gray-100 bg-white/50 backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2 sm:py-3 -mx-4 px-4 sm:mx-0 sm:px-0">
+                {monthlyPlans.map((plan) => {
+                  const monthName = MONTH_NAMES[plan.month - 1];
+                  const isActive = selectedMonth === monthName;
+                  
+                  return (
+                    <button
+                      key={plan.id}
+                      onClick={() => handleSelectMonth(monthName)}
+                      className={`
+                        whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wide transition-all border
+                        ${isActive 
+                          ? 'bg-blue-600 border-blue-600 text-white shadow-md transform scale-105' 
+                          : 'bg-white border-gray-200 text-gray-400 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50'
+                        }
+                      `}
+                    >
+                      {monthName}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </header>
 
       {/* Main Content */}
@@ -243,7 +168,9 @@ const MainApp: React.FC<MainAppProps> = ({ onBack }) => {
              </div>
           )}
 
-          {view === 'website' ? (
+          {view === 'admin' ? (
+            <AdminView />
+          ) : view === 'website' ? (
             <WebsiteView />
           ) : view === 'paid-traffic' ? (
             <PaidTrafficView />
@@ -281,11 +208,6 @@ const MainApp: React.FC<MainAppProps> = ({ onBack }) => {
           {/* Logos Footer */}
           <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 opacity-70 hover:opacity-100 transition-opacity">
              <Logo size="small" />
-             <span className="hidden sm:block text-gray-300 text-2xl font-light">|</span>
-             <div className="flex items-center gap-3">
-               <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Strategy by</span>
-               <AgencyLogo />
-             </div>
           </div>
 
           <p className="text-[10px] text-gray-400 uppercase tracking-widest font-medium text-center md:text-right">

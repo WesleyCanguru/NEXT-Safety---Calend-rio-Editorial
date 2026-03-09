@@ -122,7 +122,7 @@ export interface PostComment {
   id: string;
   post_id: string;
   author_role: UserRole;
-  author_name: string; // "Canguru", "Viviane" ou "Equipe Next"
+  author_name: string; // "Canguru", "Viviane" ou "Equipe Canguru"
   content: string;
   created_at: string;
   visible_to_admin: boolean; // True se for Viviane ou Admin. False se for Equipe.

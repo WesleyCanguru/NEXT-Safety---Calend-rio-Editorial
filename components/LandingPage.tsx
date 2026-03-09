@@ -1,7 +1,6 @@
 import React from 'react';
 import { Calendar, TrendingUp, BarChart3, ArrowRight, ShieldCheck, Target, Zap } from 'lucide-react';
 import { Logo } from './Logo';
-import { AgencyLogo } from './AgencyLogo';
 
 interface LandingPageProps {
   onEnterEditorial: () => void;
@@ -16,10 +15,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterEditorial }) =>
         <div className="scale-75 origin-left">
           <Logo size="small" />
         </div>
-        <div className="flex items-center gap-3 opacity-80 scale-75 origin-right">
-          <span className="text-[10px] uppercase tracking-widest text-gray-400 font-medium hidden sm:block">Strategy by</span>
-          <AgencyLogo />
-        </div>
       </header>
 
       {/* Hero Section */}
@@ -32,7 +27,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterEditorial }) =>
         <div className="max-w-4xl w-full text-center mb-12 space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-gray-200 shadow-sm mb-4">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Ambiente Seguro Next Safety</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Ambiente Seguro Canguru Digital</span>
           </div>
           
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-gray-900 leading-tight">
@@ -41,7 +36,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterEditorial }) =>
           </h1>
           
           <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Central de controle para o posicionamento da Next Safety. 
+            Central de controle para o posicionamento da Canguru Digital. 
             Acompanhe a linha editorial, monitore métricas de tráfego e visualize o crescimento da marca em tempo real.
           </p>
         </div>
@@ -141,7 +136,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterEditorial }) =>
              <div className="relative z-10 max-w-lg">
                 <h4 className="font-bold text-lg mb-2 flex items-center gap-2"><BarChart3 size={18} className="text-blue-400"/> Importância dos Dados</h4>
                 <p className="text-gray-300 text-xs leading-relaxed">
-                  A integração entre o conteúdo orgânico (Linha Editorial) e a distribuição paga (Tráfego) é o que garante a consistência da marca Next Safety. Utilize os dashboards para validar se a estratégia de conteúdo está gerando os resultados esperados no fundo do funil.
+                  A integração entre o conteúdo orgânico (Linha Editorial) e a distribuição paga (Tráfego) é o que garante a consistência da marca Canguru Digital. Utilize os dashboards para validar se a estratégia de conteúdo está gerando os resultados esperados no fundo do funil.
                 </p>
              </div>
           </div>
@@ -151,7 +146,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterEditorial }) =>
 
       {/* Footer */}
       <footer className="py-6 text-center text-[10px] text-gray-400 uppercase tracking-widest font-medium">
-        Next Safety • 2026 • Todos os direitos reservados
+        Canguru Digital • {new Date().getFullYear()} • Todos os direitos reservados
       </footer>
     </div>
   );
