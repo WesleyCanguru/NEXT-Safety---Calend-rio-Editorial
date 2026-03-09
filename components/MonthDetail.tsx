@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { MonthlyDetailedPlan, DailyContent, PostStatus, PostData } from '../types';
-import { Instagram, Linkedin, CalendarDays, Target, BarChart3, Repeat, FileCheck, CheckCircle2, ArrowLeft, MessageCircle, List, Calendar as CalendarIcon, Plus, Loader2, Check, Edit2, Save, X } from 'lucide-react';
+import { Instagram, Linkedin, CalendarDays, Target, BarChart3, Repeat, FileCheck, CheckCircle2, ArrowLeft, MessageCircle, List, Calendar as CalendarIcon, Plus, Loader2, Check, Edit2, Save, X, Trash } from 'lucide-react';
 import { PostModal } from './PostModal';
 import { useAuth, supabase } from '../lib/supabase';
 import { StatusLegend } from './StatusLegend';
@@ -51,6 +51,10 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
   const [editKeyDates, setEditKeyDates] = useState('');
   const [editCampaigns, setEditCampaigns] = useState('');
   const [isSavingPlan, setIsSavingPlan] = useState(false);
+
+  // Selection State
+  const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const currentPlan = monthlyPlans.find(p => MONTH_NAMES[p.month - 1].toLowerCase() === monthName.toLowerCase());
   const monthIndex = MONTH_NAMES.findIndex(m => m.toLowerCase() === monthName.toLowerCase());
@@ -402,6 +406,63 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
     setSelectedPost(null);
   };
 
+  const togglePostSelection = (e: React.MouseEvent, primaryKey: string) => {
+    e.stopPropagation();
+    const newSelection = new Set(selectedPosts);
+    if (newSelection.has(primaryKey)) {
+      newSelection.delete(primaryKey);
+    } else {
+      newSelection.add(primaryKey);
+    }
+    setSelectedPosts(newSelection);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedPosts.size === 0) return;
+    if (!window.confirm(`Tem certeza que deseja excluir ${selectedPosts.size} publicação(ões)?`)) return;
+
+    setIsDeleting(true);
+    
+    const payloads: any[] = [];
+    groupedPosts.forEach(group => {
+      if (selectedPosts.has(group.primaryKey)) {
+        group.keys.forEach(key => {
+          const dbPost = dbPosts[key];
+          const payload: any = {
+            date_key: key,
+            client_id: activeClient?.id,
+            status: 'deleted',
+            last_updated: new Date().toISOString()
+          };
+
+          if (!dbPost) {
+            payload.theme = group.theme;
+            payload.type = group.type;
+            payload.bullets = group.bullets;
+            payload.image_url = group.content.initialImageUrl || null;
+          }
+
+          payloads.push(payload);
+        });
+      }
+    });
+
+    if (payloads.length > 0) {
+      const { error } = await supabase
+        .from('posts')
+        .upsert(payloads, { onConflict: 'date_key' });
+        
+      if (error) {
+        console.error("Erro ao excluir publicações:", error);
+        alert("Erro ao excluir publicações.");
+      } else {
+        setSelectedPosts(new Set());
+        fetchMonthPosts();
+      }
+    }
+    setIsDeleting(false);
+  };
+
   const handleEditPlan = () => {
     if (!currentPlan) return;
     setEditTheme(currentPlan.theme || '');
@@ -528,15 +589,26 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                const statusColor = getStatusColorClass(group.status);
                const hasMeta = group.platforms.includes('meta');
                const hasLinkedin = group.platforms.includes('linkedin');
+               const isSelected = selectedPosts.has(group.primaryKey);
 
                return (
                 <div 
                   key={idx}
                   onClick={() => handleOpenPost({ content: group.content, key: group.primaryKey })}
-                  className={`p-2 rounded-lg border shadow-sm cursor-pointer hover:scale-[1.02] ${statusColor} relative group/card shrink-0 transition-transform`}
+                  className={`p-2 rounded-lg border shadow-sm cursor-pointer hover:scale-[1.02] ${statusColor} ${isSelected ? 'ring-2 ring-brand-dark' : ''} relative group/card shrink-0 transition-transform`}
                   draggable
                   onDragStart={(e) => handleDragStart(e, group.primaryKey)}
                 >
+                  {userRole === 'admin' && (
+                    <div 
+                      className={`absolute -top-2 -right-2 z-10 bg-white rounded-full p-0.5 shadow-sm border ${isSelected ? 'border-brand-dark opacity-100' : 'border-gray-200 opacity-0 group-hover/card:opacity-100'} transition-opacity`}
+                      onClick={(e) => togglePostSelection(e, group.primaryKey)}
+                    >
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? 'bg-brand-dark border-brand-dark' : 'border-gray-300'}`}>
+                        {isSelected && <Check size={10} className="text-white" />}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5">
                       {/* Renderiza ambos os ícones se tiver as duas plataformas */}
@@ -619,6 +691,17 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
         <div className="flex items-center gap-4">
             {loadingPosts && <div className="flex items-center gap-2 text-xs text-gray-400"><Loader2 size={14} className="animate-spin" /> Atualizando...</div>}
             
+            {userRole === 'admin' && selectedPosts.size > 0 && (
+                <button 
+                  onClick={handleBulkDelete}
+                  disabled={isDeleting}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-md text-xs font-bold uppercase shadow-sm hover:bg-red-600 transition-all disabled:opacity-50"
+                >
+                    {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash size={16} />} 
+                    Excluir ({selectedPosts.size})
+                </button>
+            )}
+
             {userRole === 'admin' && (
                 <button 
                   onClick={() => handleCreatePost()}
@@ -758,6 +841,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                    const statusColor = getStatusColorClass(group.status);
                    const hasMeta = group.platforms.includes('meta');
                    const hasLinkedin = group.platforms.includes('linkedin');
+                   const isSelected = selectedPosts.has(group.primaryKey);
 
                    const targetDay = parseInt(group.content.day.split('/')[0]);
                    
@@ -765,13 +849,23 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                       <div 
                         key={idx} 
                         onClick={() => handleOpenPost({ content: group.content, key: group.primaryKey })} 
-                        className={`p-4 rounded-xl border flex gap-4 cursor-pointer hover:shadow-md transition-all ${statusColor} items-center`}
+                        className={`p-4 rounded-xl border flex gap-4 cursor-pointer hover:shadow-md transition-all ${statusColor} ${isSelected ? 'ring-2 ring-brand-dark' : ''} items-center relative group`}
                         draggable
                         onDragStart={(e) => handleDragStart(e, group.primaryKey)}
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, targetDay)}
                       >
-                         <div className="w-24 flex-shrink-0">
+                         {userRole === 'admin' && (
+                           <div 
+                             className={`absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center -ml-2 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                             onClick={(e) => togglePostSelection(e, group.primaryKey)}
+                           >
+                             <div className={`w-5 h-5 rounded border flex items-center justify-center ${isSelected ? 'bg-brand-dark border-brand-dark' : 'border-gray-400 bg-white'}`}>
+                               {isSelected && <Check size={14} className="text-white" />}
+                             </div>
+                           </div>
+                         )}
+                         <div className={`w-24 flex-shrink-0 ${userRole === 'admin' ? 'ml-6' : ''}`}>
                             <span className="font-bold text-gray-900 block">{group.content.day.split(' – ')[0]}</span>
                             <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-1">
                                {hasMeta && <Instagram size={12} className="text-[#E1306C]" />}

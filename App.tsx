@@ -7,8 +7,9 @@ import { MonthDetail } from './components/MonthDetail';
 import { LoginScreen } from './components/LoginScreen';
 import { PublicApprovalScreen } from './components/PublicApprovalScreen';
 import { LandingPage } from './components/LandingPage';
+import { ClientSelectorScreen } from './components/ClientSelectorScreen';
 import { useEditorialData, MONTH_NAMES } from './hooks/useEditorialData';
-import { Map, ChevronRight, LogOut, Home } from 'lucide-react';
+import { Map, ChevronRight, LogOut, Home, Building2 } from 'lucide-react';
 import { AuthProvider, useAuth } from './lib/supabase';
 
 type ViewState = 'home' | 'month-detail';
@@ -20,7 +21,7 @@ interface MainAppProps {
 const MainApp: React.FC<MainAppProps> = ({ onBack }) => {
   const [view, setView] = useState<ViewState>('home');
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
-  const { userRole, logout } = useAuth();
+  const { userRole, logout, activeClient, setActiveClient } = useAuth();
   const { monthlyPlans } = useEditorialData();
 
   const handleSelectMonth = (month: string) => {
@@ -75,6 +76,17 @@ const MainApp: React.FC<MainAppProps> = ({ onBack }) => {
                 <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Logado como</span>
                 <span className="text-xs font-bold text-blue-600">{getRoleLabel()}</span>
               </div>
+
+              {userRole === 'admin' && (
+                <button
+                  onClick={() => setActiveClient(null)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700"
+                  title="Trocar Cliente"
+                >
+                  <Building2 size={14} />
+                  <span className="hidden sm:inline">Trocar Cliente</span>
+                </button>
+              )}
 
               {onBack && (
                 <button
@@ -188,14 +200,31 @@ const MainApp: React.FC<MainAppProps> = ({ onBack }) => {
 };
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userRole, activeClient, logout } = useAuth();
   const [showLanding, setShowLanding] = useState(true);
 
   if (showLanding) {
     return <LandingPage onEnterEditorial={() => setShowLanding(false)} />;
   }
 
-  return isAuthenticated ? <MainApp onBack={() => setShowLanding(true)} /> : <LoginScreen onBack={() => setShowLanding(true)} />;
+  if (!isAuthenticated) {
+    return <LoginScreen onBack={() => setShowLanding(true)} />;
+  }
+
+  if (userRole === 'admin' && !activeClient) {
+    return (
+      <ClientSelectorScreen 
+        onSelectClient={() => {}} 
+        onManageClients={() => {}} 
+        onLogout={() => {
+          logout();
+          setShowLanding(true);
+        }} 
+      />
+    );
+  }
+
+  return <MainApp onBack={() => setShowLanding(true)} />;
 }
 
 const App: React.FC = () => {
