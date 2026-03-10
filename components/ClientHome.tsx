@@ -19,6 +19,7 @@ interface ClientHomeProps {
   onNavigateToOnboarding: () => void;
   onNavigateToMapa: () => void;
   onNavigateToBriefings: () => void;
+  onNavigateToStrategicBriefings: () => void;
   onNavigateToDocuments: () => void;
   onNavigateToPaidTraffic: () => void;
   onNavigateToWebsite: () => void;
@@ -34,6 +35,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
   onNavigateToOnboarding,
   onNavigateToMapa,
   onNavigateToBriefings,
+  onNavigateToStrategicBriefings,
   onNavigateToDocuments,
   onNavigateToPaidTraffic,
   onNavigateToWebsite,
@@ -192,7 +194,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
       </motion.div>
 
       {/* Seção "O que fazer agora" */}
-      {!smartLoading && (onboardingPending > 0 || briefingMissing) && (
+      {!smartLoading && (onboardingPending > 0) && (
         <motion.div 
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -212,22 +214,6 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
                 <p className="text-base font-bold text-brand-dark">{onboardingPending} etapa(s) obrigatória(s)</p>
               </div>
               <ArrowRight size={20} className="text-amber-300" />
-            </motion.div>
-          )}
-          {briefingMissing && (
-            <motion.div 
-              whileHover={{ y: -4, shadow: '0 20px 40px rgba(0,0,0,0.04)' }}
-              onClick={onNavigateToBriefings} 
-              className="flex-1 flex items-center gap-5 p-6 bg-white border border-blue-100 rounded-[32px] cursor-pointer transition-all shadow-sm"
-            >
-              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
-                <ClipboardList size={24} />
-              </div>
-              <div className="flex-1">
-                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Briefing não enviado</p>
-                <p className="text-base font-bold text-brand-dark">Mês de {MONTHS[new Date().getMonth()]}</p>
-              </div>
-              <ArrowRight size={20} className="text-blue-300" />
             </motion.div>
           )}
         </motion.div>
@@ -405,8 +391,28 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
             </motion.div>
           )}
 
-          {/* Briefings */}
+          {/* Briefings Estratégicos */}
           {showBriefings && (
+            <motion.div 
+              variants={itemVariants}
+              onClick={onNavigateToStrategicBriefings}
+              className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col"
+            >
+              <div className="flex justify-between items-start mb-8">
+                <div className="w-16 h-16 bg-rose-50/50 rounded-[20px] flex items-center justify-center text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-all duration-500 shadow-sm">
+                  <Target size={32} />
+                </div>
+                <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
+              </div>
+              <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Briefings Estratégicos</h3>
+              <p className="text-gray-500 text-sm leading-relaxed font-medium">
+                Respostas dos formulários de onboarding e alinhamento da marca.
+              </p>
+            </motion.div>
+          )}
+
+          {/* Briefings Mensais (Desativado temporariamente) */}
+          {/* showBriefings && (
             <motion.div 
               variants={itemVariants}
               onClick={onNavigateToBriefings}
@@ -418,12 +424,12 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
                 </div>
                 <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
               </div>
-              <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Briefings</h3>
+              <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Briefings Mensais</h3>
               <p className="text-gray-500 text-sm leading-relaxed font-medium">
                 Solicitações de novas demandas e aprovações pendentes.
               </p>
             </motion.div>
-          )}
+          ) */}
 
           {/* Documentos */}
           {showDocuments && (

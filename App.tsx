@@ -7,6 +7,7 @@ import { PublicApprovalScreen } from './components/PublicApprovalScreen';
 import { ClientSelectorScreen } from './components/ClientSelectorScreen';
 import { ClientManager } from './components/ClientManager';
 import { OnboardingView } from './components/OnboardingView';
+import { BriefingOnboarding } from './components/BriefingOnboarding';
 import { ClientHome } from './components/ClientHome';
 import { BriefingsView } from './components/BriefingsView';
 import { DocumentsView } from './components/DocumentsView';
@@ -18,7 +19,7 @@ import { Map, ChevronRight, LogOut, Home, Building2, ClipboardList, LayoutDashbo
 import { AuthProvider, useAuth } from './lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 
-type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'documents' | 'paid-traffic' | 'website' | 'admin';
+type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'strategic-briefings' | 'documents' | 'paid-traffic' | 'website' | 'admin';
 
 interface MainAppProps {}
 
@@ -202,11 +203,25 @@ const MainApp: React.FC<MainAppProps> = () => {
                 <DocumentsView />
               ) : view === 'briefings' ? (
                 <BriefingsView />
+              ) : view === 'strategic-briefings' ? (
+                <div className="bg-white rounded-[2.5rem] border border-black/[0.03] shadow-sm min-h-[80vh]">
+                  <div className="p-6 border-b border-gray-100 flex items-center gap-4">
+                    <button 
+                      onClick={() => setView('dashboard')}
+                      className="p-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-400 hover:text-brand-dark"
+                    >
+                      <ChevronRight className="w-5 h-5 rotate-180" />
+                    </button>
+                    <h2 className="text-xl font-bold text-brand-dark">Voltar ao Dashboard</h2>
+                  </div>
+                  <BriefingOnboarding isDashboardView={true} />
+                </div>
               ) : view === 'dashboard' ? (
                 <ClientHome
                   onNavigateToOnboarding={() => setView('onboarding')}
                   onNavigateToMapa={() => setView('home')}
                   onNavigateToBriefings={() => setView('briefings')}
+                  onNavigateToStrategicBriefings={() => setView('strategic-briefings')}
                   onNavigateToDocuments={() => setView('documents')}
                   onNavigateToPaidTraffic={() => setView('paid-traffic')}
                   onNavigateToWebsite={() => setView('website')}
