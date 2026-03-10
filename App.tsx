@@ -31,7 +31,7 @@ const MainApp: React.FC<MainAppProps> = () => {
 
   // Redirecionar para onboarding se não estiver completo (apenas para clientes)
   useEffect(() => {
-    if (userRole === 'approver' && activeClient && !activeClient.onboarding_completed && view !== 'onboarding') {
+    if (userRole === 'approver' && activeClient && !activeClient.onboarding_completed && view !== 'onboarding' && activeClient.name !== 'Next Safety') {
       setView('onboarding');
     }
   }, [userRole, activeClient, view]);

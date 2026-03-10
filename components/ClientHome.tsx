@@ -136,7 +136,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
   const showOrganicTraffic = hasService('Social Media');
   const showBriefings = hasService('Social Media') || hasService('Tráfego Pago');
   const showWebsite = hasService('Website');
-  const showOnboarding = true; // Sempre mostrar
+  const showOnboarding = activeClient?.name !== 'Next Safety';
   const showDocuments = true; // Sempre mostrar
 
   const containerVariants = {
@@ -194,7 +194,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
       </motion.div>
 
       {/* Seção "O que fazer agora" */}
-      {!smartLoading && (onboardingPending > 0) && (
+      {!smartLoading && (onboardingPending > 0) && showOnboarding && (
         <motion.div 
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}

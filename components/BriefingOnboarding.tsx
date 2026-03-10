@@ -613,12 +613,17 @@ export const BriefingOnboarding: React.FC<BriefingFormProps> = ({ onComplete, is
   const [completedSections, setCompletedSections] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const availableSections = SECTIONS.filter(s => 
     !s.serviceRequired || (activeClient?.services || []).includes(s.serviceRequired)
   );
 
   const currentSection = availableSections[currentSectionIndex];
+
+  useEffect(() => {
+    setIsEditing(!completedSections.includes(currentSection?.id));
+  }, [currentSectionIndex, completedSections, currentSection?.id]);
 
   useEffect(() => {
     const fetchResponses = async () => {
@@ -687,6 +692,7 @@ export const BriefingOnboarding: React.FC<BriefingFormProps> = ({ onComplete, is
           if (onComplete) onComplete();
         }
       } else {
+        setIsEditing(false);
         alert('Respostas salvas com sucesso!');
       }
     } catch (err) {
@@ -789,14 +795,24 @@ export const BriefingOnboarding: React.FC<BriefingFormProps> = ({ onComplete, is
               exit={{ opacity: 0, x: -20 }}
               className="bg-white rounded-[2.5rem] border border-black/[0.03] p-10 shadow-sm"
             >
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
-                  {currentSection.icon}
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                    {currentSection.icon}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-brand-dark">{currentSection.title}</h2>
+                    <p className="text-sm text-gray-500">{currentSection.description}</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-brand-dark">{currentSection.title}</h2>
-                  <p className="text-sm text-gray-500">{currentSection.description}</p>
-                </div>
+                {!isEditing && (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="px-4 py-2 text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors"
+                  >
+                    Editar Respostas
+                  </button>
+                )}
               </div>
 
               <div className="space-y-8">
@@ -812,13 +828,15 @@ export const BriefingOnboarding: React.FC<BriefingFormProps> = ({ onComplete, is
                         onChange={(e) => handleInputChange(currentSection.id, q.id, e.target.value)}
                         placeholder={q.placeholder}
                         rows={4}
-                        className="w-full px-5 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50 transition-all outline-none resize-none"
+                        disabled={!isEditing}
+                        className="w-full px-5 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50 transition-all outline-none resize-none disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     ) : q.type === 'select' ? (
                       <select
                         value={responses[currentSection.id]?.[q.id] || ''}
                         onChange={(e) => handleInputChange(currentSection.id, q.id, e.target.value)}
-                        className="w-full px-5 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50 transition-all outline-none"
+                        disabled={!isEditing}
+                        className="w-full px-5 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50 transition-all outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         <option value="">Selecione uma opção</option>
                         {q.options?.map(opt => (
@@ -828,27 +846,29 @@ export const BriefingOnboarding: React.FC<BriefingFormProps> = ({ onComplete, is
                     ) : q.type === 'radio' ? (
                       <div className="space-y-2">
                         {q.options?.map(opt => (
-                          <label key={opt} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+                          <label key={opt} className={`flex items-center gap-3 p-3 rounded-xl border border-gray-100 transition-colors ${isEditing ? 'hover:bg-gray-50 cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}>
                             <input
                               type="radio"
                               name={q.id}
                               value={opt}
                               checked={responses[currentSection.id]?.[q.id] === opt}
                               onChange={(e) => handleInputChange(currentSection.id, q.id, e.target.value)}
-                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                              disabled={!isEditing}
+                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 disabled:cursor-not-allowed"
                             />
                             <span className="text-sm text-gray-700">{opt}</span>
                           </label>
                         ))}
                         {q.allowOther && (
-                          <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
+                          <div className={`flex items-center gap-3 p-3 rounded-xl border border-gray-100 transition-colors ${isEditing ? 'hover:bg-gray-50' : 'opacity-60'}`}>
                             <input
                               type="radio"
                               name={q.id}
                               value="Outro"
                               checked={responses[currentSection.id]?.[q.id] === 'Outro'}
                               onChange={(e) => handleInputChange(currentSection.id, q.id, e.target.value)}
-                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                              disabled={!isEditing}
+                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 disabled:cursor-not-allowed"
                             />
                             <span className="text-sm text-gray-700">Outro:</span>
                             <input
@@ -858,7 +878,8 @@ export const BriefingOnboarding: React.FC<BriefingFormProps> = ({ onComplete, is
                                 handleInputChange(currentSection.id, `${q.id}_other`, e.target.value);
                                 handleInputChange(currentSection.id, q.id, 'Outro');
                               }}
-                              className="flex-1 bg-transparent border-b border-gray-300 focus:border-blue-600 outline-none text-sm px-2 py-1"
+                              disabled={!isEditing}
+                              className="flex-1 bg-transparent border-b border-gray-300 focus:border-blue-600 outline-none text-sm px-2 py-1 disabled:cursor-not-allowed"
                             />
                           </div>
                         )}
@@ -869,7 +890,7 @@ export const BriefingOnboarding: React.FC<BriefingFormProps> = ({ onComplete, is
                           const currentValues = responses[currentSection.id]?.[q.id] || [];
                           const isChecked = currentValues.includes(opt);
                           return (
-                            <label key={opt} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+                            <label key={opt} className={`flex items-center gap-3 p-3 rounded-xl border border-gray-100 transition-colors ${isEditing ? 'hover:bg-gray-50 cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}>
                               <input
                                 type="checkbox"
                                 value={opt}
@@ -880,14 +901,15 @@ export const BriefingOnboarding: React.FC<BriefingFormProps> = ({ onComplete, is
                                     : [...currentValues, opt];
                                   handleInputChange(currentSection.id, q.id, newValues);
                                 }}
-                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                disabled={!isEditing}
+                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:cursor-not-allowed"
                               />
                               <span className="text-sm text-gray-700">{opt}</span>
                             </label>
                           );
                         })}
                         {q.allowOther && (
-                          <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
+                          <div className={`flex items-center gap-3 p-3 rounded-xl border border-gray-100 transition-colors ${isEditing ? 'hover:bg-gray-50' : 'opacity-60'}`}>
                             <input
                               type="checkbox"
                               checked={responses[currentSection.id]?.[q.id]?.includes('Outro')}
@@ -898,7 +920,8 @@ export const BriefingOnboarding: React.FC<BriefingFormProps> = ({ onComplete, is
                                   : currentValues.filter((v: string) => v !== 'Outro');
                                 handleInputChange(currentSection.id, q.id, newValues);
                               }}
-                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              disabled={!isEditing}
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:cursor-not-allowed"
                             />
                             <span className="text-sm text-gray-700">Outro:</span>
                             <input
@@ -911,7 +934,8 @@ export const BriefingOnboarding: React.FC<BriefingFormProps> = ({ onComplete, is
                                   handleInputChange(currentSection.id, q.id, [...currentValues, 'Outro']);
                                 }
                               }}
-                              className="flex-1 bg-transparent border-b border-gray-300 focus:border-blue-600 outline-none text-sm px-2 py-1"
+                              disabled={!isEditing}
+                              className="flex-1 bg-transparent border-b border-gray-300 focus:border-blue-600 outline-none text-sm px-2 py-1 disabled:cursor-not-allowed"
                             />
                           </div>
                         )}
@@ -942,7 +966,8 @@ export const BriefingOnboarding: React.FC<BriefingFormProps> = ({ onComplete, is
                                          const currentGrid = responses[currentSection.id]?.[q.id] || {};
                                          handleInputChange(currentSection.id, q.id, { ...currentGrid, [row]: e.target.value });
                                        }}
-                                       className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                       disabled={!isEditing}
+                                       className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
                                      />
                                    </td>
                                  ))}
@@ -957,7 +982,8 @@ export const BriefingOnboarding: React.FC<BriefingFormProps> = ({ onComplete, is
                         value={responses[currentSection.id]?.[q.id] || ''}
                         onChange={(e) => handleInputChange(currentSection.id, q.id, e.target.value)}
                         placeholder={q.placeholder}
-                        className="w-full px-5 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50 transition-all outline-none"
+                        disabled={!isEditing}
+                        className="w-full px-5 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50 transition-all outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     )}
                   </div>
@@ -968,14 +994,37 @@ export const BriefingOnboarding: React.FC<BriefingFormProps> = ({ onComplete, is
                 <div className="flex items-center gap-2 text-gray-400 text-xs font-medium">
                   <AlertCircle size={14} /> Suas respostas são salvas automaticamente ao avançar.
                 </div>
-                <button
-                  onClick={saveCurrentSection}
-                  disabled={saving}
-                  className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
-                >
-                  {saving ? 'Salvando...' : isDashboardView ? 'Salvar Respostas' : currentSectionIndex === availableSections.length - 1 ? 'Finalizar Onboarding' : 'Próximo Formulário'}
-                  {!isDashboardView && <ArrowRight size={18} />}
-                </button>
+                {isDashboardView ? (
+                  isEditing && (
+                    <button
+                      onClick={saveCurrentSection}
+                      disabled={saving}
+                      className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {saving ? 'Salvando...' : 'Salvar Respostas'}
+                    </button>
+                  )
+                ) : (
+                  <button
+                    onClick={() => {
+                      if (isEditing) {
+                        saveCurrentSection();
+                      } else {
+                        if (currentSectionIndex < availableSections.length - 1) {
+                          setCurrentSectionIndex(prev => prev + 1);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        } else {
+                          if (onComplete) onComplete();
+                        }
+                      }
+                    }}
+                    disabled={saving}
+                    className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving ? 'Salvando...' : currentSectionIndex === availableSections.length - 1 ? 'Finalizar Onboarding' : 'Próximo Formulário'}
+                    <ArrowRight size={18} />
+                  </button>
+                )}
               </div>
             </motion.div>
           </AnimatePresence>
