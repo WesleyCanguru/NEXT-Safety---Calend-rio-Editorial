@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { MonthCard } from './MonthCard';
-import { DistributionAnalysis } from './DistributionAnalysis';
 import { Compass, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react';
 import { useAuth, supabase } from '../lib/supabase';
 import { useEditorialData, MONTH_NAMES } from '../hooks/useEditorialData';
@@ -252,11 +251,6 @@ export const AnnualOverview: React.FC<AnnualOverviewProps> = ({ onSelectMonth })
             </div>
           </div>
         </div>
-      </motion.div>
-
-      {/* Distribution Analysis */}
-      <motion.div variants={itemVariants}>
-        <DistributionAnalysis />
       </motion.div>
 
       {/* Quarters / Grid Grid */}

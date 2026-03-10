@@ -44,13 +44,17 @@ export function useEditorialData() {
       return;
     }
     setLoading(true);
+    const startMonth = activeClient.created_at 
+      ? new Date(activeClient.created_at).getMonth() + 1 
+      : 1;
+
     const [plansRes, schedRes] = await Promise.all([
       supabase
         .from('client_monthly_plans')
         .select('*')
         .eq('client_id', activeClient.id)
         .eq('year', 2026)
-        .gte('month', new Date().getMonth() + 1)
+        .gte('month', startMonth)
         .order('month'),
       supabase
         .from('client_weekly_schedules')
