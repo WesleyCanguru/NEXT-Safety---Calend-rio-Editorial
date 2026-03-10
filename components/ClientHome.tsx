@@ -466,7 +466,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
               </div>
               <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Website</h3>
               <p className="text-gray-500 text-sm leading-relaxed font-medium">
-                Gestão de performance e atualizações do seu site.
+                Prévia e acompanhamento do desenvolvimento do seu site.
               </p>
             </motion.div>
           )}

@@ -42,10 +42,10 @@ interface ClientStats {
   client: Client;
   pendingBriefings: number;
   openTasks: number;
-  reportsThisMonth: number; // paid_traffic_reports + website_reports para o mês atual
+  reportsThisMonth: number; // paid_traffic_reports para o mês atual
 }
 
-type AdminTab = 'overview' | 'briefings' | 'tasks';
+type AdminTab = 'overview' | 'briefings';
 
 const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const currentMonth = new Date().getMonth() + 1;
@@ -104,7 +104,7 @@ export default function AdminView() {
     const clientIds = clientList.map(c => c.id);
 
     // 2. Busca em paralelo: briefings pendentes + tasks abertas + reports do mês atual
-    const [briefingsRes, tasksRes, paidRes, websiteRes] = await Promise.all([
+    const [briefingsRes, paidRes] = await Promise.all([
       supabase
         .from('briefings')
         .select('id, client_id, title, month, year, status, created_at')
@@ -113,22 +113,7 @@ export default function AdminView() {
         .order('created_at', { ascending: false }),
 
       supabase
-        .from('website_tasks')
-        .select('id, client_id, title, priority, status, created_at')
-        .in('client_id', clientIds)
-        .in('status', ['pending', 'in_progress'])
-        .order('priority', { ascending: true }) // urgent primeiro
-        .order('created_at', { ascending: false }),
-
-      supabase
         .from('paid_traffic_reports')
-        .select('id, client_id')
-        .in('client_id', clientIds)
-        .eq('month', currentMonth)
-        .eq('year', currentYear),
-
-      supabase
-        .from('website_reports')
         .select('id, client_id')
         .in('client_id', clientIds)
         .eq('month', currentMonth)
@@ -136,9 +121,9 @@ export default function AdminView() {
     ]);
 
     const briefings = briefingsRes.data || [];
-    const tasks = tasksRes.data || [];
+    const tasks: any[] = []; // Removido website_tasks
     const paidReports = paidRes.data || [];
-    const webReports = websiteRes.data || [];
+    const webReports: any[] = []; // Removido website_reports
 
     // 3. Cria mapa de nome/initials/color por client_id para enriquecer items
     const clientMap = new Map(clientList.map(c => [c.id, c]));
@@ -162,14 +147,12 @@ export default function AdminView() {
 
     // 4. Calcula stats por cliente
     const stats: ClientStats[] = clientList.map(client => {
-      const reportsThisMonth =
-        paidReports.filter(r => r.client_id === client.id).length +
-        webReports.filter(r => r.client_id === client.id).length;
+      const reportsThisMonth = paidReports.filter(r => r.client_id === client.id).length;
 
       return {
         client,
         pendingBriefings: briefings.filter(b => b.client_id === client.id).length,
-        openTasks: tasks.filter(t => t.client_id === client.id).length,
+        openTasks: 0, // Removido website_tasks
         reportsThisMonth
       };
     });
@@ -182,7 +165,7 @@ export default function AdminView() {
   useEffect(() => { loadData(); }, []);
 
   const totalReportsThisMonth = clientStats.reduce((acc, curr) => acc + curr.reportsThisMonth, 0);
-  const maxExpectedReports = clients.length * 2;
+  const maxExpectedReports = clients.length; // Apenas 1 relatório esperado por cliente (tráfego pago)
 
   const briefingWeight: Record<string, number> = { revision_requested: 3, in_review: 2, submitted: 1 };
   const sortedBriefings = [...pendingBriefings].sort((a, b) => (briefingWeight[b.status] || 0) - (briefingWeight[a.status] || 0));
@@ -235,16 +218,6 @@ export default function AdminView() {
           </div>
 
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 flex items-center gap-4">
-            <div className={`p-3 rounded-lg ${openTasks.length > 0 ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'}`}>
-              <CheckSquare size={24} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 font-medium">Tarefas em Aberto</p>
-              <p className="text-2xl font-bold text-gray-900">{openTasks.length}</p>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 flex items-center gap-4">
             <div className="bg-green-100 text-green-600 p-3 rounded-lg">
               <BarChart2 size={24} />
             </div>
@@ -269,12 +242,6 @@ export default function AdminView() {
           >
             Briefings ({pendingBriefings.length})
           </button>
-          <button
-            onClick={() => setActiveTab('tasks')}
-            className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'tasks' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-          >
-            Tarefas ({openTasks.length})
-          </button>
         </div>
 
         {loading ? (
@@ -293,13 +260,12 @@ export default function AdminView() {
                         <th className="py-3 px-4 font-medium">Segmento</th>
                         <th className="py-3 px-4 font-medium">Responsável</th>
                         <th className="py-3 px-4 font-medium text-center">Briefings Pendentes</th>
-                        <th className="py-3 px-4 font-medium text-center">Tarefas Abertas</th>
                         <th className="py-3 px-4 font-medium text-center">Relatórios do Mês</th>
                         <th className="py-3 px-4 font-medium text-center">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {clientStats.map(({ client, pendingBriefings, openTasks, reportsThisMonth }) => (
+                      {clientStats.map(({ client, pendingBriefings, reportsThisMonth }) => (
                         <tr key={client.id} className="hover:bg-gray-50">
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-3">
@@ -320,17 +286,12 @@ export default function AdminView() {
                             </span>
                           </td>
                           <td className="py-3 px-4 text-center">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${openTasks > 0 ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'}`}>
-                              {openTasks}
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${reportsThisMonth === 1 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                              {reportsThisMonth}/1
                             </span>
                           </td>
                           <td className="py-3 px-4 text-center">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${reportsThisMonth === 2 ? 'bg-green-100 text-green-700' : reportsThisMonth === 1 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                              {reportsThisMonth}/2
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            {(pendingBriefings === 0 && openTasks === 0) ? (
+                            {(pendingBriefings === 0) ? (
                               <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">OK</span>
                             ) : (
                               <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Atenção</span>
@@ -376,57 +337,6 @@ export default function AdminView() {
                             {b.created_at && (
                               <span className="text-xs text-gray-400">
                                 {new Date(b.created_at).toLocaleDateString('pt-BR')}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'tasks' && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-bold text-gray-900 mb-4">Tarefas abertas dos clientes</h2>
-                {openTasks.length === 0 ? (
-                  <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-12 text-center">
-                    <CheckSquare className="mx-auto text-gray-400 mb-3" size={40} />
-                    <p className="text-gray-500">Nenhuma tarefa em aberto.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {openTasks.map(t => {
-                      const priorityConfig = PRIORITY_CONFIG[t.priority];
-                      const statusConfig = TASK_STATUS_CONFIG[t.status as keyof typeof TASK_STATUS_CONFIG] || TASK_STATUS_CONFIG.pending;
-                      const StatusIcon = statusConfig.icon;
-                      
-                      return (
-                        <div key={t.id} className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 flex flex-col">
-                          <div className="flex items-center gap-3 mb-3">
-                            <div 
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                              style={{ backgroundColor: t.client?.color || '#3B82F6' }}
-                            >
-                              {t.client?.initials || t.client?.name?.substring(0, 2).toUpperCase() || 'CL'}
-                            </div>
-                            <span className="font-medium text-gray-900 truncate">{t.client?.name || 'Cliente Desconhecido'}</span>
-                          </div>
-                          <h3 className="font-bold text-gray-800 mb-4 line-clamp-2">{t.title}</h3>
-                          <div className="mt-auto flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${priorityConfig.color}`}>
-                                {priorityConfig.label}
-                              </span>
-                              <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600`}>
-                                <StatusIcon size={12} />
-                                {statusConfig.label}
-                              </span>
-                            </div>
-                            {t.created_at && (
-                              <span className="text-xs text-gray-400">
-                                {new Date(t.created_at).toLocaleDateString('pt-BR')}
                               </span>
                             )}
                           </div>
