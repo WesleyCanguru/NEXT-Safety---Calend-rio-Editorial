@@ -103,10 +103,9 @@ export const PublicApprovalScreen: React.FC = () => {
          setActiveTab(primary.content.platform);
 
          // 2. Try to Load Counterpart
-         const parts = dateKey.split('-');
          const currentPlatform = dateKey.includes('linkedin') ? 'linkedin' : 'meta';
          const otherPlatform = currentPlatform === 'linkedin' ? 'meta' : 'linkedin';
-         const counterpartKey = `${parts[0]}-${parts[1]}-${parts[2]}-${otherPlatform}`;
+         const counterpartKey = dateKey.replace(currentPlatform, otherPlatform);
          
          const partner = await fetchPostData(counterpartKey);
          if (partner) {

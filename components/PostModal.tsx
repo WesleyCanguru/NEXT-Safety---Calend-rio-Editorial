@@ -344,6 +344,9 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
           }
       }
 
+      // Generate a single timestamp for all platforms to ensure counterparts match exactly
+      const saveTimestamp = Date.now();
+
       // Loop through selected platforms and save independently
       for (const plat of selectedPlatforms) {
           // Generate key logic
@@ -352,7 +355,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
           // Se for NEW ou se a DATA MUDOU, adiciona timestamp pra evitar colisão e garantir unicidade
           // Isso resolve o problema de sobrescrever posts existentes no destino
           if (isNew || dateChanged) {
-             targetKey = `${targetKey}-${Date.now()}`;
+             targetKey = `${targetKey}-${saveTimestamp}`;
           } else {
               // Se estamos editando e a data for a mesma, tentamos preservar a chave original 
               // (para o caso de posts com sufixos).

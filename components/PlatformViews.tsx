@@ -191,7 +191,7 @@ export const LinkedInView: React.FC<PlatformViewProps> = ({ dayContent, caption,
       aspectRatioClass = isVerticalVideo ? 'aspect-[9/16]' : 'aspect-[16/9]';
   }
 
-  const linkedinHandle = client?.social_networks?.find(s => s.startsWith('linkedin_handle:'))?.split(':')[1] || client?.name || 'Canguru Digital';
+  const linkedinHandle = client?.linkedin || client?.social_networks?.find(s => s.startsWith('linkedin_handle:'))?.split(':')[1] || client?.name || 'Canguru Digital';
   const logoUrl = client?.logo_url || 'https://i.postimg.cc/ZRYDpRWD/Rebranding-Canguru-Digital-(5000-x-2500-px).png';
 
   return (
