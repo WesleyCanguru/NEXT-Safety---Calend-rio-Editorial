@@ -1006,7 +1006,7 @@ export const BriefingOnboarding: React.FC<BriefingFormProps> = ({ onComplete, is
                   )
                 ) : (
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (isEditing) {
                         saveCurrentSection();
                       } else {
@@ -1014,7 +1014,22 @@ export const BriefingOnboarding: React.FC<BriefingFormProps> = ({ onComplete, is
                           setCurrentSectionIndex(prev => prev + 1);
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         } else {
-                          if (onComplete) onComplete();
+                          if (activeClient) {
+                            setSaving(true);
+                            try {
+                              await supabase
+                                .from('clients')
+                                .update({ onboarding_completed: true })
+                                .eq('id', activeClient.id);
+                              if (onComplete) onComplete();
+                            } catch (err) {
+                              console.error('Erro ao finalizar onboarding:', err);
+                            } finally {
+                              setSaving(false);
+                            }
+                          } else {
+                            if (onComplete) onComplete();
+                          }
                         }
                       }
                     }}

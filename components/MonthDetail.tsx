@@ -754,15 +754,15 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
 
       <div className="bg-white rounded-[3rem] shadow-[0_40px_80px_rgba(0,0,0,0.08)] border border-black/[0.02] overflow-hidden">
         {/* Header */}
-        <div className="bg-brand-dark text-white p-12 md:p-20 relative overflow-hidden">
-           <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none transform translate-x-1/4 -translate-y-1/4"><CalendarDays size={400} /></div>
+        <div className="bg-brand-dark text-white p-8 md:p-12 relative overflow-hidden">
+           <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none transform translate-x-1/4 -translate-y-1/4"><CalendarDays size={400} /></div>
            <div className="relative z-10">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
-              <div className="space-y-4">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-6">
+              <div className="space-y-2">
                 <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.4em] text-white/40">
                   <Sparkles size={14} /> Planejamento Mensal
                 </div>
-                <h2 className="text-6xl md:text-8xl font-serif font-medium tracking-tight italic leading-none">
+                <h2 className="text-5xl md:text-7xl font-serif font-medium tracking-tight italic leading-none">
                   {monthName} <span className="not-italic font-sans font-bold opacity-20">{year}</span>
                 </h2>
               </div>
@@ -771,7 +771,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                 <motion.button 
                   whileHover={{ scale: 1.05 }}
                   onClick={handleEditPlan}
-                  className="flex items-center gap-3 px-8 py-4 bg-white/10 hover:bg-white/20 rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] transition-all backdrop-blur-md border border-white/10 shadow-xl"
+                  className="flex items-center gap-3 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] transition-all backdrop-blur-md border border-white/10 shadow-xl"
                 >
                   <Edit2 size={14} /> Editar Plano
                 </motion.button>
@@ -779,7 +779,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
             </div>
 
             {isEditingPlan ? (
-              <div className="bg-white/5 p-8 rounded-3xl border border-white/10 mt-8 space-y-6 backdrop-blur-xl">
+              <div className="bg-white/5 p-6 rounded-3xl border border-white/10 mt-6 space-y-4 backdrop-blur-xl">
                 <div>
                   <label className="premium-label text-white/60 mb-2 block">Tema do Mês</label>
                   <input 
@@ -790,13 +790,13 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                     placeholder="Ex: Inovação e Segurança"
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="premium-label text-white/60 mb-2 block">Objetivos</label>
                     <textarea 
                       value={editObjectives} 
                       onChange={e => setEditObjectives(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white placeholder-white/20 focus:outline-none focus:border-white/40 transition-all h-32 resize-none font-medium text-sm"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white placeholder-white/20 focus:outline-none focus:border-white/40 transition-all h-24 resize-none font-medium text-sm"
                       placeholder="Um por linha..."
                     />
                   </div>
@@ -805,7 +805,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                     <textarea 
                       value={editKeyDates} 
                       onChange={e => setEditKeyDates(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white placeholder-white/20 focus:outline-none focus:border-white/40 transition-all h-32 resize-none font-medium text-sm"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white placeholder-white/20 focus:outline-none focus:border-white/40 transition-all h-24 resize-none font-medium text-sm"
                       placeholder="Uma por linha..."
                     />
                   </div>
@@ -814,12 +814,12 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                     <textarea 
                       value={editCampaigns} 
                       onChange={e => setEditCampaigns(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white placeholder-white/20 focus:outline-none focus:border-white/40 transition-all h-32 resize-none font-medium text-sm"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white placeholder-white/20 focus:outline-none focus:border-white/40 transition-all h-24 resize-none font-medium text-sm"
                       placeholder="Uma por linha..."
                     />
                   </div>
                 </div>
-                <div className="flex justify-end gap-4 mt-8">
+                <div className="flex justify-end gap-4 mt-6">
                   <button 
                     onClick={() => setIsEditingPlan(false)}
                     className="flex items-center gap-2 px-6 py-3 bg-transparent hover:bg-white/5 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all"
@@ -838,11 +838,11 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
               </div>
             ) : (
               <>
-                <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-white/80 text-[10px] font-bold uppercase tracking-[0.2em] mb-10 mt-4">
+                <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-white/80 text-[10px] font-bold uppercase tracking-[0.2em] mb-6 mt-2">
                   <Target size={12} className="text-white/40" />
                   Tema: <span className="text-white">{currentPlan.theme || 'Não definido'}</span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
                    <div className="md:col-span-1">
                       <h4 className="flex items-center gap-2 text-brand-green font-bold text-sm uppercase tracking-wider mb-2"><Target size={16} /> Objetivos</h4>
                       <ul className="text-gray-300 leading-relaxed text-sm space-y-1">
@@ -850,7 +850,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                         {(!currentPlan.objectives || currentPlan.objectives.length === 0) && <li>Nenhum objetivo definido.</li>}
                       </ul>
                    </div>
-                   <div className="bg-white/5 rounded-xl p-5 border border-white/10 md:col-span-2">
+                   <div className="bg-white/5 rounded-xl p-4 border border-white/10 md:col-span-2">
                       <h4 className="flex items-center gap-2 text-white font-bold text-sm uppercase tracking-wider mb-3"><BarChart3 size={16} /> Visão Geral</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
