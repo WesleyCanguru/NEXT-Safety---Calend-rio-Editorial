@@ -150,6 +150,7 @@ export interface Client {
   responsible: string | null;
   email: string | null;
   instagram: string | null;
+  linkedin?: string | null;
   color: string;
   initials: string;
   logo_url: string | null;

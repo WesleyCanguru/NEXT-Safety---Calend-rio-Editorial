@@ -404,6 +404,7 @@ export const PublicApprovalScreen: React.FC = () => {
                            imageUrl={displayImage} 
                            isVideo={!!isVideo} 
                            onImageClick={handleImageClick}
+                           client={client}
                          />
                       ) : (
                          <InstagramView 
@@ -412,6 +413,7 @@ export const PublicApprovalScreen: React.FC = () => {
                            imageUrl={displayImage} 
                            isVideo={!!isVideo} 
                            onImageClick={handleImageClick}
+                           client={client}
                          />
                       )}
                    </div>

@@ -572,9 +572,9 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
            <div className="flex-grow p-8 sm:p-16 flex items-center justify-center">
              <div className="w-full max-w-lg transition-all duration-500 transform hover:scale-[1.01]">
                 {previewPlatform === 'linkedin' ? (
-                  <LinkedInView dayContent={effectiveDayContent} caption={previewCaption} imageUrl={imageUrl} isVideo={!!isVideo} isUploading={isUploading} />
+                  <LinkedInView dayContent={effectiveDayContent} caption={previewCaption} imageUrl={imageUrl} isVideo={!!isVideo} isUploading={isUploading} client={activeClient} />
                 ) : (
-                  <InstagramView dayContent={effectiveDayContent} caption={previewCaption} imageUrl={imageUrl} isVideo={!!isVideo} isUploading={isUploading} />
+                  <InstagramView dayContent={effectiveDayContent} caption={previewCaption} imageUrl={imageUrl} isVideo={!!isVideo} isUploading={isUploading} client={activeClient} />
                 )}
              </div>
            </div>

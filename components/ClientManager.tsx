@@ -31,6 +31,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
     responsible: '',
     email: '',
     instagram: '',
+    linkedin: '',
     reportei_url: '',
     organic_reportei_url: '',
     paid_reportei_url: '',
@@ -59,6 +60,11 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
     if (!form.name.trim() || !form.initials.trim()) return;
     setSaving(true);
     try {
+      const socialNetworks = form.social_networks.filter(s => !s.startsWith('linkedin_handle:'));
+      if (form.linkedin.trim()) {
+        socialNetworks.push(`linkedin_handle:${form.linkedin.trim()}`);
+      }
+
       const clientPayload = {
         name: form.name.trim(),
         segment: form.segment.trim() || null,
@@ -70,7 +76,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
         color: form.color,
         initials: form.initials.trim().toUpperCase().slice(0, 2),
         services: form.services,
-        social_networks: form.social_networks,
+        social_networks: socialNetworks,
         traffic_platforms: form.traffic_platforms,
         logo_url: form.logo_url || null,
       };
@@ -188,6 +194,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
       responsible: '', 
       email: '', 
       instagram: '', 
+      linkedin: '',
       organic_reportei_url: '',
       paid_reportei_url: '',
       color: '#1e40af', 
@@ -202,12 +209,14 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
   };
 
   const handleEdit = (client: Client) => {
+    const linkedinHandle = client.social_networks?.find(s => s.startsWith('linkedin_handle:'))?.split(':')[1] || '';
     setForm({
       name: client.name,
       segment: client.segment || '',
       responsible: client.responsible || '',
       email: client.email || '',
       instagram: client.instagram || '',
+      linkedin: linkedinHandle,
       organic_reportei_url: client.organic_reportei_url || '',
       paid_reportei_url: client.paid_reportei_url || '',
       color: client.color,
@@ -373,6 +382,13 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Instagram</label>
                 <input type="text" value={form.instagram} onChange={e => setForm(f => ({...f, instagram: e.target.value}))}
                   placeholder="@empresa"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">LinkedIn</label>
+                <input type="text" value={form.linkedin} onChange={e => setForm(f => ({...f, linkedin: e.target.value}))}
+                  placeholder="Nome da Empresa"
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
 

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Image as ImageIcon, Heart, MessageCircle, Send as SendIcon, Bookmark, MoreHorizontal, Globe, ThumbsUp, MessageSquare, Repeat, FileVideo } from 'lucide-react';
-import { DailyContent } from '../types';
+import { DailyContent, Client } from '../types';
 
 interface PlatformViewProps {
   dayContent: DailyContent;
@@ -10,6 +10,7 @@ interface PlatformViewProps {
   isVideo: boolean | null;
   isUploading?: boolean;
   onImageClick?: (url: string) => void;
+  client?: Client | null;
 }
 
 export const MediaRenderer: React.FC<{ 
@@ -127,9 +128,11 @@ export const MediaRenderer: React.FC<{
   );
 };
 
-export const InstagramView: React.FC<PlatformViewProps> = ({ dayContent, caption, imageUrl, isVideo, isUploading, onImageClick }) => {
+export const InstagramView: React.FC<PlatformViewProps> = ({ dayContent, caption, imageUrl, isVideo, isUploading, onImageClick, client }) => {
   const isVerticalVideo = dayContent.type.toLowerCase().includes('vídeo') || dayContent.type.toLowerCase().includes('reel');
   const aspectRatioClass = isVerticalVideo ? 'aspect-[9/16]' : 'aspect-[4/5]';
+  const handle = client?.instagram || 'canguru_digital';
+  const logoUrl = client?.logo_url || 'https://i.postimg.cc/ZRYDpRWD/Rebranding-Canguru-Digital-(5000-x-2500-px).png';
 
   return (
     <div className="bg-white border border-gray-200 rounded-sm shadow-sm max-w-md mx-auto">
@@ -138,10 +141,10 @@ export const InstagramView: React.FC<PlatformViewProps> = ({ dayContent, caption
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 to-purple-600">
             <div className="w-full h-full rounded-full border-2 border-white bg-gray-200 overflow-hidden">
-               <img src="https://i.postimg.cc/ZRYDpRWD/Rebranding-Canguru-Digital-(5000-x-2500-px).png" alt="Avatar" className="w-full h-full object-cover" />
+               <img src={logoUrl} alt="Avatar" className="w-full h-full object-cover" />
             </div>
           </div>
-          <span className="text-sm font-semibold text-gray-900">canguru_digital</span>
+          <span className="text-sm font-semibold text-gray-900">{handle}</span>
         </div>
         <MoreHorizontal size={20} className="text-gray-600" />
       </div>
@@ -165,7 +168,7 @@ export const InstagramView: React.FC<PlatformViewProps> = ({ dayContent, caption
         
         {/* Caption */}
         <div className="text-sm text-gray-900 leading-normal">
-          <span className="font-semibold mr-2">canguru_digital</span>
+          <span className="font-semibold mr-2">{handle}</span>
           <span className="whitespace-pre-line">
             {caption || <span className="text-gray-400 italic font-normal">[Sua legenda aparecerá aqui...]</span>}
           </span>
@@ -176,7 +179,7 @@ export const InstagramView: React.FC<PlatformViewProps> = ({ dayContent, caption
   );
 };
 
-export const LinkedInView: React.FC<PlatformViewProps> = ({ dayContent, caption, imageUrl, isVideo, isUploading, onImageClick }) => {
+export const LinkedInView: React.FC<PlatformViewProps> = ({ dayContent, caption, imageUrl, isVideo, isUploading, onImageClick, client }) => {
   const isVerticalVideo = dayContent.type.toLowerCase().includes('vídeo') || dayContent.type.toLowerCase().includes('reel');
   
   // Logic: 
@@ -188,16 +191,19 @@ export const LinkedInView: React.FC<PlatformViewProps> = ({ dayContent, caption,
       aspectRatioClass = isVerticalVideo ? 'aspect-[9/16]' : 'aspect-[16/9]';
   }
 
+  const linkedinHandle = client?.social_networks?.find(s => s.startsWith('linkedin_handle:'))?.split(':')[1] || client?.name || 'Canguru Digital';
+  const logoUrl = client?.logo_url || 'https://i.postimg.cc/ZRYDpRWD/Rebranding-Canguru-Digital-(5000-x-2500-px).png';
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm max-w-md mx-auto overflow-hidden">
       {/* Header */}
       <div className="p-3 flex items-start gap-3">
          <div className="w-10 h-10 rounded-sm bg-gray-200 overflow-hidden">
-             <img src="https://i.postimg.cc/ZRYDpRWD/Rebranding-Canguru-Digital-(5000-x-2500-px).png" alt="Logo" className="w-full h-full object-cover" />
+             <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
          </div>
          <div>
             <div className="flex items-center gap-1">
-               <span className="text-sm font-bold text-gray-900">Canguru Digital</span>
+               <span className="text-sm font-bold text-gray-900">{linkedinHandle}</span>
                <span className="text-gray-500 text-xs">• 1º</span>
             </div>
             <p className="text-xs text-gray-500">2.131 seguidores</p>

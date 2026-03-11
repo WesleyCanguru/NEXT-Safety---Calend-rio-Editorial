@@ -57,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         responsible: 'Viviane',
         email: null,
         instagram: null,
+        linkedin: null,
         color: '#1e40af',
         initials: 'NS',
         logo_url: null,
