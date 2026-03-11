@@ -43,8 +43,8 @@ export interface MonthPlan {
   function: string;
   color: MonthColor;
   events?: EventData[];
-  deliverables: string[];
-  takeaways: string[];
+  deliverables?: string[];
+  takeaways?: string[];
 }
 
 export interface AnnualStrategy {

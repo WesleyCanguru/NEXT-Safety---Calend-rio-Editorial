@@ -284,10 +284,7 @@ export const AnnualOverview: React.FC<AnnualOverviewProps> = ({ onSelectMonth })
                     month: monthName,
                     title: plan.theme || 'Sem tema definido',
                     color: 'blue', 
-                    function: plan.objectives?.[0] || 'Objetivo não definido',
-                    events: plan.key_dates?.map(d => ({ name: d, date: '' })) || [],
-                    deliverables: plan.campaigns || [],
-                    takeaways: plan.objectives?.slice(1) || []
+                    function: plan.objectives?.[0] || 'Objetivo não definido'
                   }} 
                   onClick={() => onSelectMonth(monthName)}
                   postCount={postCount}
