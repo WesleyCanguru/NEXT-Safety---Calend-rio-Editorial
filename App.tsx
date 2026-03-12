@@ -29,6 +29,15 @@ const MainApp: React.FC<MainAppProps> = () => {
   const { userRole, logout, activeClient, setActiveClient, refreshActiveClient } = useAuth();
   const { monthlyPlans } = useEditorialData();
 
+  // Redirecionar cliente para briefings estratégicos se onboarding não estiver completo
+  useEffect(() => {
+    if (userRole === 'approver' && activeClient) {
+      if (!activeClient.onboarding_completed && view !== 'strategic-briefings') {
+        setView('strategic-briefings');
+      }
+    }
+  }, [userRole, activeClient, view]);
+
   const handleSelectMonth = (month: string) => {
     setSelectedMonth(month);
     setView('month-detail');
@@ -200,16 +209,18 @@ const MainApp: React.FC<MainAppProps> = () => {
                 <BriefingsView />
               ) : view === 'strategic-briefings' ? (
                 <div className="bg-white rounded-[2.5rem] border border-black/[0.03] shadow-sm min-h-[80vh]">
-                  <div className="p-6 border-b border-gray-100 flex items-center gap-4">
-                    <button 
-                      onClick={() => setView('dashboard')}
-                      className="p-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-400 hover:text-brand-dark"
-                    >
-                      <ChevronRight className="w-5 h-5 rotate-180" />
-                    </button>
-                    <h2 className="text-xl font-bold text-brand-dark">Voltar ao Dashboard</h2>
-                  </div>
-                  <BriefingOnboarding isDashboardView={true} />
+                  {!(userRole === 'approver' && !activeClient?.onboarding_completed) && (
+                    <div className="p-6 border-b border-gray-100 flex items-center gap-4">
+                      <button 
+                        onClick={() => setView('dashboard')}
+                        className="p-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-400 hover:text-brand-dark"
+                      >
+                        <ChevronRight className="w-5 h-5 rotate-180" />
+                      </button>
+                      <h2 className="text-xl font-bold text-brand-dark">Voltar ao Dashboard</h2>
+                    </div>
+                  )}
+                  <BriefingOnboarding />
                 </div>
               ) : view === 'dashboard' ? (
                 <ClientHome
