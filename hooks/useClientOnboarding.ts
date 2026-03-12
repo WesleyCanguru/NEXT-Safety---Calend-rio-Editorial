@@ -42,7 +42,6 @@ export const generateOnboardingSteps = (services: string[]): OnboardingStep[] =>
   };
 
   // Universal
-  addStep('universal', 'Validar handover do time comercial');
   addStep('universal', 'Definir responsáveis e datas no sistema');
   addStep('universal', 'Criar grupo WhatsApp e adicionar equipe');
   addStep('universal', 'Enviar mensagem de boas-vindas + apresentação de onboarding');
