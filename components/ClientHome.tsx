@@ -23,6 +23,7 @@ interface ClientHomeProps {
   onNavigateToDocuments: () => void;
   onNavigateToPaidTraffic: () => void;
   onNavigateToWebsite: () => void;
+  onNavigateToPasswordVault: () => void;
   onRefreshClient?: () => void;
 }
 
@@ -39,6 +40,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
   onNavigateToDocuments,
   onNavigateToPaidTraffic,
   onNavigateToWebsite,
+  onNavigateToPasswordVault,
   onRefreshClient,
 }) => {
   const { activeClient, userRole } = useAuth();
@@ -427,6 +429,24 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
               </p>
             </motion.div>
           )}
+
+          {/* Cofre de Senhas */}
+          <motion.div 
+            variants={itemVariants}
+            onClick={onNavigateToPasswordVault}
+            className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col"
+          >
+            <div className="flex justify-between items-start mb-8">
+              <div className="w-16 h-16 bg-slate-50/50 rounded-[20px] flex items-center justify-center text-slate-600 group-hover:bg-slate-600 group-hover:text-white transition-all duration-500 shadow-sm">
+                <ShieldCheck size={32} />
+              </div>
+              <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Cofre de Senhas</h3>
+            <p className="text-gray-500 text-sm leading-relaxed font-medium">
+              Acesso seguro às credenciais e senhas da sua marca.
+            </p>
+          </motion.div>
 
         </div>
 

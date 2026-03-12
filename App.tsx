@@ -19,7 +19,9 @@ import { Map, ChevronRight, LogOut, Home, Building2, ClipboardList, LayoutDashbo
 import { AuthProvider, useAuth } from './lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 
-type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'strategic-briefings' | 'documents' | 'paid-traffic' | 'website' | 'admin';
+import { PasswordVault } from './components/PasswordVault';
+
+type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'strategic-briefings' | 'documents' | 'paid-traffic' | 'website' | 'admin' | 'password-vault';
 
 interface MainAppProps {}
 
@@ -207,6 +209,19 @@ const MainApp: React.FC<MainAppProps> = () => {
                 <DocumentsView />
               ) : view === 'briefings' ? (
                 <BriefingsView />
+              ) : view === 'password-vault' ? (
+                <div className="bg-white rounded-[2.5rem] border border-black/[0.03] shadow-sm min-h-[80vh] p-6 sm:p-10">
+                  <div className="mb-8 border-b border-gray-100 pb-6 flex items-center gap-4">
+                    <button 
+                      onClick={() => setView('dashboard')}
+                      className="p-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-400 hover:text-brand-dark"
+                    >
+                      <ChevronRight className="w-5 h-5 rotate-180" />
+                    </button>
+                    <h2 className="text-xl font-bold text-brand-dark">Voltar ao Dashboard</h2>
+                  </div>
+                  <PasswordVault clientId={activeClient?.id || ''} userRole={userRole} />
+                </div>
               ) : view === 'strategic-briefings' ? (
                 <div className="bg-white rounded-[2.5rem] border border-black/[0.03] shadow-sm min-h-[80vh]">
                   {!(userRole === 'approver' && !activeClient?.onboarding_completed) && (
@@ -231,6 +246,7 @@ const MainApp: React.FC<MainAppProps> = () => {
                   onNavigateToDocuments={() => setView('documents')}
                   onNavigateToPaidTraffic={() => setView('paid-traffic')}
                   onNavigateToWebsite={() => setView('website')}
+                  onNavigateToPasswordVault={() => setView('password-vault')}
                   onRefreshClient={refreshActiveClient}
                 />
               ) : view === 'onboarding' ? (
