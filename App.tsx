@@ -70,28 +70,28 @@ const MainApp: React.FC<MainAppProps> = () => {
       <header className="bg-white/70 backdrop-blur-xl border-b border-black/[0.02] sticky top-0 z-50 shadow-[0_1px_10px_rgba(0,0,0,0.02)]">
         {/* Linha Superior: Logo e Botões de Navegação */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-24">
+          <div className="flex justify-between items-center h-20 sm:h-24">
             {/* Área de Logos */}
-            <div className="flex items-center gap-6 sm:gap-10">
+            <div className="flex items-center gap-4 sm:gap-10 overflow-hidden">
               <motion.div
                 whileHover={{ scale: 1.02 }}
-                className="cursor-pointer flex items-center gap-4"
+                className="cursor-pointer flex items-center gap-2 sm:gap-4 shrink-0"
                 onClick={() => setView('dashboard')}
               >
                 {activeClient?.logo_url ? (
-                  <img src={activeClient.logo_url} alt={activeClient.name} className="h-20 w-auto object-contain mix-blend-multiply" />
+                  <img src={activeClient.logo_url} alt={activeClient.name} className="h-10 sm:h-20 w-auto max-w-[100px] sm:max-w-[200px] object-contain mix-blend-multiply" />
                 ) : (
-                  <span className="text-3xl font-bold text-brand-dark tracking-tighter serif italic">{activeClient?.name}</span>
+                  <span className="text-lg sm:text-3xl font-bold text-brand-dark tracking-tighter serif italic truncate max-w-[120px] sm:max-w-none">{activeClient?.name}</span>
                 )}
                 <div className="h-6 w-px bg-gray-100 hidden sm:block"></div>
-                <div className="flex items-center gap-2 opacity-40 hover:opacity-100 transition-opacity duration-500">
+                <div className="hidden sm:flex items-center gap-2 opacity-40 hover:opacity-100 transition-opacity duration-500">
                   <span className="text-[7px] uppercase tracking-[0.3em] text-gray-400 font-bold hidden lg:block">Strategy by</span>
                   <Logo size="small" />
                 </div>
               </motion.div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
               <div className="hidden md:flex flex-col items-end mr-4">
                 <span className="text-[8px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-0.5">Membro Premium</span>
                 <span className="text-[11px] font-bold text-brand-dark uppercase tracking-widest">{getRoleLabel()}</span>
@@ -99,7 +99,7 @@ const MainApp: React.FC<MainAppProps> = () => {
               {userRole === 'admin' && (
                 <button
                   onClick={() => setActiveClient(null)}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.15em] transition-all bg-gray-50/50 text-gray-500 hover:bg-gray-100 hover:text-brand-dark border border-black/[0.02]"
+                  className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] transition-all bg-gray-50/50 text-gray-500 hover:bg-gray-100 hover:text-brand-dark border border-black/[0.02]"
                   title="Trocar Cliente"
                 >
                   <Building2 size={14} />
@@ -109,7 +109,7 @@ const MainApp: React.FC<MainAppProps> = () => {
               {userRole === 'admin' && (
                 <button
                   onClick={() => setView('admin')}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.15em] transition-all ${
+                  className={`flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] transition-all ${
                     view === 'admin'
                       ? 'bg-brand-dark text-white shadow-xl shadow-brand-dark/20'
                       : 'bg-gray-50/50 text-gray-500 hover:text-brand-dark hover:bg-gray-100 border border-black/[0.02]'
@@ -121,10 +121,10 @@ const MainApp: React.FC<MainAppProps> = () => {
               )}
               <button
                 onClick={logout}
-                className="p-3 rounded-2xl bg-red-50/50 text-red-400 hover:bg-red-50 hover:text-red-600 transition-all active:scale-95 border border-red-100/20"
+                className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-red-50/50 text-red-400 hover:bg-red-50 hover:text-red-600 transition-all active:scale-95 border border-red-100/20"
                 title="Sair"
               >
-                <LogOut size={18} />
+                <LogOut size={16} className="sm:w-[18px] sm:h-[18px]" />
               </button>
             </div>
           </div>

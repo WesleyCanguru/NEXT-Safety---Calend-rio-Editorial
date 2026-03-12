@@ -180,9 +180,9 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
         </div>
         
         <div className="space-y-3">
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tighter text-brand-dark leading-[0.8]">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tighter text-brand-dark leading-[1.2] md:leading-[0.9]">
             Bolsa <br />
-            <span className="serif italic font-normal text-gray-300">Estratégia & Gestão</span>
+            <span className="serif italic font-normal text-gray-300 inline-block mt-2 md:mt-0">Estratégia & Gestão</span>
           </h1>
           <div className="w-10 h-1 bg-brand-dark mx-auto opacity-5 rounded-full"></div>
         </div>

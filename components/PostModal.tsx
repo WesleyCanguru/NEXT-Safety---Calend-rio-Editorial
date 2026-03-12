@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DailyContent, PostData, PostComment, PostStatus } from '../types';
 import { useAuth, supabase, parseImageUrl, stringifyImageUrl } from '../lib/supabase';
-import { X, Send, Image as ImageIcon, CheckCircle2, AlertTriangle, Save, UploadCloud, Trash2, Edit3, RefreshCw, Link, Check, Calendar, Instagram, Linkedin, ChevronDown, Layers, Copy, LayoutTemplate } from 'lucide-react';
+import { X, Send, Image as ImageIcon, CheckCircle2, AlertTriangle, Save, UploadCloud, Trash2, Edit3, RefreshCw, Link, Check, Calendar, Instagram, Linkedin, ChevronDown, Layers, Copy, LayoutTemplate, Eye, FileText } from 'lucide-react';
 import { InstagramView, LinkedInView } from './PlatformViews';
 
 interface PostModalProps {
@@ -58,6 +58,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
   
   // Interaction States
   const [showRequestChangesInput, setShowRequestChangesInput] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'preview' | 'edit'>('preview');
   
   // Multi-Platform & Caption Logic
   const [selectedPlatforms, setSelectedPlatforms] = useState<('meta' | 'linkedin')[]>([]);
@@ -525,7 +526,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="bg-[#fcfbf9] w-full max-w-[98%] xl:max-w-[95rem] h-[95vh] rounded-[2.5rem] shadow-[0_50px_100px_rgba(0,0,0,0.25)] relative z-10 flex flex-col md:flex-row overflow-hidden border border-white/20"
+        className="bg-[#fcfbf9] w-full max-w-[98%] xl:max-w-[95rem] h-[95vh] rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_50px_100px_rgba(0,0,0,0.25)] relative z-10 flex flex-col overflow-hidden border border-white/20"
       >
         {/* Background Decorations inside Modal */}
         <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-30">
@@ -533,96 +534,97 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
           <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-50 rounded-full blur-[100px]"></div>
         </div>
         
-        <button onClick={onClose} className="absolute top-6 right-6 z-50 p-3 bg-white/80 backdrop-blur-md rounded-full text-gray-400 hover:text-red-500 shadow-xl border border-white/50 transition-all hover:scale-110 active:scale-95"><X size={20} /></button>
+        <button onClick={onClose} className="absolute top-4 sm:top-6 right-4 sm:right-6 z-50 p-2 sm:p-3 bg-white/80 backdrop-blur-md rounded-full text-gray-400 hover:text-red-500 shadow-xl border border-white/50 transition-all hover:scale-110 active:scale-95"><X size={20} /></button>
 
-        {/* ================= LEFT: PREVIEW ================= */}
-        <div className="w-full md:w-[65%] bg-[#1a1c20] flex flex-col border-r border-white/5 overflow-y-auto custom-scrollbar relative">
-           
-           {/* Header: Status + Preview Tabs */}
-           <div className="sticky top-0 z-20 w-full p-6 flex justify-between items-start pointer-events-none">
-                <div className="flex gap-3">
-                    {!isNew && (
-                      <div className="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-bold border uppercase bg-white/10 backdrop-blur-md border-white/10 shadow-xl text-white tracking-widest">
-                        <div className={`w-2 h-2 rounded-full animate-pulse ${
-                          post?.status === 'approved' ? 'bg-green-400' : 
-                          post?.status === 'published' ? 'bg-blue-400' : 
-                          post?.status === 'changes_requested' ? 'bg-red-400' : 'bg-yellow-400'
-                        }`} />
-                        {getStatusLabel(post?.status || 'draft')}
+        <div className="flex-grow flex flex-col md:flex-row overflow-hidden relative z-10">
+          {/* ================= LEFT: PREVIEW ================= */}
+          <div className={`w-full md:w-[65%] bg-[#1a1c20] flex-col border-r border-white/5 overflow-y-auto custom-scrollbar relative ${mobileTab === 'preview' ? 'flex h-full' : 'hidden md:flex'}`}>
+             
+             {/* Header: Status + Preview Tabs */}
+             <div className="sticky top-0 z-20 w-full p-4 sm:p-6 flex justify-between items-start pointer-events-none">
+                  <div className="flex gap-3">
+                      {!isNew && (
+                        <div className="pointer-events-auto flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[9px] sm:text-[10px] font-bold border uppercase bg-white/10 backdrop-blur-md border-white/10 shadow-xl text-white tracking-widest">
+                          <div className={`w-2 h-2 rounded-full animate-pulse ${
+                            post?.status === 'approved' ? 'bg-green-400' : 
+                            post?.status === 'published' ? 'bg-blue-400' : 
+                            post?.status === 'changes_requested' ? 'bg-red-400' : 'bg-yellow-400'
+                          }`} />
+                          {getStatusLabel(post?.status || 'draft')}
+                        </div>
+                      )}
+                  </div>
+                  
+                  {/* Preview Toggles (Only if both selected) */}
+                  {selectedPlatforms.length > 1 && (
+                      <div className="pointer-events-auto bg-white/5 backdrop-blur-md p-1 sm:p-1.5 rounded-xl shadow-2xl border border-white/10 flex gap-1 sm:gap-1.5 mr-10 sm:mr-0">
+                          <button 
+                              onClick={() => setPreviewPlatform('meta')}
+                              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[9px] sm:text-[10px] font-bold flex items-center gap-1.5 sm:gap-2 transition-all tracking-widest uppercase ${previewPlatform === 'meta' ? 'bg-white text-black shadow-lg' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                          >
+                              <Instagram size={14} /> <span className="hidden sm:inline">Instagram</span>
+                          </button>
+                          <button 
+                              onClick={() => setPreviewPlatform('linkedin')}
+                              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[9px] sm:text-[10px] font-bold flex items-center gap-1.5 sm:gap-2 transition-all tracking-widest uppercase ${previewPlatform === 'linkedin' ? 'bg-white text-black shadow-lg' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                          >
+                              <Linkedin size={14} /> <span className="hidden sm:inline">LinkedIn</span>
+                          </button>
                       </div>
-                    )}
-                </div>
-                
-                {/* Preview Toggles (Only if both selected) */}
-                {selectedPlatforms.length > 1 && (
-                    <div className="pointer-events-auto bg-white/5 backdrop-blur-md p-1.5 rounded-xl shadow-2xl border border-white/10 flex gap-1.5">
-                        <button 
-                            onClick={() => setPreviewPlatform('meta')}
-                            className={`px-4 py-2 rounded-lg text-[10px] font-bold flex items-center gap-2 transition-all tracking-widest uppercase ${previewPlatform === 'meta' ? 'bg-white text-black shadow-lg' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                        >
-                            <Instagram size={14} /> Instagram
-                        </button>
-                        <button 
-                            onClick={() => setPreviewPlatform('linkedin')}
-                            className={`px-4 py-2 rounded-lg text-[10px] font-bold flex items-center gap-2 transition-all tracking-widest uppercase ${previewPlatform === 'linkedin' ? 'bg-white text-black shadow-lg' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                        >
-                            <Linkedin size={14} /> LinkedIn
-                        </button>
-                    </div>
-                )}
-           </div>
-
-           <div className="flex-grow p-8 sm:p-16 flex items-center justify-center">
-             <div className="w-full max-w-lg transition-all duration-500 transform hover:scale-[1.01]">
-                {previewPlatform === 'linkedin' ? (
-                  <LinkedInView dayContent={effectiveDayContent} caption={previewCaption} imageUrl={imageUrl} isVideo={!!isVideo} isUploading={isUploading} client={activeClient} />
-                ) : (
-                  <InstagramView dayContent={effectiveDayContent} caption={previewCaption} imageUrl={imageUrl} isVideo={!!isVideo} isUploading={isUploading} client={activeClient} />
-                )}
+                  )}
              </div>
-           </div>
 
-           {/* Decorative elements for premium feel */}
-           <div className="absolute bottom-6 left-6 pointer-events-none opacity-20">
-              <span className="font-serif italic text-white/50 text-4xl tracking-tighter">Bolsa</span>
-           </div>
-        </div>
+             <div className="flex-grow p-4 sm:p-16 flex items-center justify-center">
+               <div className="w-full max-w-lg transition-all duration-500 transform hover:scale-[1.01]">
+                  {previewPlatform === 'linkedin' ? (
+                    <LinkedInView dayContent={effectiveDayContent} caption={previewCaption} imageUrl={imageUrl} isVideo={!!isVideo} isUploading={isUploading} client={activeClient} />
+                  ) : (
+                    <InstagramView dayContent={effectiveDayContent} caption={previewCaption} imageUrl={imageUrl} isVideo={!!isVideo} isUploading={isUploading} client={activeClient} />
+                  )}
+               </div>
+             </div>
 
-        {/* ================= RIGHT: EDIT ================= */}
-        <div className="w-full md:w-[35%] flex flex-col h-full bg-[#fcfbf9] relative border-l border-black/[0.03]">
-           
-           <div className="p-6 border-b border-black/[0.03] flex flex-col gap-5 bg-white/50 backdrop-blur-sm pr-14">
-              <div className="flex justify-between items-start">
-                 <div>
-                    {isNew ? (
-                        <h2 className="font-serif text-2xl text-brand-dark tracking-tight">Nova Publicação</h2>
-                    ) : (
-                        <h2 className="font-serif text-2xl text-brand-dark tracking-tight">{effectiveDayContent.day.split(' ')[0]}</h2>
-                    )}
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[9px] text-gray-400 uppercase font-bold tracking-[0.2em]">
-                          {selectedPlatforms.length > 1 ? 'Multi-plataforma' : (previewPlatform === 'meta' ? 'Instagram/Face' : 'LinkedIn')}
-                      </span>
-                      <div className="w-1 h-1 rounded-full bg-gray-300" />
-                      <span className="text-[9px] text-gray-400 uppercase font-bold tracking-[0.2em]">
-                        {editedType.split(' ')[0]}
-                      </span>
-                    </div>
-                 </div>
-                 {userRole === 'admin' && (
-                     <div className="flex gap-2">
-                        {!isNew && (
-                            <button onClick={handleCopyLink} className="p-2.5 text-gray-400 hover:text-brand-dark hover:bg-black/[0.03] rounded-xl border border-black/[0.05] transition-all" title="Copiar Link"><Link size={16} /></button>
-                        )}
-                        {!isNew && (
-                            <button onClick={handleDeletePost} className="p-2.5 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-xl border border-transparent transition-all" title="Excluir"><Trash2 size={16} /></button>
-                        )}
-                        <button onClick={() => setIsEditing(!isEditing)} className={`text-[10px] font-bold uppercase tracking-widest px-5 py-2.5 rounded-xl border flex items-center gap-2 transition-all ${isEditing ? 'bg-brand-dark text-white border-brand-dark shadow-lg shadow-brand-dark/20' : 'bg-white text-gray-600 border-black/[0.08] hover:bg-gray-50 shadow-sm'}`}>
-                            <Edit3 size={14} /> {isEditing ? 'Concluir' : 'Editar'}
-                        </button>
-                     </div>
-                 )}
-              </div>
+             {/* Decorative elements for premium feel */}
+             <div className="absolute bottom-6 left-6 pointer-events-none opacity-20 hidden sm:block">
+                <span className="font-serif italic text-white/50 text-4xl tracking-tighter">Bolsa</span>
+             </div>
+          </div>
+
+          {/* ================= RIGHT: EDIT ================= */}
+          <div className={`w-full md:w-[35%] flex-col h-full bg-[#fcfbf9] relative border-l border-black/[0.03] ${mobileTab === 'edit' ? 'flex' : 'hidden md:flex'}`}>
+             
+             <div className="p-4 sm:p-6 border-b border-black/[0.03] flex flex-col gap-4 sm:gap-5 bg-white/50 backdrop-blur-sm pr-12 sm:pr-14">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+                   <div>
+                      {isNew ? (
+                          <h2 className="font-serif text-xl sm:text-2xl text-brand-dark tracking-tight">Nova Publicação</h2>
+                      ) : (
+                          <h2 className="font-serif text-xl sm:text-2xl text-brand-dark tracking-tight">{effectiveDayContent.day.split(' ')[0]}</h2>
+                      )}
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[8px] sm:text-[9px] text-gray-400 uppercase font-bold tracking-[0.2em]">
+                            {selectedPlatforms.length > 1 ? 'Multi-plataforma' : (previewPlatform === 'meta' ? 'Instagram/Face' : 'LinkedIn')}
+                        </span>
+                        <div className="w-1 h-1 rounded-full bg-gray-300" />
+                        <span className="text-[8px] sm:text-[9px] text-gray-400 uppercase font-bold tracking-[0.2em]">
+                          {editedType.split(' ')[0]}
+                        </span>
+                      </div>
+                   </div>
+                   {userRole === 'admin' && (
+                       <div className="flex gap-1.5 sm:gap-2 self-end sm:self-auto">
+                          {!isNew && (
+                              <button onClick={handleCopyLink} className="p-2 sm:p-2.5 text-gray-400 hover:text-brand-dark hover:bg-black/[0.03] rounded-xl border border-black/[0.05] transition-all" title="Copiar Link"><Link size={14} className="sm:w-4 sm:h-4" /></button>
+                          )}
+                          {!isNew && (
+                              <button onClick={handleDeletePost} className="p-2 sm:p-2.5 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-xl border border-transparent transition-all" title="Excluir"><Trash2 size={14} className="sm:w-4 sm:h-4" /></button>
+                          )}
+                          <button onClick={() => setIsEditing(!isEditing)} className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl border flex items-center gap-1.5 sm:gap-2 transition-all ${isEditing ? 'bg-brand-dark text-white border-brand-dark shadow-lg shadow-brand-dark/20' : 'bg-white text-gray-600 border-black/[0.08] hover:bg-gray-50 shadow-sm'}`}>
+                              <Edit3 size={12} className="sm:w-3.5 sm:h-3.5" /> {isEditing ? 'Concluir' : 'Editar'}
+                          </button>
+                       </div>
+                   )}
+                </div>
               
               {/* Approver Actions */}
               {userRole === 'approver' && !isNew && (
@@ -902,6 +904,17 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
                 </div>
              )}
            </div>
+        </div>
+        </div>
+
+        {/* Mobile Tab Bar */}
+        <div className="md:hidden flex w-full bg-white border-t border-gray-200 z-50 shrink-0">
+           <button onClick={() => setMobileTab('preview')} className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest flex flex-col items-center gap-1 transition-colors ${mobileTab === 'preview' ? 'text-brand-dark bg-gray-50' : 'text-gray-400 hover:bg-gray-50'}`}>
+              <Eye size={18} /> Visualizar
+           </button>
+           <button onClick={() => setMobileTab('edit')} className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest flex flex-col items-center gap-1 transition-colors ${mobileTab === 'edit' ? 'text-brand-dark bg-gray-50' : 'text-gray-400 hover:bg-gray-50'}`}>
+              <FileText size={18} /> Detalhes
+           </button>
         </div>
       </motion.div>
     </div>

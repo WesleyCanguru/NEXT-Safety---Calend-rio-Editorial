@@ -550,7 +550,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
 
     // Empty Start
     for (let i = 0; i < firstDayOfWeek; i++) {
-      calendarCells.push(<div key={`empty-start-${i}`} className="bg-gray-50/30 border-b border-r border-gray-100 min-h-[200px]"></div>);
+      calendarCells.push(<div key={`empty-start-${i}`} className="hidden md:block bg-gray-50/30 border-b border-r border-gray-100 min-h-[200px]"></div>);
     }
 
     // Days
@@ -559,6 +559,9 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
       const monthNum = monthIndex + 1;
       const monthString = monthNum < 10 ? `0${monthNum}` : `${monthNum}`;
       
+      const dayOfWeek = new Date(year, monthIndex, d).getDay();
+      const dayName = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'][dayOfWeek];
+
       // Filtrar posts do dia (usando groupedPosts)
       const dayEvents = groupedPosts.filter(p => {
          const pDate = p.primaryKey.split('-').slice(0, 2).join('/');
@@ -568,16 +571,18 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
       calendarCells.push(
         <div 
           key={`day-${d}`} 
-          className="bg-white border-b border-r border-gray-100 min-h-[200px] p-2 relative group hover:bg-gray-50/50 transition-colors"
+          className="bg-white border-b border-r border-gray-100 min-h-[120px] md:min-h-[200px] p-3 md:p-2 relative group hover:bg-gray-50/50 transition-colors"
           onDragOver={handleDragOver}
           onDrop={(e) => handleDrop(e, d)}
         >
-          <div className="flex justify-between items-start mb-2">
-            <span className={`text-sm font-semibold ${dayEvents.length > 0 ? 'text-gray-900' : 'text-gray-400'}`}>{d}</span>
+          <div className="flex justify-between items-start mb-3 md:mb-2">
+            <span className={`text-sm font-semibold ${dayEvents.length > 0 ? 'text-gray-900' : 'text-gray-400'}`}>
+              {d} <span className="md:hidden text-[10px] font-normal ml-1 text-gray-400">{dayName}</span>
+            </span>
             {userRole === 'admin' && (
                 <button 
                   onClick={(e) => { e.stopPropagation(); handleCreatePost(d); }}
-                  className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-blue-500 transition-all p-1"
+                  className="opacity-100 md:opacity-0 md:group-hover:opacity-100 text-gray-400 hover:text-blue-500 transition-all p-1"
                   title="Criar publicação neste dia"
                 >
                   <Plus size={16} />
@@ -585,7 +590,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
             )}
           </div>
           
-          <div className="flex flex-col gap-2 max-h-[180px] overflow-y-auto custom-scrollbar pr-1">
+          <div className="flex flex-col gap-2 max-h-[300px] md:max-h-[180px] overflow-y-auto custom-scrollbar pr-1">
             {dayEvents.map((group, idx) => {
                const statusColor = getStatusColorClass(group.status);
                const hasMeta = group.platforms.includes('meta');
@@ -653,20 +658,20 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
     const remainingCells = 7 - (totalCells % 7);
     if (remainingCells < 7) {
       for (let i = 0; i < remainingCells; i++) {
-        calendarCells.push(<div key={`empty-end-${i}`} className="bg-gray-50/30 border-b border-r border-gray-100 min-h-[200px]"></div>);
+        calendarCells.push(<div key={`empty-end-${i}`} className="hidden md:block bg-gray-50/30 border-b border-r border-gray-100 min-h-[200px]"></div>);
       }
     }
 
     return (
       <div className="bg-white rounded-3xl border border-black/[0.03] shadow-sm overflow-hidden animate-in fade-in zoom-in-95 duration-500">
-        <div className="grid grid-cols-7 bg-gray-50/50 border-b border-black/[0.03]">
+        <div className="hidden md:grid grid-cols-7 bg-gray-50/50 border-b border-black/[0.03]">
           {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'].map((d, i) => (
             <div key={d} className={`py-5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em] ${i === 0 || i === 6 ? 'bg-gray-100/30 text-gray-300' : ''}`}>
               {d}
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7">{calendarCells}</div>
+        <div className="grid grid-cols-1 md:grid-cols-7">{calendarCells}</div>
       </div>
     );
   };
@@ -694,19 +699,19 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
       </AnimatePresence>
 
       {/* Navigation */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+      <div className="flex flex-wrap items-center justify-between gap-4 sm:gap-6 mb-8 sm:mb-10">
         <motion.button 
           whileHover={{ x: -4 }}
           onClick={onBack} 
-          className="flex items-center gap-4 text-gray-400 hover:text-brand-dark transition-all font-bold text-[11px] uppercase tracking-[0.3em] group"
+          className="flex items-center gap-2 sm:gap-4 text-gray-400 hover:text-brand-dark transition-all font-bold text-[10px] sm:text-[11px] uppercase tracking-[0.3em] group"
         >
-          <div className="w-10 h-10 rounded-full border border-black/[0.05] flex items-center justify-center group-hover:border-brand-dark group-hover:bg-brand-dark group-hover:text-white transition-all duration-300">
-            <ArrowLeft size={16} />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-black/[0.05] flex items-center justify-center group-hover:border-brand-dark group-hover:bg-brand-dark group-hover:text-white transition-all duration-300">
+            <ArrowLeft size={14} className="sm:w-4 sm:h-4" />
           </div>
-          Voltar
+          <span className="hidden sm:inline">Voltar</span>
         </motion.button>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             {loadingPosts && (
               <motion.div 
                 initial={{ opacity: 0 }}
@@ -723,10 +728,10 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                   animate={{ scale: 1, opacity: 1 }}
                   onClick={handleBulkDelete}
                   disabled={isDeleting}
-                  className="premium-button-secondary bg-red-50 text-red-600 border-red-100 hover:bg-red-100 px-6"
+                  className="premium-button-secondary bg-red-50 text-red-600 border-red-100 hover:bg-red-100 px-4 sm:px-6 py-2 sm:py-3 text-[9px] sm:text-[10px]"
                 >
                     {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash size={14} />} 
-                    Excluir ({selectedPosts.size})
+                    <span className="hidden sm:inline">Excluir ({selectedPosts.size})</span>
                 </motion.button>
             )}
 
@@ -735,18 +740,18 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => handleCreatePost()}
-                  className="premium-button-primary px-6"
+                  className="premium-button-primary px-4 sm:px-6 py-2 sm:py-3 text-[9px] sm:text-[10px] whitespace-nowrap"
                 >
                     <Plus size={14} /> Criar Post
                 </motion.button>
             )}
 
-            <div className="flex bg-white rounded-2xl p-1.5 border border-black/[0.03] shadow-[0_4px_15px_rgba(0,0,0,0.03)]">
-                <button onClick={() => setViewMode('list')} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${viewMode === 'list' ? 'bg-brand-dark text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50'}`}>
-                    <List size={14} /> Lista
+            <div className="flex bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 border border-black/[0.03] shadow-[0_4px_15px_rgba(0,0,0,0.03)]">
+                <button onClick={() => setViewMode('list')} className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${viewMode === 'list' ? 'bg-brand-dark text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50'}`}>
+                    <List size={14} /> <span className="hidden sm:inline">Lista</span>
                 </button>
-                <button onClick={() => setViewMode('calendar')} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${viewMode === 'calendar' ? 'bg-brand-dark text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50'}`}>
-                    <CalendarIcon size={14} /> Calendário
+                <button onClick={() => setViewMode('calendar')} className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${viewMode === 'calendar' ? 'bg-brand-dark text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50'}`}>
+                    <CalendarIcon size={14} /> <span className="hidden sm:inline">Calendário</span>
                 </button>
             </div>
         </div>
@@ -892,7 +897,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                       <div 
                         key={idx} 
                         onClick={() => handleOpenPost({ content: group.content, key: group.primaryKey })} 
-                        className={`p-4 rounded-xl border flex gap-4 cursor-pointer hover:shadow-md transition-all ${statusColor} ${isSelected ? 'ring-2 ring-brand-dark' : ''} items-center relative group`}
+                        className={`p-4 rounded-xl border flex flex-col md:flex-row gap-4 cursor-pointer hover:shadow-md transition-all ${statusColor} ${isSelected ? 'ring-2 ring-brand-dark' : ''} md:items-center relative group`}
                         draggable
                         onDragStart={(e) => handleDragStart(e, group.primaryKey)}
                         onDragOver={handleDragOver}
@@ -908,14 +913,14 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                              </div>
                            </div>
                          )}
-                         <div className={`w-24 flex-shrink-0 ${userRole === 'admin' ? 'ml-6' : ''}`}>
-                            <span className="font-bold text-gray-900 block">{group.content.day.split(' – ')[0]}</span>
-                            <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-1">
+                         <div className={`flex md:flex-col items-center md:items-start gap-3 md:gap-0 md:w-24 flex-shrink-0 ${userRole === 'admin' ? 'ml-6' : ''}`}>
+                            <span className="font-bold text-gray-900 text-lg md:text-base">{group.content.day.split(' – ')[0]}</span>
+                            <div className="flex items-center gap-1.5 text-xs text-gray-600 md:mt-1">
                                {hasMeta && <Instagram size={12} className="text-[#E1306C]" />}
                                {hasLinkedin && <Linkedin size={12} className="text-[#0077B5]" />}
-                               <span className="capitalize text-[10px]">{group.platforms.length > 1 ? 'Multi' : group.platforms[0]}</span>
+                               <span className="capitalize text-[10px] hidden md:inline">{group.platforms.length > 1 ? 'Multi' : group.platforms[0]}</span>
                             </div>
-                            <span className="inline-block mt-2 px-2 py-0.5 rounded text-[9px] font-bold border border-black/10 bg-white/50 uppercase text-gray-700">{getStatusLabel(group.status)}</span>
+                            <span className="inline-block md:mt-2 px-2 py-0.5 rounded text-[9px] font-bold border border-black/10 bg-white/50 uppercase text-gray-700">{getStatusLabel(group.status)}</span>
                          </div>
                          <div className="flex-grow">
                             <span className="text-xs font-bold px-2 py-0.5 rounded border bg-white/50 border-black/10 text-gray-800 mb-2 inline-block">📌 {group.type}</span>
@@ -925,7 +930,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                          {userRole === 'admin' && group.status !== 'published' && (
                             <button 
                                 onClick={(e) => handleQuickPublish(e, group)}
-                                className="flex items-center gap-2 px-3 py-2 bg-white text-gray-500 border border-gray-200 rounded-lg hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition-all shadow-sm ml-4"
+                                className="flex items-center justify-center gap-2 px-3 py-2 bg-white text-gray-500 border border-gray-200 rounded-lg hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition-all shadow-sm md:ml-4 mt-2 md:mt-0 w-full md:w-auto"
                                 title="Publicar Agora"
                             >
                                 <Check size={16} /> <span className="text-xs font-bold">Publicar</span>
