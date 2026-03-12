@@ -26,7 +26,9 @@ const POST_TYPES = [
   "Estático institucional",
   "Carrossel",
   "Carrossel educacional",
-  "Carrossel técnico"
+  "Carrossel técnico",
+  "Carrossel analítico",
+  "Repost"
 ];
 
 const STATUS_OPTIONS: { value: PostStatus; label: string }[] = [
