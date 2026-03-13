@@ -12,6 +12,7 @@ export default function WebsiteView({ onBack }: WebsiteViewProps) {
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [desktopScale, setDesktopScale] = useState(1);
+  const [mobileScale, setMobileScale] = useState(1);
   
   const isCalabres = activeClient?.id === 'e817fbf9-0985-4453-b710-34623af870d6' || activeClient?.name?.includes('Calabres');
 
@@ -32,22 +33,40 @@ export default function WebsiteView({ onBack }: WebsiteViewProps) {
   }, []);
 
   useEffect(() => {
-    if (viewMode !== 'desktop' || !containerRef.current) return;
+    if (!containerRef.current) return;
 
     const observer = new ResizeObserver((entries) => {
       for (let entry of entries) {
-        // Target width for the desktop iframe is 1440px
-        const targetWidth = 1440;
         const containerWidth = entry.contentRect.width;
-        // Calculate scale, max 1 (don't scale up), min 0.1 to avoid division by zero
-        const scale = Math.max(0.1, Math.min(1, containerWidth / targetWidth));
-        setDesktopScale(scale);
+        
+        // Desktop scale
+        // The desktop frame has a max-width of 5xl (1024px)
+        const desktopContainerWidth = Math.min(containerWidth, 1024);
+        const desktopTargetWidth = 1440;
+        setDesktopScale(Math.max(0.1, Math.min(1, desktopContainerWidth / desktopTargetWidth)));
+        
+        // Mobile scale
+        const mobileTargetWidth = 375;
+        const mobileTargetHeight = 812;
+        const frameBorder = 28; // 14px * 2
+        const totalMobileWidth = mobileTargetWidth + frameBorder;
+        const totalMobileHeight = mobileTargetHeight + frameBorder;
+        
+        let mScale = 1;
+        if (window.innerWidth >= 768) {
+          // On desktop, make the phone smaller (e.g. 600px tall)
+          mScale = 600 / totalMobileHeight;
+        } else {
+          // On mobile, scale to fit the available container width
+          mScale = Math.min(1, containerWidth / totalMobileWidth);
+        }
+        setMobileScale(Math.max(0.1, mScale));
       }
     });
 
     observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, [viewMode]);
+  }, []);
 
   return (
     <div className="bg-white rounded-[2.5rem] border border-black/[0.03] shadow-sm min-h-[80vh] flex flex-col overflow-hidden">
@@ -72,7 +91,7 @@ export default function WebsiteView({ onBack }: WebsiteViewProps) {
       </div>
 
       {isCalabres ? (
-        <div className="flex-1 p-4 sm:p-8 bg-[#FDFDFD] flex flex-col items-center overflow-x-hidden">
+        <div ref={containerRef} className="flex-1 p-4 sm:p-8 bg-[#FDFDFD] flex flex-col items-center overflow-x-hidden">
           
           {/* Toggle (always show so mobile users can view desktop version) */}
           <div className="flex bg-gray-100 p-1 rounded-xl mb-6 sm:mb-8 w-full max-w-[240px] mx-auto">
@@ -93,7 +112,7 @@ export default function WebsiteView({ onBack }: WebsiteViewProps) {
           </div>
 
           {viewMode === 'desktop' ? (
-            <div ref={containerRef} className="w-full max-w-5xl mx-auto border border-gray-200 rounded-xl overflow-hidden shadow-2xl bg-white transition-all duration-500">
+            <div className="w-full max-w-5xl mx-auto border border-gray-200 rounded-xl overflow-hidden shadow-2xl bg-white transition-all duration-500">
               {/* Barra superior imitando um navegador */}
               <div className="bg-gray-100 border-b border-gray-200 h-10 w-full flex items-center px-4 gap-2">
                 <div className="w-3 h-3 rounded-full bg-red-400"></div>
@@ -126,20 +145,33 @@ export default function WebsiteView({ onBack }: WebsiteViewProps) {
               </div>
             </div>
           ) : (
-            <div className="w-full max-w-[375px] mx-auto border-[10px] sm:border-[14px] border-gray-900 rounded-[2.5rem] sm:rounded-[3rem] overflow-hidden shadow-xl sm:shadow-2xl bg-white relative transition-all duration-500 h-[700px] sm:h-[812px]">
-              {/* Dynamic Island / Notch */}
-              <div className="flex absolute top-0 inset-x-0 h-5 sm:h-6 justify-center z-10">
-                <div className="w-24 sm:w-32 h-5 sm:h-6 bg-gray-900 rounded-b-2xl sm:rounded-b-3xl"></div>
-              </div>
-              
-              {/* O Iframe carregando o site */}
-              <div className="w-full h-full overflow-x-hidden">
-                <iframe 
-                  src="https://site-calabres-lima.vercel.app/" 
-                  style={{ width: '100%', height: '100%', border: 'none' }}
-                  className="bg-[#FCFAF8] pt-5 sm:pt-6"
-                  title="Prévia do Site Calabres & Lima"
-                />
+            <div 
+              className="relative origin-top flex justify-center w-full transition-all duration-500"
+              style={{ height: `${840 * mobileScale}px` }}
+            >
+              <div 
+                className="absolute top-0 origin-top"
+                style={{ 
+                  width: '403px', // 375 + 28
+                  height: '840px', // 812 + 28
+                  transform: `scale(${mobileScale})`
+                }}
+              >
+                <div className="w-full h-full border-[14px] border-gray-900 rounded-[3rem] overflow-hidden shadow-2xl bg-white relative">
+                  {/* Dynamic Island / Notch */}
+                  <div className="flex absolute top-0 inset-x-0 h-6 justify-center z-10">
+                    <div className="w-32 h-6 bg-gray-900 rounded-b-3xl"></div>
+                  </div>
+                  
+                  {/* O Iframe carregando o site */}
+                  <div className="w-full h-full overflow-hidden bg-[#FCFAF8] pt-6">
+                    <iframe 
+                      src="https://site-calabres-lima.vercel.app/" 
+                      style={{ width: '100%', height: '100%', border: 'none' }}
+                      title="Prévia do Site Calabres & Lima"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}
