@@ -148,13 +148,13 @@ export const useTutorialCenter = (clientId: string, userRole: 'admin' | 'client'
         platform: 'meta',
         slug: 'meta-business-acesso',
         title: 'Como dar acesso ao Meta Business Suite',
-        description: 'Passo a passo para compartilhar o acesso do seu Gerenciador de Negócios com a nossa agência.',
+        description: 'Passo a passo para adicionar nossa agência como administradora do seu Gerenciador de Negócios.',
         steps: [
           { order: 1, title: 'Acesse o Meta Business Suite', description: 'Faça login no Facebook e acesse business.facebook.com.' },
           { order: 2, title: 'Vá em Configurações', description: 'No menu lateral esquerdo, clique no ícone de engrenagem (Configurações do negócio).' },
-          { order: 3, title: 'Parceiros', description: 'Na seção "Usuários", clique em "Parceiros" e depois no botão "Adicionar" -> "Conceder a um parceiro acesso aos seus recursos".' },
-          { order: 4, title: 'Insira o ID da Agência', description: 'Insira o ID do BM da Canguru Digital: 1356919691324181 e clique em Avançar.' },
-          { order: 5, title: 'Conceder Controle Total', description: 'Dê controle total (Administrador) do Gerenciador de Negócios para a agência como parceiro e clique em Salvar alterações.' }
+          { order: 3, title: 'Adicionar Pessoa', description: 'Na seção "Usuários", clique em "Pessoas" e depois no botão azul "Adicionar" (ou "Convidar pessoas").' },
+          { order: 4, title: 'Insira o E-mail da Agência', description: 'Insira o e-mail da Canguru Digital: contato@cangurudigital.com.br e clique em Avançar.' },
+          { order: 5, title: 'Conceder Controle Total', description: 'Selecione a opção "Controle total" (Administrador) e clique em "Convidar". Pronto, nós faremos o resto da configuração!' }
         ]
       },
       {
