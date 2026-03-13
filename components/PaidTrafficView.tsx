@@ -83,7 +83,7 @@ const emptyForm: Omit<PaidTrafficReport, 'client_id'> = {
   next_month_strategy: '',
 };
 
-export const PaidTrafficView: React.FC = () => {
+export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const { activeClient, userRole } = useAuth();
   const [view, setView] = useState<'list' | 'form'>('list');
   const [loading, setLoading] = useState(true);
@@ -244,6 +244,15 @@ export const PaidTrafficView: React.FC = () => {
         <div className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
+              {onBack && (
+                <button 
+                  onClick={onBack}
+                  className="p-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-400 hover:text-brand-dark mr-1"
+                  title="Voltar ao Dashboard"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+              )}
               <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-orange-600" />
               </div>

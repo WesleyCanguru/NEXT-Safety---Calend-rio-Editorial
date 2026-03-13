@@ -209,15 +209,15 @@ const MainApp: React.FC<MainAppProps> = () => {
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
               {view === 'admin' ? (
-                <AdminView />
+                <AdminView onBack={() => setView('dashboard')} />
               ) : view === 'website' ? (
-                <WebsiteView />
+                <WebsiteView onBack={() => setView('dashboard')} />
               ) : view === 'paid-traffic' ? (
-                <PaidTrafficView />
+                <PaidTrafficView onBack={() => setView('dashboard')} />
               ) : view === 'documents' ? (
-                <DocumentsView />
+                <DocumentsView onBack={() => setView('dashboard')} />
               ) : view === 'briefings' ? (
-                <BriefingsView />
+                <BriefingsView onBack={() => setView('dashboard')} />
               ) : view === 'tutorials' ? (
                 <div className="bg-white rounded-[2.5rem] border border-black/[0.03] shadow-sm min-h-[80vh] p-6 sm:p-10">
                   <div className="mb-8 border-b border-gray-100 pb-6 flex items-center gap-4">

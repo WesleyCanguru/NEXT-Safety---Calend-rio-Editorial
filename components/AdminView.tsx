@@ -3,7 +3,7 @@ import { supabase, useAuth } from '../lib/supabase';
 import {
   Shield, Users, FileText, CheckSquare, TrendingUp, Globe,
   AlertCircle, Clock, CheckCircle, RotateCcw, XCircle,
-  ChevronRight, BarChart2, Activity, RefreshCw
+  ChevronRight, BarChart2, Activity, RefreshCw, ChevronLeft
 } from 'lucide-react';
 
 interface Client {
@@ -73,7 +73,7 @@ const TASK_STATUS_CONFIG: Record<string, { label: string, icon: React.ElementTyp
   cancelled: { label: 'Cancelada', icon: XCircle }
 };
 
-export default function AdminView() {
+export default function AdminView({ onBack }: { onBack?: () => void }) {
   const { activeClient, userRole, setActiveClient } = useAuth();
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [clients, setClients] = useState<Client[]>([]);
@@ -177,6 +177,15 @@ export default function AdminView() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
+            {onBack && (
+              <button 
+                onClick={onBack}
+                className="p-2 hover:bg-gray-200 rounded-xl transition-colors text-gray-500 hover:text-gray-900 mr-1"
+                title="Voltar ao Dashboard"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            )}
             <Shield className="text-blue-600" size={24} />
             <div>
               <h1 className="text-xl font-bold text-gray-900">Painel Administrativo</h1>

@@ -61,7 +61,7 @@ const emptyForm = {
   additional_notes: '',
 };
 
-export function BriefingsView() {
+export function BriefingsView({ onBack }: { onBack?: () => void }) {
   const { activeClient } = useAuth();
   const [briefings, setBriefings] = useState<Briefing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,6 +175,15 @@ export function BriefingsView() {
         <div className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
+              {onBack && (
+                <button 
+                  onClick={onBack}
+                  className="p-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-400 hover:text-brand-dark mr-1"
+                  title="Voltar ao Dashboard"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+              )}
               <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
                 <ClipboardList className="w-5 h-5 text-purple-600" />
               </div>

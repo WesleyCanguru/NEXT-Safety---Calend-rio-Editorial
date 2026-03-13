@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Globe, Construction, Monitor, Smartphone } from 'lucide-react';
+import { Globe, Construction, Monitor, Smartphone, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../lib/supabase';
 
-export default function WebsiteView() {
+interface WebsiteViewProps {
+  onBack?: () => void;
+}
+
+export default function WebsiteView({ onBack }: WebsiteViewProps) {
   const { activeClient } = useAuth();
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [desktopScale, setDesktopScale] = useState(1);
   
   const isCalabres = activeClient?.id === 'e817fbf9-0985-4453-b710-34623af870d6' || activeClient?.name?.includes('Calabres');
 
@@ -25,10 +31,37 @@ export default function WebsiteView() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  useEffect(() => {
+    if (viewMode !== 'desktop' || !containerRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        // Target width for the desktop iframe is 1440px
+        const targetWidth = 1440;
+        const containerWidth = entry.contentRect.width;
+        // Calculate scale, max 1 (don't scale up), min 0.1 to avoid division by zero
+        const scale = Math.max(0.1, Math.min(1, containerWidth / targetWidth));
+        setDesktopScale(scale);
+      }
+    });
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [viewMode]);
+
   return (
     <div className="bg-white rounded-[2.5rem] border border-black/[0.03] shadow-sm min-h-[80vh] flex flex-col overflow-hidden">
       {/* Header */}
       <div className="p-6 sm:p-8 border-b border-gray-100 flex items-center gap-4">
+        {onBack && (
+          <button 
+            onClick={onBack}
+            className="p-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-400 hover:text-brand-dark"
+            title="Voltar ao Dashboard"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+        )}
         <div className="w-12 h-12 bg-indigo-50/50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm shrink-0">
           <Globe size={24} />
         </div>
@@ -60,25 +93,32 @@ export default function WebsiteView() {
           </div>
 
           {viewMode === 'desktop' ? (
-            <div className="w-full max-w-5xl mx-auto border border-gray-200 rounded-xl overflow-hidden shadow-2xl bg-white transition-all duration-500">
+            <div ref={containerRef} className="w-full max-w-5xl mx-auto border border-gray-200 rounded-xl overflow-hidden shadow-2xl bg-white transition-all duration-500">
               {/* Barra superior imitando um navegador */}
-              <div className="bg-gray-100 border-b border-gray-200 h-10 w-full flex items-center px-4 gap-2 hidden sm:flex">
+              <div className="bg-gray-100 border-b border-gray-200 h-10 w-full flex items-center px-4 gap-2">
                 <div className="w-3 h-3 rounded-full bg-red-400"></div>
                 <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
                 <div className="w-3 h-3 rounded-full bg-green-400"></div>
                 <div className="ml-4 px-3 py-1 bg-white rounded-md text-xs text-gray-500 font-mono shadow-sm flex-1 max-w-sm flex items-center gap-2">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                  calabreselima.adv.br
+                  calabreselimaadvocacia.com.br
                 </div>
               </div>
               
               {/* O Iframe carregando o site */}
-              <div className="w-full overflow-x-auto">
-                <div className="min-w-[1024px] w-full">
+              <div className="w-full relative bg-[#FCFAF8]" style={{ height: `${Math.max(700 * desktopScale, 400)}px` }}>
+                <div 
+                  className="absolute top-0 left-0 origin-top-left" 
+                  style={{ 
+                    width: '1440px', 
+                    height: `${Math.max(700 * desktopScale, 400) / desktopScale}px`, 
+                    transform: `scale(${desktopScale})` 
+                  }}
+                >
                   <iframe 
                     src="https://site-calabres-lima.vercel.app/" 
                     width="100%" 
-                    height="700px" 
+                    height="100%" 
                     className="border-none bg-[#FCFAF8]"
                     title="Prévia do Site Calabres & Lima"
                   />
@@ -86,10 +126,10 @@ export default function WebsiteView() {
               </div>
             </div>
           ) : (
-            <div className="w-full sm:w-[414px] mx-auto sm:border-[14px] border-gray-900 rounded-2xl sm:rounded-[3rem] overflow-hidden shadow-xl sm:shadow-2xl bg-white relative transition-all duration-500 h-[700px] sm:h-[812px] border border-gray-200">
-              {/* Dynamic Island / Notch - Only visible on desktop mockup */}
-              <div className="hidden sm:flex absolute top-0 inset-x-0 h-6 justify-center z-10">
-                <div className="w-32 h-6 bg-gray-900 rounded-b-3xl"></div>
+            <div className="w-full max-w-[375px] mx-auto border-[10px] sm:border-[14px] border-gray-900 rounded-[2.5rem] sm:rounded-[3rem] overflow-hidden shadow-xl sm:shadow-2xl bg-white relative transition-all duration-500 h-[700px] sm:h-[812px]">
+              {/* Dynamic Island / Notch */}
+              <div className="flex absolute top-0 inset-x-0 h-5 sm:h-6 justify-center z-10">
+                <div className="w-24 sm:w-32 h-5 sm:h-6 bg-gray-900 rounded-b-2xl sm:rounded-b-3xl"></div>
               </div>
               
               {/* O Iframe carregando o site */}
@@ -97,7 +137,7 @@ export default function WebsiteView() {
                 <iframe 
                   src="https://site-calabres-lima.vercel.app/" 
                   style={{ width: '100%', height: '100%', border: 'none' }}
-                  className="bg-[#FCFAF8] sm:pt-6"
+                  className="bg-[#FCFAF8] pt-5 sm:pt-6"
                   title="Prévia do Site Calabres & Lima"
                 />
               </div>
