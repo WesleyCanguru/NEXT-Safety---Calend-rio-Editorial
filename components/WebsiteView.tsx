@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Globe, Construction, Monitor, Smartphone, ChevronLeft } from 'lucide-react';
+import { Globe, Construction, Monitor, Smartphone, ChevronLeft, MessageSquarePlus } from 'lucide-react';
 import { useAuth } from '../lib/supabase';
+import WebsiteFeedbackPanel from './WebsiteFeedbackPanel';
 
 interface WebsiteViewProps {
   onBack?: () => void;
@@ -13,6 +14,7 @@ export default function WebsiteView({ onBack }: WebsiteViewProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [desktopScale, setDesktopScale] = useState(1);
   const [mobileScale, setMobileScale] = useState(1);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   
   const isCalabres = activeClient?.id === 'e817fbf9-0985-4453-b710-34623af870d6' || activeClient?.name?.includes('Calabres');
 
@@ -175,6 +177,22 @@ export default function WebsiteView({ onBack }: WebsiteViewProps) {
               </div>
             </div>
           )}
+
+          {/* Action Button for Feedbacks (Below Viewer) */}
+          <div className="w-full max-w-5xl mx-auto mt-8 sm:mt-12 flex justify-center">
+            <button
+              onClick={() => setIsFeedbackOpen(true)}
+              className="bg-brand-dark text-white px-6 py-3.5 rounded-xl shadow-sm hover:bg-brand-dark/90 hover:shadow-md transition-all flex items-center gap-3 font-medium text-sm sm:text-base w-full sm:w-auto justify-center"
+            >
+              <MessageSquarePlus size={20} />
+              Solicitar Alteração ou Fazer Observação
+            </button>
+          </div>
+
+          <WebsiteFeedbackPanel 
+            isOpen={isFeedbackOpen} 
+            onClose={() => setIsFeedbackOpen(false)} 
+          />
         </div>
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
