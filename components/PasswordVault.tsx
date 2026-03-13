@@ -39,7 +39,7 @@ export const PasswordVault: React.FC<PasswordVaultProps> = ({ clientId, userRole
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const isAdmin = userRole === 'admin';
+  const canEdit = userRole === 'admin' || userRole === 'approver';
 
   const handleOpenModal = (cred?: Credential) => {
     if (cred) {
@@ -136,7 +136,7 @@ export const PasswordVault: React.FC<PasswordVaultProps> = ({ clientId, userRole
         <AlertCircle size={24} />
         <div>
           <h3 className="font-bold">Erro de Configuração</h3>
-          <p className="text-sm">Configure VITE_ENCRYPTION_KEY no Vercel para habilitar o cofre.</p>
+          <p className="text-sm">Configure a variável <strong>VITE_ENCRYPTION_KEY</strong> nas configurações de ambiente (Settings) para habilitar o cofre de senhas.</p>
         </div>
       </div>
     );
@@ -159,7 +159,7 @@ export const PasswordVault: React.FC<PasswordVaultProps> = ({ clientId, userRole
           </h2>
           <p className="text-gray-500 text-sm mt-1">Credenciais seguras e criptografadas.</p>
         </div>
-        {isAdmin && (
+        {canEdit && (
           <button
             onClick={() => handleOpenModal()}
             className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold text-sm transition-colors shadow-sm"
@@ -178,7 +178,7 @@ export const PasswordVault: React.FC<PasswordVaultProps> = ({ clientId, userRole
         <div className="text-center py-16 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
           <Lock size={48} className="mx-auto text-gray-300 mb-4" />
           <p className="text-gray-500 font-medium">Nenhuma credencial cadastrada ainda.</p>
-          {isAdmin && (
+          {canEdit && (
             <button
               onClick={() => handleOpenModal()}
               className="mt-4 text-green-600 font-semibold hover:text-green-700"
@@ -195,7 +195,7 @@ export const PasswordVault: React.FC<PasswordVaultProps> = ({ clientId, userRole
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {(creds as Credential[]).map(cred => (
                   <div key={cred.id} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative group">
-                    {isAdmin && (
+                    {canEdit && (
                       <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => handleOpenModal(cred)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
                           <Edit size={14} />

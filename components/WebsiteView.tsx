@@ -13,56 +13,56 @@ export default function WebsiteView() {
     const checkMobile = () => {
       const isMobile = window.innerWidth < 768;
       setIsMobileDevice(isMobile);
-      if (isMobile) {
-        setViewMode('mobile');
-      }
     };
     
     checkMobile();
+    // Set initial view mode based on device, but don't force it on resize
+    if (window.innerWidth < 768) {
+      setViewMode('mobile');
+    }
+    
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   return (
-    <div className="bg-white rounded-[2.5rem] border border-black/[0.03] shadow-sm min-h-[80vh] flex flex-col">
+    <div className="bg-white rounded-[2.5rem] border border-black/[0.03] shadow-sm min-h-[80vh] flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="p-8 border-b border-gray-100 flex items-center gap-4">
-        <div className="w-12 h-12 bg-indigo-50/50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm">
+      <div className="p-6 sm:p-8 border-b border-gray-100 flex items-center gap-4">
+        <div className="w-12 h-12 bg-indigo-50/50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm shrink-0">
           <Globe size={24} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-brand-dark tracking-tight">Website</h1>
-          <p className="text-sm text-gray-500 font-medium mt-1">Prévia e acompanhamento do site</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-brand-dark tracking-tight">Website</h1>
+          <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">Prévia e acompanhamento do site</p>
         </div>
       </div>
 
       {isCalabres ? (
-        <div className="flex-1 p-4 sm:p-8 bg-[#FDFDFD] flex flex-col items-center">
+        <div className="flex-1 p-4 sm:p-8 bg-[#FDFDFD] flex flex-col items-center overflow-x-hidden">
           
-          {/* Toggle (only show if not on mobile device) */}
-          {!isMobileDevice && (
-            <div className="flex bg-gray-100 p-1 rounded-xl mb-8">
-              <button
-                onClick={() => setViewMode('desktop')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'desktop' ? 'bg-white text-brand-dark shadow-sm' : 'text-gray-500 hover:text-brand-dark'}`}
-              >
-                <Monitor size={16} />
-                Desktop
-              </button>
-              <button
-                onClick={() => setViewMode('mobile')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'mobile' ? 'bg-white text-brand-dark shadow-sm' : 'text-gray-500 hover:text-brand-dark'}`}
-              >
-                <Smartphone size={16} />
-                Mobile
-              </button>
-            </div>
-          )}
+          {/* Toggle (always show so mobile users can view desktop version) */}
+          <div className="flex bg-gray-100 p-1 rounded-xl mb-6 sm:mb-8 w-full max-w-[240px] mx-auto">
+            <button
+              onClick={() => setViewMode('desktop')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'desktop' ? 'bg-white text-brand-dark shadow-sm' : 'text-gray-500 hover:text-brand-dark'}`}
+            >
+              <Monitor size={16} />
+              Desktop
+            </button>
+            <button
+              onClick={() => setViewMode('mobile')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'mobile' ? 'bg-white text-brand-dark shadow-sm' : 'text-gray-500 hover:text-brand-dark'}`}
+            >
+              <Smartphone size={16} />
+              Mobile
+            </button>
+          </div>
 
           {viewMode === 'desktop' ? (
             <div className="w-full max-w-5xl mx-auto border border-gray-200 rounded-xl overflow-hidden shadow-2xl bg-white transition-all duration-500">
               {/* Barra superior imitando um navegador */}
-              <div className="bg-gray-100 border-b border-gray-200 h-10 w-full flex items-center px-4 gap-2">
+              <div className="bg-gray-100 border-b border-gray-200 h-10 w-full flex items-center px-4 gap-2 hidden sm:flex">
                 <div className="w-3 h-3 rounded-full bg-red-400"></div>
                 <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
                 <div className="w-3 h-3 rounded-full bg-green-400"></div>
@@ -73,29 +73,34 @@ export default function WebsiteView() {
               </div>
               
               {/* O Iframe carregando o site */}
-              <iframe 
-                src="https://site-calabres-lima.vercel.app/" 
-                width="100%" 
-                height="700px" 
-                className="border-none bg-[#FCFAF8]"
-                title="Prévia do Site Calabres & Lima"
-              />
+              <div className="w-full overflow-x-auto">
+                <div className="min-w-[1024px] w-full">
+                  <iframe 
+                    src="https://site-calabres-lima.vercel.app/" 
+                    width="100%" 
+                    height="700px" 
+                    className="border-none bg-[#FCFAF8]"
+                    title="Prévia do Site Calabres & Lima"
+                  />
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="w-full max-w-[375px] mx-auto border-[10px] sm:border-[14px] border-gray-900 rounded-[2.5rem] sm:rounded-[3rem] overflow-hidden shadow-2xl bg-white relative transition-all duration-500 h-[700px] sm:h-[812px]">
-              {/* Dynamic Island / Notch */}
-              <div className="absolute top-0 inset-x-0 h-6 flex justify-center z-10">
+            <div className="w-full sm:w-[414px] mx-auto sm:border-[14px] border-gray-900 rounded-2xl sm:rounded-[3rem] overflow-hidden shadow-xl sm:shadow-2xl bg-white relative transition-all duration-500 h-[700px] sm:h-[812px] border border-gray-200">
+              {/* Dynamic Island / Notch - Only visible on desktop mockup */}
+              <div className="hidden sm:flex absolute top-0 inset-x-0 h-6 justify-center z-10">
                 <div className="w-32 h-6 bg-gray-900 rounded-b-3xl"></div>
               </div>
               
               {/* O Iframe carregando o site */}
-              <iframe 
-                src="https://site-calabres-lima.vercel.app/" 
-                width="100%" 
-                height="100%" 
-                className="border-none bg-[#FCFAF8] pt-6"
-                title="Prévia do Site Calabres & Lima"
-              />
+              <div className="w-full h-full overflow-x-hidden">
+                <iframe 
+                  src="https://site-calabres-lima.vercel.app/" 
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                  className="bg-[#FCFAF8] sm:pt-6"
+                  title="Prévia do Site Calabres & Lima"
+                />
+              </div>
             </div>
           )}
         </div>
