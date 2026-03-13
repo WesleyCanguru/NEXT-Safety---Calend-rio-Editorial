@@ -151,15 +151,23 @@ const MainApp: React.FC<MainAppProps> = () => {
                   {monthlyPlans.map((plan) => {
                     const monthName = MONTH_NAMES[plan.month - 1];
                     const isActive = selectedMonth === monthName;
+                    
+                    const hasTheme = !!plan.theme && plan.theme.trim() !== '';
+                    const hasObjective = !!plan.objectives && plan.objectives.length > 0 && plan.objectives[0].trim() !== '';
+                    const isConfigured = hasTheme && hasObjective;
+                    const isLocked = userRole !== 'admin' && !isConfigured;
+
                     return (
                       <button
                         key={plan.id}
-                        onClick={() => handleSelectMonth(monthName)}
+                        onClick={() => !isLocked && handleSelectMonth(monthName)}
                         className={`
                           whitespace-nowrap px-6 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] transition-all border
-                          ${isActive
-                            ? 'bg-brand-dark border-brand-dark text-white shadow-xl transform scale-105'
-                            : 'bg-white border-black/[0.03] text-gray-400 hover:border-brand-dark hover:text-brand-dark'
+                          ${isLocked 
+                            ? 'bg-gray-50 border-transparent text-gray-300 cursor-not-allowed opacity-60' 
+                            : isActive
+                              ? 'bg-brand-dark border-brand-dark text-white shadow-xl transform scale-105'
+                              : 'bg-white border-black/[0.03] text-gray-400 hover:border-brand-dark hover:text-brand-dark'
                           }
                         `}
                       >

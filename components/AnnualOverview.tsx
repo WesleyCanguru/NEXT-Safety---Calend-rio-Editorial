@@ -277,18 +277,33 @@ export const AnnualOverview: React.FC<AnnualOverviewProps> = ({ onSelectMonth })
             monthlyPlans.map((plan) => {
               const monthName = MONTH_NAMES[plan.month - 1];
               const postCount = postCounts[monthName.toUpperCase()] || 0;
+              
+              const hasTheme = !!plan.theme && plan.theme.trim() !== '';
+              const hasObjective = !!plan.objectives && plan.objectives.length > 0 && plan.objectives[0].trim() !== '';
+              const isConfigured = hasTheme && hasObjective;
+              
+              const isLocked = !isAdmin && !isConfigured;
+
               return (
-                <MonthCard 
-                  key={plan.id} 
-                  data={{
-                    month: monthName,
-                    title: plan.theme || 'Sem tema definido',
-                    color: 'blue', 
-                    function: plan.objectives?.[0] || 'Objetivo não definido'
-                  }} 
-                  onClick={() => onSelectMonth(monthName)}
-                  postCount={postCount}
-                />
+                <div key={plan.id} className="relative h-full">
+                  {isAdmin && !isConfigured && (
+                    <div className="absolute -top-3 -right-3 z-20 bg-gray-800 text-white text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 pointer-events-none">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      Oculto (Cliente)
+                    </div>
+                  )}
+                  <MonthCard 
+                    data={{
+                      month: monthName,
+                      title: plan.theme || 'Sem tema definido',
+                      color: 'blue', 
+                      function: plan.objectives?.[0] || 'Objetivo não definido'
+                    }} 
+                    onClick={() => onSelectMonth(monthName)}
+                    postCount={postCount}
+                    isLocked={isLocked}
+                  />
+                </div>
               );
             })
           )}
