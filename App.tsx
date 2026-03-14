@@ -21,8 +21,9 @@ import { motion, AnimatePresence } from 'motion/react';
 
 import { PasswordVault } from './components/PasswordVault';
 import { TutorialCenter } from './components/TutorialCenter';
+import { AiPhotosView } from './components/AiPhotosView';
 
-type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'strategic-briefings' | 'documents' | 'paid-traffic' | 'website' | 'admin' | 'password-vault' | 'tutorials';
+type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'strategic-briefings' | 'documents' | 'paid-traffic' | 'website' | 'admin' | 'password-vault' | 'tutorials' | 'ai-photos';
 
 interface MainAppProps {}
 
@@ -259,6 +260,19 @@ const MainApp: React.FC<MainAppProps> = () => {
                   )}
                   <BriefingOnboarding />
                 </div>
+              ) : view === 'ai-photos' ? (
+                <div className="bg-white rounded-[2.5rem] border border-black/[0.03] shadow-sm min-h-[80vh] p-6 sm:p-10">
+                  <div className="mb-8 border-b border-gray-100 pb-6 flex items-center gap-4">
+                    <button 
+                      onClick={() => setView('dashboard')}
+                      className="p-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-400 hover:text-brand-dark"
+                    >
+                      <ChevronRight className="w-5 h-5 rotate-180" />
+                    </button>
+                    <h2 className="text-xl font-bold text-brand-dark">Voltar ao Dashboard</h2>
+                  </div>
+                  <AiPhotosView />
+                </div>
               ) : view === 'dashboard' ? (
                 <ClientHome
                   onNavigateToOnboarding={() => setView('onboarding')}
@@ -270,6 +284,7 @@ const MainApp: React.FC<MainAppProps> = () => {
                   onNavigateToWebsite={() => setView('website')}
                   onNavigateToPasswordVault={() => setView('password-vault')}
                   onNavigateToTutorials={() => setView('tutorials')}
+                  onNavigateToAiPhotos={() => setView('ai-photos')}
                   onRefreshClient={refreshActiveClient}
                 />
               ) : view === 'onboarding' ? (

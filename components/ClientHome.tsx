@@ -12,7 +12,8 @@ import {
   Globe,
   AlertCircle,
   Sparkles,
-  BookOpen
+  BookOpen,
+  Camera
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -26,6 +27,7 @@ interface ClientHomeProps {
   onNavigateToWebsite: () => void;
   onNavigateToPasswordVault: () => void;
   onNavigateToTutorials: () => void;
+  onNavigateToAiPhotos: () => void;
   onRefreshClient?: () => void;
 }
 
@@ -44,6 +46,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
   onNavigateToWebsite,
   onNavigateToPasswordVault,
   onNavigateToTutorials,
+  onNavigateToAiPhotos,
   onRefreshClient,
 }) => {
   const { activeClient, userRole } = useAuth();
@@ -118,6 +121,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
 
   const showMapa = hasService('Social Media');
   const showPaidTraffic = hasService('Tráfego Pago');
+  const showAiPhotos = hasService('Fotos com IA');
   const showOrganicTraffic = hasService('Social Media');
   const showBriefings = hasService('Social Media') || hasService('Tráfego Pago');
   const showWebsite = hasService('Website');
@@ -177,6 +181,117 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
         </p>
       </motion.div>
 
+      {/* Dashboard de Acompanhamento Section */}
+      {(showPaidTraffic || showOrganicTraffic) && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-6xl w-full mb-12"
+        >
+          <h2 className="text-xl font-bold text-brand-dark mb-6 tracking-tight">Acompanhamento de Resultados</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {showPaidTraffic && (
+              activeClient?.paid_reportei_url ? (
+                <a 
+                  href={activeClient.paid_reportei_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group bg-white rounded-2xl p-6 shadow-sm border border-black/[0.02] hover:shadow-md hover:border-brand-dark/10 transition-all duration-300 flex items-center justify-between relative"
+                >
+                  {isAdmin && (
+                    <button 
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSetUrl('paid'); }}
+                      className="absolute top-1/2 -translate-y-1/2 right-16 p-2 bg-gray-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+                    >
+                      <Globe size={14} className="text-gray-400" />
+                    </button>
+                  )}
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-50/50 rounded-xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                      <Zap size={24} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-brand-dark">Dashboard Pago</h4>
+                      <p className="text-xs text-gray-500 font-medium">Acessar Reportei</p>
+                    </div>
+                  </div>
+                  <ArrowRight size={18} className="text-gray-300 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-300" />
+                </a>
+              ) : (
+                <div 
+                  onClick={() => isAdmin && handleSetUrl('paid')}
+                  className={`group bg-white rounded-2xl p-6 shadow-sm border border-black/[0.02] ${isAdmin ? 'cursor-pointer hover:border-brand-dark/10 hover:shadow-md' : 'opacity-60 cursor-default'} transition-all duration-300 flex items-center justify-between`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-50/50 rounded-xl flex items-center justify-center text-blue-600">
+                      <Zap size={24} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-brand-dark">Dashboard Pago</h4>
+                      <p className="text-xs text-gray-500 font-medium">Acessar Reportei</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Em breve</span>
+                    {isAdmin && <span className="text-[8px] text-brand-dark font-bold uppercase tracking-widest opacity-40 group-hover:opacity-100 transition-opacity">Configurar Link</span>}
+                  </div>
+                </div>
+              )
+            )}
+
+            {showOrganicTraffic && (
+              activeClient?.organic_reportei_url ? (
+                <a 
+                  href={activeClient.organic_reportei_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group bg-white rounded-2xl p-6 shadow-sm border border-black/[0.02] hover:shadow-md hover:border-brand-dark/10 transition-all duration-300 flex items-center justify-between relative"
+                >
+                  {isAdmin && (
+                    <button 
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSetUrl('organic'); }}
+                      className="absolute top-1/2 -translate-y-1/2 right-16 p-2 bg-gray-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+                    >
+                      <Globe size={14} className="text-gray-400" />
+                    </button>
+                  )}
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-purple-50/50 rounded-xl flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
+                      <TrendingUp size={24} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-brand-dark">Dashboard Orgânico</h4>
+                      <p className="text-xs text-gray-500 font-medium">Acessar Reportei</p>
+                    </div>
+                  </div>
+                  <ArrowRight size={18} className="text-gray-300 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-300" />
+                </a>
+              ) : (
+                <div 
+                  onClick={() => isAdmin && handleSetUrl('organic')}
+                  className={`group bg-white rounded-2xl p-6 shadow-sm border border-black/[0.02] ${isAdmin ? 'cursor-pointer hover:border-brand-dark/10 hover:shadow-md' : 'opacity-60 cursor-default'} transition-all duration-300 flex items-center justify-between`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-purple-50/50 rounded-xl flex items-center justify-center text-purple-600">
+                      <TrendingUp size={24} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-brand-dark">Dashboard Orgânico</h4>
+                      <p className="text-xs text-gray-500 font-medium">Acessar Reportei</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Em breve</span>
+                    {isAdmin && <span className="text-[8px] text-brand-dark font-bold uppercase tracking-widest opacity-40 group-hover:opacity-100 transition-opacity">Configurar Link</span>}
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+        </motion.div>
+      )}
+
       {/* Seção Admin: Onboarding Interno */}
       {userRole === 'admin' && (
         <motion.div 
@@ -206,270 +321,164 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className={`grid grid-cols-1 ${showMapa ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-8 max-w-6xl w-full`}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl w-full"
       >
         
-        {/* Card 1: Linha Editorial (Destaque) */}
+        {/* Card 1: Linha Editorial */}
         {showMapa && (
           <motion.div 
             variants={itemVariants}
             onClick={onNavigateToMapa}
-            className="group relative bg-white rounded-[3rem] p-12 shadow-[0_4px_30px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_20px_60px_rgba(0,0,0,0.06)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer overflow-hidden md:col-span-1 md:row-span-2 flex flex-col justify-between"
+            className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col relative"
           >
-            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 duration-1000">
-              <Calendar size={200} />
-            </div>
-            
-            <div className="relative z-10">
-              <div className="w-20 h-20 bg-gray-50 rounded-[24px] flex items-center justify-center text-brand-dark mb-10 group-hover:bg-brand-dark group-hover:text-white transition-all duration-700 shadow-sm">
-                <Calendar size={36} />
+            <div className="flex justify-between items-start mb-8">
+              <div className="w-16 h-16 bg-gray-50 rounded-[20px] flex items-center justify-center text-brand-dark group-hover:bg-brand-dark group-hover:text-white transition-all duration-500 shadow-sm">
+                <Calendar size={32} />
               </div>
-              
-              <h3 className="text-4xl font-bold text-brand-dark mb-4 tracking-tight">Mapa Editorial</h3>
-              <p className="text-gray-500 text-base leading-relaxed mb-10 font-medium">
-                Acesse o calendário completo de publicações. Visualize, aprove e acompanhe o status de cada conteúdo planejado.
-              </p>
-              
-              <div className="space-y-4 mb-12">
-                <div className="flex items-center gap-4 text-[11px] text-gray-400 font-bold uppercase tracking-[0.25em] bg-gray-50/50 p-4 rounded-2xl border border-black/[0.01]">
-                  <ShieldCheck size={16} className="text-green-500" /> Acesso Restrito
-                </div>
-                <div className="flex items-center gap-4 text-[11px] text-gray-400 font-bold uppercase tracking-[0.25em] bg-gray-50/50 p-4 rounded-2xl border border-black/[0.01]">
-                  <Target size={16} className="text-brand-dark" /> Planejamento Estratégico
-                </div>
-              </div>
+              <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
             </div>
-
-            <div className="relative z-10 flex items-center text-brand-dark font-bold text-xs uppercase tracking-[0.3em] group-hover:translate-x-3 transition-transform duration-500">
-              Acessar Sistema <ArrowRight size={18} className="ml-4 opacity-30 group-hover:opacity-100 transition-opacity" />
-            </div>
+            <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Mapa Editorial</h3>
+            <p className="text-gray-500 text-sm leading-relaxed font-medium">
+              Acesse o calendário completo de publicações. Visualize, aprove e acompanhe o status de cada conteúdo planejado.
+            </p>
           </motion.div>
         )}
 
-        {/* Módulos Secundários Grid */}
-        <div className={`${showMapa ? 'md:col-span-2' : 'md:col-span-2'} grid grid-cols-1 sm:grid-cols-2 gap-8`}>
-          
-          {/* Tráfego Pago */}
-          {showPaidTraffic && (
-            activeClient?.paid_reportei_url ? (
-              <motion.a 
-                variants={itemVariants}
-                href={activeClient.paid_reportei_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col relative"
-              >
-                {isAdmin && (
-                  <button 
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSetUrl('paid'); }}
-                    className="absolute top-6 right-6 p-2 bg-gray-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
-                  >
-                    <Globe size={14} className="text-gray-400" />
-                  </button>
-                )}
-                <div className="flex justify-between items-start mb-8">
-                  <div className="w-16 h-16 bg-blue-50/50 rounded-[20px] flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-sm">
-                    <Zap size={32} />
-                  </div>
-                  <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
-                </div>
-                <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Tráfego Pago</h3>
-                <p className="text-gray-500 text-sm leading-relaxed font-medium">
-                  Performance de anúncios e campanhas ativas em tempo real.
-                </p>
-              </motion.a>
-            ) : (
-              <motion.div 
-                variants={itemVariants}
-                onClick={() => isAdmin && handleSetUrl('paid')}
-                className={`group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] ${isAdmin ? 'cursor-pointer hover:border-brand-dark/10' : 'opacity-60 cursor-default'} flex flex-col`}
-              >
-                <div className="flex justify-between items-start mb-8">
-                  <div className="w-16 h-16 bg-blue-50/50 rounded-[20px] flex items-center justify-center text-blue-600 shadow-sm">
-                    <Zap size={32} />
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400">Em breve</span>
-                    {isAdmin && <span className="text-[8px] text-brand-dark font-bold uppercase tracking-widest opacity-40 group-hover:opacity-100 transition-opacity">Configurar Link</span>}
-                  </div>
-                </div>
-                <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Tráfego Pago</h3>
-                <p className="text-gray-500 text-sm leading-relaxed font-medium">
-                  Performance de anúncios e campanhas ativas em tempo real.
-                </p>
-              </motion.div>
-            )
-          )}
-
-          {/* Tráfego Orgânico */}
-          {showOrganicTraffic && (
-            activeClient?.organic_reportei_url ? (
-              <motion.a 
-                variants={itemVariants}
-                href={activeClient.organic_reportei_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col relative"
-              >
-                {isAdmin && (
-                  <button 
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSetUrl('organic'); }}
-                    className="absolute top-6 right-6 p-2 bg-gray-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
-                  >
-                    <Globe size={14} className="text-gray-400" />
-                  </button>
-                )}
-                <div className="flex justify-between items-start mb-8">
-                  <div className="w-16 h-16 bg-purple-50/50 rounded-[20px] flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-all duration-500 shadow-sm">
-                    <TrendingUp size={32} />
-                  </div>
-                  <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
-                </div>
-                <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Tráfego Orgânico</h3>
-                <p className="text-gray-500 text-sm leading-relaxed font-medium">
-                  Crescimento orgânico, engajamento e relatórios de métricas.
-                </p>
-              </motion.a>
-            ) : (
-              <motion.div 
-                variants={itemVariants}
-                onClick={() => isAdmin && handleSetUrl('organic')}
-                className={`group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] ${isAdmin ? 'cursor-pointer hover:border-brand-dark/10' : 'opacity-60 cursor-default'} flex flex-col`}
-              >
-                <div className="flex justify-between items-start mb-8">
-                  <div className="w-16 h-16 bg-purple-50/50 rounded-[20px] flex items-center justify-center text-purple-600 shadow-sm">
-                    <TrendingUp size={32} />
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400">Em breve</span>
-                    {isAdmin && <span className="text-[8px] text-brand-dark font-bold uppercase tracking-widest opacity-40 group-hover:opacity-100 transition-opacity">Configurar Link</span>}
-                  </div>
-                </div>
-                <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Tráfego Orgânico</h3>
-                <p className="text-gray-500 text-sm leading-relaxed font-medium">
-                  Crescimento orgânico, engajamento e relatórios de métricas.
-                </p>
-              </motion.div>
-            )
-          )}
-
-          {/* Briefings Estratégicos */}
-          {showBriefings && (
-            <motion.div 
-              variants={itemVariants}
-              onClick={onNavigateToStrategicBriefings}
-              className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col"
-            >
-              <div className="flex justify-between items-start mb-8">
-                <div className="w-16 h-16 bg-rose-50/50 rounded-[20px] flex items-center justify-center text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-all duration-500 shadow-sm">
-                  <Target size={32} />
-                </div>
-                <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
-              </div>
-              <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Briefings Estratégicos</h3>
-              <p className="text-gray-500 text-sm leading-relaxed font-medium">
-                Respostas dos formulários de onboarding e alinhamento da marca.
-              </p>
-            </motion.div>
-          )}
-
-          {/* Briefings Mensais (Desativado temporariamente) */}
-          {/* showBriefings && (
-            <motion.div 
-              variants={itemVariants}
-              onClick={onNavigateToBriefings}
-              className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col"
-            >
-              <div className="flex justify-between items-start mb-8">
-                <div className="w-16 h-16 bg-amber-50/50 rounded-[20px] flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-all duration-500 shadow-sm">
-                  <AlertCircle size={32} />
-                </div>
-                <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
-              </div>
-              <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Briefings Mensais</h3>
-              <p className="text-gray-500 text-sm leading-relaxed font-medium">
-                Solicitações de novas demandas e aprovações pendentes.
-              </p>
-            </motion.div>
-          ) */}
-
-          {/* Documentos */}
-          {showDocuments && (
-            <motion.div 
-              variants={itemVariants}
-              onClick={onNavigateToDocuments}
-              className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col"
-            >
-              <div className="flex justify-between items-start mb-8">
-                <div className="w-16 h-16 bg-teal-50/50 rounded-[20px] flex items-center justify-center text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-all duration-500 shadow-sm">
-                  <FolderOpen size={32} />
-                </div>
-                <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
-              </div>
-              <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Documentos</h3>
-              <p className="text-gray-500 text-sm leading-relaxed font-medium">
-                Repositório de arquivos, contratos e relatórios mensais.
-              </p>
-            </motion.div>
-          )}
-
-          {/* Website */}
-          {showWebsite && (
-            <motion.div 
-              variants={itemVariants}
-              onClick={onNavigateToWebsite}
-              className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col"
-            >
-              <div className="flex justify-between items-start mb-8">
-                <div className="w-16 h-16 bg-indigo-50/50 rounded-[20px] flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500 shadow-sm">
-                  <Globe size={32} />
-                </div>
-                <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
-              </div>
-              <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Website</h3>
-              <p className="text-gray-500 text-sm leading-relaxed font-medium">
-                Prévia e acompanhamento do desenvolvimento do seu site.
-              </p>
-            </motion.div>
-          )}
-
-          {/* Cofre de Senhas */}
+        {/* Tráfego Pago */}
+        {showPaidTraffic && (
           <motion.div 
             variants={itemVariants}
-            onClick={onNavigateToPasswordVault}
-            className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col"
-          >
-            <div className="flex justify-between items-start mb-8">
-              <div className="w-16 h-16 bg-slate-50/50 rounded-[20px] flex items-center justify-center text-slate-600 group-hover:bg-slate-600 group-hover:text-white transition-all duration-500 shadow-sm">
-                <ShieldCheck size={32} />
-              </div>
-              <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
-            </div>
-            <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Cofre de Senhas</h3>
-            <p className="text-gray-500 text-sm leading-relaxed font-medium">
-              Acesso seguro às credenciais e senhas da sua marca.
-            </p>
-          </motion.div>
-
-          {/* Central de Tutoriais */}
-          <motion.div 
-            variants={itemVariants}
-            onClick={onNavigateToTutorials}
-            className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col"
+            onClick={onNavigateToPaidTraffic}
+            className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col relative"
           >
             <div className="flex justify-between items-start mb-8">
               <div className="w-16 h-16 bg-blue-50/50 rounded-[20px] flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-sm">
-                <BookOpen size={32} />
+                <Zap size={32} />
               </div>
               <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
             </div>
-            <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Tutoriais</h3>
+            <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Tráfego Pago</h3>
             <p className="text-gray-500 text-sm leading-relaxed font-medium">
-              Aprenda a gerenciar suas plataformas e aprovar conteúdos.
+              Estratégias, performance de anúncios e campanhas ativas.
             </p>
           </motion.div>
+        )}
 
-        </div>
+        {/* Fotos com IA */}
+        {showAiPhotos && (
+          <motion.div 
+            variants={itemVariants}
+            onClick={onNavigateToAiPhotos}
+            className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col relative"
+          >
+            <div className="flex justify-between items-start mb-8">
+              <div className="w-16 h-16 bg-fuchsia-50/50 rounded-[20px] flex items-center justify-center text-fuchsia-600 group-hover:bg-fuchsia-600 group-hover:text-white transition-all duration-500 shadow-sm">
+                <Camera size={32} />
+              </div>
+              <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Fotos com IA</h3>
+            <p className="text-gray-500 text-sm leading-relaxed font-medium">
+              Aprove e comente os ensaios fotográficos gerados por Inteligência Artificial.
+            </p>
+          </motion.div>
+        )}
+
+        {/* Website */}
+        {showWebsite && (
+          <motion.div 
+            variants={itemVariants}
+            onClick={onNavigateToWebsite}
+            className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col"
+          >
+            <div className="flex justify-between items-start mb-8">
+              <div className="w-16 h-16 bg-indigo-50/50 rounded-[20px] flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500 shadow-sm">
+                <Globe size={32} />
+              </div>
+              <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Website</h3>
+            <p className="text-gray-500 text-sm leading-relaxed font-medium">
+              Prévia e acompanhamento do desenvolvimento do seu site.
+            </p>
+          </motion.div>
+        )}
+
+        {/* Cofre de Senhas */}
+        <motion.div 
+          variants={itemVariants}
+          onClick={onNavigateToPasswordVault}
+          className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col"
+        >
+          <div className="flex justify-between items-start mb-8">
+            <div className="w-16 h-16 bg-slate-50/50 rounded-[20px] flex items-center justify-center text-slate-600 group-hover:bg-slate-600 group-hover:text-white transition-all duration-500 shadow-sm">
+              <ShieldCheck size={32} />
+            </div>
+            <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
+          </div>
+          <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Cofre de Senhas</h3>
+          <p className="text-gray-500 text-sm leading-relaxed font-medium">
+            Acesso seguro às credenciais e senhas da sua marca.
+          </p>
+        </motion.div>
+
+        {/* Documentos */}
+        {showDocuments && (
+          <motion.div 
+            variants={itemVariants}
+            onClick={onNavigateToDocuments}
+            className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col"
+          >
+            <div className="flex justify-between items-start mb-8">
+              <div className="w-16 h-16 bg-teal-50/50 rounded-[20px] flex items-center justify-center text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-all duration-500 shadow-sm">
+                <FolderOpen size={32} />
+              </div>
+              <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Documentos</h3>
+            <p className="text-gray-500 text-sm leading-relaxed font-medium">
+              Repositório de arquivos, contratos e relatórios mensais.
+            </p>
+          </motion.div>
+        )}
+
+        {/* Central de Tutoriais */}
+        <motion.div 
+          variants={itemVariants}
+          onClick={onNavigateToTutorials}
+          className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col"
+        >
+          <div className="flex justify-between items-start mb-8">
+            <div className="w-16 h-16 bg-blue-50/50 rounded-[20px] flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-sm">
+              <BookOpen size={32} />
+            </div>
+            <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
+          </div>
+          <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Tutoriais</h3>
+          <p className="text-gray-500 text-sm leading-relaxed font-medium">
+            Aprenda a gerenciar suas plataformas e aprovar conteúdos.
+          </p>
+        </motion.div>
+
+        {/* Briefings Estratégicos */}
+        {showBriefings && (
+          <motion.div 
+            variants={itemVariants}
+            onClick={onNavigateToStrategicBriefings}
+            className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col"
+          >
+            <div className="flex justify-between items-start mb-8">
+              <div className="w-16 h-16 bg-rose-50/50 rounded-[20px] flex items-center justify-center text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-all duration-500 shadow-sm">
+                <Target size={32} />
+              </div>
+              <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Briefings Estratégicos</h3>
+            <p className="text-gray-500 text-sm leading-relaxed font-medium">
+              Respostas dos formulários de onboarding e alinhamento da marca.
+            </p>
+          </motion.div>
+        )}
 
       </motion.div>
 

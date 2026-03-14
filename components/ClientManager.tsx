@@ -14,7 +14,7 @@ const COLORS = [
   '#E0F2FE', '#DCFCE7', '#FEE2E2', '#F3E8FF', '#FEF3C7', '#ECFEFF', '#FCE7F3', '#F1F5F9',
   '#FFEDD5', '#CCFBF1', '#F5F3FF', '#FDF2F8'
 ];
-const AVAILABLE_SERVICES = ["Social Media", "Tráfego Pago", "Website", "Identidade Visual", "Papelaria", "E-mail Marketing"];
+const AVAILABLE_SERVICES = ["Social Media", "Tráfego Pago", "Website", "Identidade Visual", "Papelaria", "E-mail Marketing", "Fotos com IA"];
 const AVAILABLE_SOCIAL_NETWORKS = ["Instagram", "Facebook", "LinkedIn", "TikTok", "YouTube", "Pinterest", "Twitter/X"];
 const AVAILABLE_TRAFFIC_PLATFORMS = ["Google Ads", "Meta Ads (Facebook/Instagram)", "LinkedIn Ads", "TikTok Ads", "YouTube Ads", "Pinterest Ads"];
 
