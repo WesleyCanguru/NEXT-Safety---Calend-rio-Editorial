@@ -6,7 +6,13 @@ import { UserRole, Client } from '../types';
 const SUPABASE_URL = 'https://wtzphiyybitcucwkfpgv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_uLQGmz7lWazPN1Uqb4_4vQ_HggVpMz9';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false
+  }
+});
 
 export const hashPassword = async (password: string): Promise<string> => {
   const msgBuffer = new TextEncoder().encode(password);
