@@ -81,38 +81,49 @@ export const AiPhotosView: React.FC = () => {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !activeClient) return;
+    const files = e.target.files;
+    if (!files || files.length === 0 || !activeClient) return;
 
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${activeClient.id}/ai-photos/${Date.now()}.${fileExt}`;
+      const uploadPromises = Array.from(files).map(async (file: File) => {
+        const fileExt = file.name.split('.').pop();
+        const uniqueId = Math.random().toString(36).substring(2, 15);
+        const fileName = `ai-photo-${Date.now()}-${uniqueId}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('post-uploads')
-        .upload(fileName, file);
+        const { error: uploadError } = await supabase.storage
+          .from('post-uploads')
+          .upload(fileName, file);
 
-      if (uploadError) throw uploadError;
+        if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage
-        .from('post-uploads')
-        .getPublicUrl(fileName);
+        const { data } = supabase.storage
+          .from('post-uploads')
+          .getPublicUrl(fileName);
 
-      await supabase
-        .from('ai_photos')
-        .insert({
+        return {
           client_id: activeClient.id,
           image_url: data.publicUrl,
           status: 'pending_approval'
-        });
+        };
+      });
+
+      const newPhotos = await Promise.all(uploadPromises);
+
+      const { error: dbError } = await supabase
+        .from('ai_photos')
+        .insert(newPhotos);
+
+      if (dbError) throw dbError;
 
       fetchData();
     } catch (error) {
-      console.error('Error uploading photo:', error);
-      alert('Erro ao fazer upload da foto.');
+      console.error('Error uploading photos:', error);
+      alert('Erro ao fazer upload das fotos. Verifique o console para mais detalhes.');
     } finally {
       setUploading(false);
+      // Limpa o input para permitir selecionar os mesmos arquivos novamente se necessário
+      e.target.value = '';
     }
   };
 
@@ -232,10 +243,11 @@ export const AiPhotosView: React.FC = () => {
             ${uploading ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-fuchsia-600 text-white hover:bg-fuchsia-700'}
           `}>
             <Upload size={18} />
-            {uploading ? 'Enviando...' : 'Selecionar Imagem'}
+            {uploading ? 'Enviando...' : 'Selecionar Imagens'}
             <input
               type="file"
               accept="image/*"
+              multiple
               className="hidden"
               onChange={handleFileUpload}
               disabled={uploading}
