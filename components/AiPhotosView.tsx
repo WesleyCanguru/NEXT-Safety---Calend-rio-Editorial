@@ -137,6 +137,16 @@ export const AiPhotosView: React.FC = () => {
     }
   };
 
+  const handleDeleteFeedback = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este comentário?')) return;
+    try {
+      await supabase.from('ai_photos').update({ feedback: null }).eq('id', id);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting feedback:', error);
+    }
+  };
+
   const handleUpdateStatus = async (id: string, status: AiPhoto['status'], feedback?: string) => {
     try {
       const updateData: any = { status, updated_at: new Date().toISOString() };
@@ -265,8 +275,8 @@ export const AiPhotosView: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="bg-white rounded-[2rem] overflow-hidden shadow-sm border border-black/[0.02] flex flex-col"
           >
-            <div className="relative aspect-square bg-gray-100">
-              <img src={photo.image_url} alt="AI Generated" className="w-full h-full object-cover" />
+            <div className="relative bg-gray-100 flex items-center justify-center">
+              <img src={photo.image_url} alt="AI Generated" className="w-full h-auto max-h-[600px] object-contain" />
               
               {/* Status Badge */}
               <div className="absolute top-4 left-4">
@@ -309,73 +319,84 @@ export const AiPhotosView: React.FC = () => {
 
             <div className="p-6 flex-1 flex flex-col">
               {photo.feedback && (
-                <div className="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <div className="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 relative group">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Feedback do Cliente</p>
-                  <p className="text-sm text-gray-700 font-medium">{photo.feedback}</p>
+                  <p className="text-sm text-gray-700 font-medium pr-6">{photo.feedback}</p>
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleDeleteFeedback(photo.id)}
+                      className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                      title="Excluir comentário"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               )}
 
-              <div className="mt-auto flex flex-col gap-2">
-                {activePhotoId === photo.id ? (
-                  <div className="space-y-3">
-                    <textarea
-                      value={feedbackText}
-                      onChange={(e) => setFeedbackText(e.target.value)}
-                      placeholder="O que precisa ser ajustado?"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none h-24"
-                    />
-                    <div className="flex gap-2">
+              {!isAdmin && (
+                <div className="mt-auto flex flex-col gap-2">
+                  {activePhotoId === photo.id ? (
+                    <div className="space-y-3">
+                      <textarea
+                        value={feedbackText}
+                        onChange={(e) => setFeedbackText(e.target.value)}
+                        placeholder="O que precisa ser ajustado?"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none h-24"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleUpdateStatus(photo.id, 'changes_requested', feedbackText)}
+                          disabled={!feedbackText.trim()}
+                          className="flex-1 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-bold hover:bg-amber-600 transition-colors disabled:opacity-50"
+                        >
+                          Enviar
+                        </button>
+                        <button
+                          onClick={() => { setActivePhotoId(null); setFeedbackText(''); }}
+                          className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-200 transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2">
+                      {quota > 0 && approvedCount >= quota && photo.status !== 'approved' ? (
+                        <button
+                          onClick={() => handleUpdateStatus(photo.id, 'interested')}
+                          className={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl transition-all ${photo.status === 'interested' ? 'bg-purple-50 text-purple-600 border border-purple-200' : 'bg-gray-50 text-gray-500 hover:bg-purple-50 hover:text-purple-600'}`}
+                        >
+                          <Sparkles size={18} />
+                          <span className="text-[10px] font-bold uppercase tracking-wider">Interesse</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleUpdateStatus(photo.id, 'approved')}
+                          className={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl transition-all ${photo.status === 'approved' ? 'bg-green-50 text-green-600 border border-green-200' : 'bg-gray-50 text-gray-500 hover:bg-green-50 hover:text-green-600'}`}
+                        >
+                          <Check size={18} />
+                          <span className="text-[10px] font-bold uppercase tracking-wider">Aprovar</span>
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleUpdateStatus(photo.id, 'changes_requested', feedbackText)}
-                        disabled={!feedbackText.trim()}
-                        className="flex-1 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-bold hover:bg-amber-600 transition-colors disabled:opacity-50"
+                        onClick={() => setActivePhotoId(photo.id)}
+                        className={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl transition-all ${photo.status === 'changes_requested' ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-gray-50 text-gray-500 hover:bg-amber-50 hover:text-amber-600'}`}
                       >
-                        Enviar
+                        <MessageSquare size={18} />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Ajustar</span>
                       </button>
                       <button
-                        onClick={() => { setActivePhotoId(null); setFeedbackText(''); }}
-                        className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-200 transition-colors"
+                        onClick={() => handleUpdateStatus(photo.id, 'rejected')}
+                        className={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl transition-all ${photo.status === 'rejected' ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-gray-50 text-gray-500 hover:bg-red-50 hover:text-red-600'}`}
                       >
-                        Cancelar
+                        <X size={18} />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Rejeitar</span>
                       </button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-2">
-                    {quota > 0 && approvedCount >= quota && photo.status !== 'approved' ? (
-                      <button
-                        onClick={() => handleUpdateStatus(photo.id, 'interested')}
-                        className={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl transition-all ${photo.status === 'interested' ? 'bg-purple-50 text-purple-600 border border-purple-200' : 'bg-gray-50 text-gray-500 hover:bg-purple-50 hover:text-purple-600'}`}
-                      >
-                        <Sparkles size={18} />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Interesse</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleUpdateStatus(photo.id, 'approved')}
-                        className={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl transition-all ${photo.status === 'approved' ? 'bg-green-50 text-green-600 border border-green-200' : 'bg-gray-50 text-gray-500 hover:bg-green-50 hover:text-green-600'}`}
-                      >
-                        <Check size={18} />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Aprovar</span>
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setActivePhotoId(photo.id)}
-                      className={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl transition-all ${photo.status === 'changes_requested' ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-gray-50 text-gray-500 hover:bg-amber-50 hover:text-amber-600'}`}
-                    >
-                      <MessageSquare size={18} />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">Ajustar</span>
-                    </button>
-                    <button
-                      onClick={() => handleUpdateStatus(photo.id, 'rejected')}
-                      className={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl transition-all ${photo.status === 'rejected' ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-gray-50 text-gray-500 hover:bg-red-50 hover:text-red-600'}`}
-                    >
-                      <X size={18} />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">Rejeitar</span>
-                    </button>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
           </motion.div>
         ))}
