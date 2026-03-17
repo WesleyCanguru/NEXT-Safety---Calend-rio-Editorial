@@ -275,9 +275,13 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
               setImageUrl(uploadedUrls[0]);
           }
 
-      } catch (error) {
-          alert('Erro no upload.');
+      } catch (error: any) {
           console.error(error);
+          if (error.message && error.message.includes('maximum allowed size')) {
+              alert('Erro: O arquivo é muito grande. O limite de tamanho foi excedido no servidor (Supabase).');
+          } else {
+              alert('Erro no upload. Verifique o console para mais detalhes.');
+          }
       } finally {
           setIsUploading(false);
           setIsDragging(false);
