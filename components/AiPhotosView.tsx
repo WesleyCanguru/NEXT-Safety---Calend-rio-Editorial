@@ -24,6 +24,15 @@ export const AiPhotosView: React.FC = () => {
   const [feedbackText, setFeedbackText] = useState('');
   const [activePhotoId, setActivePhotoId] = useState<string | null>(null);
 
+  type TabType = 'pending_approval' | 'changes_requested' | 'approved' | 'rejected' | 'interested';
+  const [activeTab, setActiveTab] = useState<TabType>('pending_approval');
+
+  // Admin Replace States
+  const [replacingPhotoId, setReplacingPhotoId] = useState<string | null>(null);
+  const [agencyFeedback, setAgencyFeedback] = useState('');
+  const [replacingFile, setReplacingFile] = useState<File | null>(null);
+  const [isReplacing, setIsReplacing] = useState(false);
+
   const isAdmin = userRole === 'admin';
 
   useEffect(() => {
@@ -52,7 +61,7 @@ export const AiPhotosView: React.FC = () => {
         .from('ai_photos')
         .select('*')
         .eq('client_id', activeClient!.id)
-        .order('created_at', { ascending: false });
+        .order('updated_at', { ascending: false });
 
       if (photosData) {
         setPhotos(photosData as AiPhoto[]);
@@ -157,12 +166,56 @@ export const AiPhotosView: React.FC = () => {
       fetchData();
       setActivePhotoId(null);
       setFeedbackText('');
+      setActiveTab(status); // Automatically switch to the tab of the new status
     } catch (error) {
       console.error('Error updating status:', error);
     }
   };
 
+  const handleReplacePhoto = async (id: string, currentFeedback: string | null) => {
+    if (!replacingFile) return;
+    setIsReplacing(true);
+    try {
+      const fileExt = replacingFile.name.split('.').pop();
+      const uniqueId = Math.random().toString(36).substring(2, 15);
+      const fileName = `ai-photo-${Date.now()}-${uniqueId}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('post-uploads')
+        .upload(fileName, replacingFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('post-uploads')
+        .getPublicUrl(fileName);
+
+      const newFeedback = currentFeedback 
+        ? `${currentFeedback}\n\nCanguru Digital: ${agencyFeedback}` 
+        : `Canguru Digital: ${agencyFeedback}`;
+
+      await supabase.from('ai_photos').update({
+        image_url: data.publicUrl,
+        feedback: newFeedback,
+        status: 'pending_approval',
+        updated_at: new Date().toISOString()
+      }).eq('id', id);
+
+      fetchData();
+      setReplacingPhotoId(null);
+      setReplacingFile(null);
+      setAgencyFeedback('');
+      setActiveTab('pending_approval');
+    } catch (error) {
+      console.error('Error replacing photo:', error);
+      alert('Erro ao substituir foto.');
+    } finally {
+      setIsReplacing(false);
+    }
+  };
+
   const approvedCount = photos.filter(p => p.status === 'approved').length;
+  const filteredPhotos = photos.filter(p => p.status === activeTab);
 
   if (loading) {
     return (
@@ -266,8 +319,42 @@ export const AiPhotosView: React.FC = () => {
         </div>
       )}
 
+      {/* Tabs Navigation */}
+      <div className="flex overflow-x-auto gap-2 pb-2 hide-scrollbar">
+        <button 
+          onClick={() => setActiveTab('pending_approval')} 
+          className={`px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'pending_approval' ? 'bg-gray-900 text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'}`}
+        >
+          Pendentes ({photos.filter(p => p.status === 'pending_approval').length})
+        </button>
+        <button 
+          onClick={() => setActiveTab('changes_requested')} 
+          className={`px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'changes_requested' ? 'bg-amber-500 text-white shadow-md' : 'bg-white text-amber-600 hover:bg-amber-50 border border-amber-200'}`}
+        >
+          Ajustes Solicitados ({photos.filter(p => p.status === 'changes_requested').length})
+        </button>
+        <button 
+          onClick={() => setActiveTab('approved')} 
+          className={`px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'approved' ? 'bg-green-500 text-white shadow-md' : 'bg-white text-green-600 hover:bg-green-50 border border-green-200'}`}
+        >
+          Aprovadas ({photos.filter(p => p.status === 'approved').length})
+        </button>
+        <button 
+          onClick={() => setActiveTab('rejected')} 
+          className={`px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'rejected' ? 'bg-red-500 text-white shadow-md' : 'bg-white text-red-600 hover:bg-red-50 border border-red-200'}`}
+        >
+          Rejeitadas ({photos.filter(p => p.status === 'rejected').length})
+        </button>
+        <button 
+          onClick={() => setActiveTab('interested')} 
+          className={`px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'interested' ? 'bg-purple-500 text-white shadow-md' : 'bg-white text-purple-600 hover:bg-purple-50 border border-purple-200'}`}
+        >
+          Interesse ({photos.filter(p => p.status === 'interested').length})
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {photos.map((photo) => (
+        {filteredPhotos.map((photo) => (
           <motion.div
             key={photo.id}
             layout
@@ -328,7 +415,7 @@ export const AiPhotosView: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-700 font-medium pr-6">{photo.feedback}</p>
+                  <p className="text-sm text-gray-700 font-medium pr-6 whitespace-pre-wrap">{photo.feedback}</p>
                   {isAdmin && (
                     <button
                       onClick={() => handleDeleteFeedback(photo.id)}
@@ -338,6 +425,48 @@ export const AiPhotosView: React.FC = () => {
                       <Trash2 size={14} />
                     </button>
                   )}
+                </div>
+              )}
+
+              {isAdmin && photo.status === 'changes_requested' && !replacingPhotoId && (
+                <button
+                  onClick={() => setReplacingPhotoId(photo.id)}
+                  className="w-full py-2.5 bg-fuchsia-50 text-fuchsia-600 rounded-xl text-sm font-bold hover:bg-fuchsia-100 transition-colors mb-4 border border-fuchsia-200"
+                >
+                  Substituir Imagem
+                </button>
+              )}
+
+              {isAdmin && replacingPhotoId === photo.id && (
+                <div className="mb-4 space-y-3 bg-white p-4 rounded-xl border border-fuchsia-200 shadow-sm">
+                  <p className="text-xs font-bold text-fuchsia-600 uppercase tracking-wider">Substituir Imagem</p>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={(e) => setReplacingFile(e.target.files?.[0] || null)} 
+                    className="text-sm w-full text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-fuchsia-50 file:text-fuchsia-700 hover:file:bg-fuchsia-100" 
+                  />
+                  <textarea
+                    value={agencyFeedback}
+                    onChange={(e) => setAgencyFeedback(e.target.value)}
+                    placeholder="Mensagem da agência (ex: Ajustes feitos!)..."
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-500 resize-none h-20"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleReplacePhoto(photo.id, photo.feedback)}
+                      disabled={!replacingFile || isReplacing}
+                      className="flex-1 py-2 bg-fuchsia-600 text-white rounded-lg text-sm font-bold hover:bg-fuchsia-700 transition-colors disabled:opacity-50"
+                    >
+                      {isReplacing ? 'Enviando...' : 'Confirmar'}
+                    </button>
+                    <button
+                      onClick={() => { setReplacingPhotoId(null); setReplacingFile(null); setAgencyFeedback(''); }}
+                      className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -408,14 +537,14 @@ export const AiPhotosView: React.FC = () => {
           </motion.div>
         ))}
 
-        {photos.length === 0 && !loading && (
+        {filteredPhotos.length === 0 && !loading && (
           <div className="col-span-full py-20 flex flex-col items-center justify-center text-center">
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-4">
               <Camera size={40} />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Nenhuma foto disponível</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Nenhuma foto nesta categoria</h3>
             <p className="text-gray-500 max-w-md">
-              As fotos geradas por Inteligência Artificial aparecerão aqui para sua aprovação.
+              Não há imagens com o status "{activeTab === 'pending_approval' ? 'Pendente' : activeTab === 'changes_requested' ? 'Ajustes Solicitados' : activeTab === 'approved' ? 'Aprovadas' : activeTab === 'rejected' ? 'Rejeitadas' : 'Interesse'}" no momento.
             </p>
           </div>
         )}
