@@ -9,7 +9,8 @@ import {
   MessageCircle,
   ArrowRight,
   AlertTriangle,
-  Zap
+  Zap,
+  Globe
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -80,7 +81,7 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
               <h3 className="font-medium text-white/80">Verba Mensal</h3>
             </div>
             <p className="text-3xl font-bold">R$ 600</p>
-            <p className="text-sm text-white/60 mt-2">R$ 20/dia (Mês 1 = aprendizado)</p>
+            <p className="text-sm text-white/60 mt-2">R$ 25/dia (segunda a sábado a principio para quesito de teste) (Mês 1 = aprendizado)</p>
           </motion.div>
 
           <motion.div variants={itemVariants} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
@@ -91,7 +92,7 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
               <h3 className="font-medium text-gray-500">Meta Prioritária</h3>
             </div>
             <p className="text-3xl font-bold text-gray-900">5 clientes</p>
-            <p className="text-sm text-gray-500 mt-2">Objetivo para o Mês 2</p>
+            <p className="text-sm text-gray-500 mt-2">Objetivo para o Mês</p>
           </motion.div>
 
           <motion.div variants={itemVariants} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
@@ -118,16 +119,16 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
               <div>
                 <h3 className="font-bold text-gray-900 text-lg">100% Google Ads (Rede de Pesquisa)</h3>
                 <p className="text-gray-600 mt-2 leading-relaxed">
-                  O público já está com o problema e buscando solução agora. O Google captura essa intenção ativa. O Meta Ads fará sentido quando o tráfego orgânico já existir e houver público para remarketing (previsto para o mês 3 ou 4).
+                  O público já está com o problema e buscando solução agora. O Google captura essa intenção ativa. O Meta Ads fará sentido quando o tráfego orgânico já existir e houver público para remarketing (previsto para os meses 3 ou 4).
                 </p>
               </div>
             </div>
             <div className="flex gap-4">
               <div className="w-1.5 bg-green-500 rounded-full shrink-0"></div>
               <div>
-                <h3 className="font-bold text-gray-900 text-lg">Destino: WhatsApp Direto</h3>
+                <h3 className="font-bold text-gray-900 text-lg">Destino: Landing Pages Exclusivas por Conjunto</h3>
                 <p className="text-gray-600 mt-2 leading-relaxed">
-                  Todos os anúncios levam direto para o WhatsApp com mensagem pré-preenchida por grupo de anúncio. Sem landing page nesta fase para reduzir fricção e custo de implementação.
+                  Cada conjunto de anúncios direciona para uma landing page própria, com copy alinhada à intenção de busca de cada público. As páginas já estão publicadas e os links estão configurados nos grupos de anúncios.
                 </p>
               </div>
             </div>
@@ -147,8 +148,8 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
                   <h3 className="text-lg font-bold text-gray-900">Direito do Consumidor e Bancário</h3>
                 </div>
                 <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-700 shadow-sm">
-                  <MessageCircle className="w-4 h-4 text-green-500" />
-                  Destino: WhatsApp
+                  <Globe className="w-4 h-4 text-blue-500" />
+                  Destino: <a href="https://consumidor.calabreselimaadvocacia.com.br/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">https://consumidor.calabreselimaadvocacia.com.br/</a>
                 </div>
               </div>
               
@@ -168,7 +169,7 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
                       <li>[banco bloqueou minha conta]</li>
                       <li>[plano de saúde negou tratamento]</li>
                       <li>[seguro não quer pagar sinistro]</li>
-                      <li>"advogado direito do consumidor"</li>
+                      <li>"advogado direito de consumidor"</li>
                       <li>"advogado conta bloqueada"</li>
                     </ul>
                   </div>
@@ -193,14 +194,14 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
                   <h3 className="text-lg font-bold text-gray-900">Direito de Família</h3>
                 </div>
                 <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-700 shadow-sm">
-                  <MessageCircle className="w-4 h-4 text-green-500" />
-                  Destino: WhatsApp
+                  <Globe className="w-4 h-4 text-blue-500" />
+                  Destino: <a href="https://familia.calabreselimaadvocacia.com.br/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">https://familia.calabreselimaadvocacia.com.br/</a>
                 </div>
               </div>
               
               <div className="p-8">
                 <p className="text-gray-600 mb-6">
-                  <strong className="text-gray-900">Público:</strong> Pessoas passando por divórcio, disputas de guarda, pensão alimentícia ou inventário. Momento emocional delicado — copy precisa ser acolhedora e transmitir segurança.
+                  <strong className="text-gray-900">Público:</strong> Pessoas passando por divórcio, disputas de guarda, pensão alimentícia ou inventário. Momento emocional delicado — a copy precisa ser acolhedora e transmitir segurança.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -239,8 +240,8 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
                   <h3 className="text-lg font-bold text-gray-900">Cível e Indenizações</h3>
                 </div>
                 <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-700 shadow-sm">
-                  <MessageCircle className="w-4 h-4 text-green-500" />
-                  Destino: WhatsApp
+                  <Globe className="w-4 h-4 text-blue-500" />
+                  Destino: <a href="http://indenizacao.calabreselimaadvocacia.com.br/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">http://indenizacao.calabreselimaadvocacia.com.br/</a>
                 </div>
               </div>
               
@@ -315,7 +316,7 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
           <div>
             <h4 className="font-bold text-amber-900">Atenção ao Atendimento</h4>
             <p className="text-amber-800 text-sm mt-1">
-              Oriente a equipe a responder os leads do WhatsApp em até 1 hora nos horários comerciais. A velocidade de resposta é o principal fator de conversão nesse modelo de campanha.
+              Lembre-se de orientar sua equipe a responder os leads do WhatsApp em até 1 hora durante o horário comercial. A velocidade de resposta de vocês é o principal fator de conversão nesse modelo de campanha!
             </p>
           </div>
         </motion.div>
