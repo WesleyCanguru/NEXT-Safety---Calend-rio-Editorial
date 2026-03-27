@@ -37,10 +37,10 @@ export function useAgencyFinanceiro(monthYear: string) {
         id: `temp-${c.id}`,
         client_id: c.id,
         month_year: monthYear,
-        base_value: 0,
+        base_value: c.base_value || 0,
         extra_value: 0,
         total_value: 0,
-        due_day: 10,
+        due_day: c.due_day || 10,
         status: 'pending',
         notes: null,
         paid_at: null,
@@ -71,29 +71,48 @@ export function useAgencyFinanceiro(monthYear: string) {
 
   const updateBilling = async (billing: Partial<AgencyBilling>) => {
     try {
+      const existing = billings.find(b => b.id === billing.id || b.client_id === billing.client_id);
+      
+      const base = billing.base_value !== undefined ? billing.base_value : (existing?.base_value || 0);
+      const extra = billing.extra_value !== undefined ? billing.extra_value : (existing?.extra_value || 0);
+      const total = base + extra;
+
+      // Define exactly what we want to save to the DB to avoid sending extra fields
+      const dbData = {
+        client_id: billing.client_id || existing?.client_id,
+        month_year: billing.month_year || existing?.month_year || monthYear,
+        base_value: base,
+        extra_value: extra,
+        total_value: total,
+        due_day: billing.due_day !== undefined ? billing.due_day : (existing?.due_day || 10),
+        status: billing.status || existing?.status || 'pending',
+        notes: billing.notes !== undefined ? billing.notes : (existing?.notes || null),
+        paid_at: billing.paid_at !== undefined ? billing.paid_at : (existing?.paid_at || null),
+      };
+
       if (billing.id?.startsWith('temp-')) {
-        // Create new record
-        const { client, id, ...newRecord } = billing as any;
         const { data, error } = await supabase
           .from('agency_billing')
-          .insert([newRecord])
-          .select('*, client:clients(*)')
-          .single();
+          .insert([dbData])
+          .select('*, client:clients(*)');
         
         if (error) throw error;
-        setBillings(prev => prev.map(b => b.client_id === data.client_id ? data : b));
+        if (data && data.length > 0) {
+          const inserted = data[0];
+          setBillings(prev => prev.map(b => b.client_id === inserted.client_id ? inserted : b));
+        }
       } else {
-        // Update existing
-        const { client, ...updateData } = billing as any;
         const { data, error } = await supabase
           .from('agency_billing')
-          .update(updateData)
+          .update(dbData)
           .eq('id', billing.id)
-          .select('*, client:clients(*)')
-          .single();
+          .select('*, client:clients(*)');
 
         if (error) throw error;
-        setBillings(prev => prev.map(b => b.id === data.id ? data : b));
+        if (data && data.length > 0) {
+          const updated = data[0];
+          setBillings(prev => prev.map(b => b.id === updated.id ? updated : b));
+        }
       }
     } catch (error) {
       console.error('Error updating billing:', error);

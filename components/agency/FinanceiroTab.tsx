@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Calendar,
   Save,
-  MoreVertical
+  Edit2,
+  X
 } from 'lucide-react';
 import { useAgencyFinanceiro } from '../../hooks/useAgencyFinanceiro';
 import dayjs from 'dayjs';
@@ -21,7 +22,9 @@ export const FinanceiroTab: React.FC = () => {
   const [currentMonthYear, setCurrentMonthYear] = useState(dayjs().format('YYYY-MM'));
   const { billings, expenses, loading, updateBilling, addExpense, deleteExpense } = useAgencyFinanceiro(currentMonthYear);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [editingBilling, setEditingBilling] = useState<any>(null);
   const [newExpense, setNewExpense] = useState({ description: '', category: 'fixed' as 'fixed' | 'variable', amount: 0 });
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const stats = useMemo(() => {
     const totalToReceive = billings.reduce((acc, b) => acc + (b.base_value + b.extra_value), 0);
@@ -47,14 +50,36 @@ export const FinanceiroTab: React.FC = () => {
     setNewExpense({ description: '', category: 'fixed', amount: 0 });
   };
 
+  const handleUpdateBilling = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingBilling && !isUpdating) {
+      setIsUpdating(true);
+      try {
+        await updateBilling(editingBilling);
+        setEditingBilling(null);
+      } catch (error) {
+        console.error('Failed to update billing:', error);
+      } finally {
+        setIsUpdating(false);
+      }
+    }
+  };
+
   const getStatusBadge = (billing: any) => {
-    const today = dayjs();
-    const dueDay = billing.due_day;
-    const isOverdue = billing.status !== 'paid' && today.date() > dueDay && today.format('YYYY-MM') === currentMonthYear;
+    if (billing.status === 'paid') {
+      return <span className="px-3 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase tracking-widest">Pago</span>;
+    }
     
-    if (billing.status === 'paid') return <span className="px-3 py-1 bg-green-50 text-green-600 text-[10px] font-bold rounded-full uppercase tracking-widest">Pago</span>;
-    if (isOverdue) return <span className="px-3 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-full uppercase tracking-widest">Atrasado</span>;
-    return <span className="px-3 py-1 bg-yellow-50 text-yellow-600 text-[10px] font-bold rounded-full uppercase tracking-widest">Pendente</span>;
+    const today = dayjs();
+    // Get the due date for the specific month/year of the billing
+    const billingDate = dayjs(billing.month_year).date(billing.due_day);
+    const isOverdue = today.isAfter(billingDate, 'day');
+    
+    if (isOverdue || billing.status === 'overdue') {
+      return <span className="px-3 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-full uppercase tracking-widest">Atrasado</span>;
+    }
+    
+    return <span className="px-3 py-1 bg-orange-100 text-orange-700 text-[10px] font-bold rounded-full uppercase tracking-widest">Pendente</span>;
   };
 
   return (
@@ -134,6 +159,7 @@ export const FinanceiroTab: React.FC = () => {
                 <th className="px-8 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Extras</th>
                 <th className="px-8 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Total</th>
                 <th className="px-8 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Vencimento</th>
+                <th className="px-8 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Notas</th>
                 <th className="px-8 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Status</th>
                 <th className="px-8 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Ações</th>
               </tr>
@@ -150,35 +176,55 @@ export const FinanceiroTab: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <input 
-                      type="number" 
-                      defaultValue={billing.base_value}
-                      onBlur={(e) => updateBilling({ id: billing.id, client_id: billing.client_id, month_year: currentMonthYear, base_value: Number(e.target.value) })}
-                      className="w-24 bg-transparent border-b border-transparent focus:border-blue-600 outline-none font-medium text-brand-dark"
-                    />
+                    <span className="font-medium text-brand-dark">{formatCurrency(billing.base_value)}</span>
                   </td>
                   <td className="px-8 py-6">
-                    <input 
-                      type="number" 
-                      defaultValue={billing.extra_value}
-                      onBlur={(e) => updateBilling({ id: billing.id, client_id: billing.client_id, month_year: currentMonthYear, extra_value: Number(e.target.value) })}
-                      className="w-24 bg-transparent border-b border-transparent focus:border-blue-600 outline-none font-medium text-brand-dark"
-                    />
+                    <span className="font-medium text-brand-dark">{formatCurrency(billing.extra_value)}</span>
                   </td>
                   <td className="px-8 py-6 font-bold text-brand-dark">
                     {formatCurrency(billing.base_value + billing.extra_value)}
                   </td>
-                  <td className="px-8 py-6 text-gray-500 font-medium">Dia {billing.due_day}</td>
+                  <td className="px-8 py-6">
+                    <span className="text-gray-500 font-medium">Dia {billing.due_day}</span>
+                  </td>
+                  <td className="px-8 py-6">
+                    <input 
+                      type="text" 
+                      placeholder="Nota rápida..."
+                      defaultValue={billing.notes || ''}
+                      onBlur={(e) => updateBilling({ id: billing.id, client_id: billing.client_id, month_year: currentMonthYear, notes: e.target.value })}
+                      className="w-32 bg-transparent border-b border-gray-100 focus:border-blue-600 outline-none text-xs text-gray-500 italic py-1"
+                    />
+                  </td>
                   <td className="px-8 py-6">{getStatusBadge(billing)}</td>
                   <td className="px-8 py-6">
-                    {billing.status !== 'paid' && (
+                    <div className="flex items-center gap-2">
                       <button 
-                        onClick={() => updateBilling({ id: billing.id, client_id: billing.client_id, month_year: currentMonthYear, status: 'paid', paid_at: new Date().toISOString() })}
-                        className="px-4 py-2 bg-green-50 text-green-600 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-green-600 hover:text-white transition-all"
+                        onClick={() => setEditingBilling(billing)}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                        title="Editar Detalhes"
                       >
-                        Marcar como Pago
+                        <Edit2 size={16} />
                       </button>
-                    )}
+                      {billing.status !== 'paid' ? (
+                        <button 
+                          onClick={() => updateBilling({ 
+                            id: billing.id, 
+                            client_id: billing.client_id, 
+                            month_year: billing.month_year, 
+                            status: 'paid', 
+                            paid_at: new Date().toISOString() 
+                          })}
+                          className="px-4 py-2 bg-green-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-600/20 whitespace-nowrap"
+                        >
+                          Marcar Pago
+                        </button>
+                      ) : (
+                        <div className="px-4 py-2 bg-gray-50 text-gray-400 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-gray-100 whitespace-nowrap">
+                          Recebido
+                        </div>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -234,7 +280,12 @@ export const FinanceiroTab: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl"
           >
-            <h3 className="text-2xl font-bold text-brand-dark mb-8">Nova Despesa</h3>
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-2xl font-bold text-brand-dark">Nova Despesa</h3>
+              <button onClick={() => setShowExpenseModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={24} />
+              </button>
+            </div>
             <form onSubmit={handleAddExpense} className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Descrição</label>
@@ -283,6 +334,100 @@ export const FinanceiroTab: React.FC = () => {
                   className="flex-1 py-4 bg-brand-dark text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-gray-800 transition-all shadow-xl shadow-brand-dark/10"
                 >
                   Salvar
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Billing Edit Modal */}
+      {editingBilling && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl"
+          >
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h3 className="text-2xl font-bold text-brand-dark">Editar Faturamento</h3>
+                <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400">{editingBilling.client?.name}</p>
+              </div>
+              <button onClick={() => setEditingBilling(null)} className="text-gray-400 hover:text-gray-600">
+                <X size={24} />
+              </button>
+            </div>
+            <form onSubmit={handleUpdateBilling} className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Valor Base (R$)</label>
+                  <input 
+                    type="number" 
+                    required
+                    value={editingBilling.base_value}
+                    onChange={(e) => setEditingBilling({ ...editingBilling, base_value: Number(e.target.value) })}
+                    className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-brand-dark/5 focus:border-brand-dark outline-none transition-all font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Extras (R$)</label>
+                  <input 
+                    type="number" 
+                    required
+                    value={editingBilling.extra_value}
+                    onChange={(e) => setEditingBilling({ ...editingBilling, extra_value: Number(e.target.value) })}
+                    className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-brand-dark/5 focus:border-brand-dark outline-none transition-all font-medium"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Dia Vencimento</label>
+                  <input 
+                    type="number" 
+                    required min={1} max={31}
+                    value={editingBilling.due_day}
+                    onChange={(e) => setEditingBilling({ ...editingBilling, due_day: Number(e.target.value) })}
+                    className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-brand-dark/5 focus:border-brand-dark outline-none transition-all font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Status</label>
+                  <select 
+                    value={editingBilling.status}
+                    onChange={(e) => setEditingBilling({ ...editingBilling, status: e.target.value as any })}
+                    className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-brand-dark/5 focus:border-brand-dark outline-none transition-all font-medium"
+                  >
+                    <option value="pending">Pendente</option>
+                    <option value="paid">Pago</option>
+                    <option value="overdue">Atrasado</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Notas / Observações</label>
+                <textarea 
+                  value={editingBilling.notes || ''}
+                  onChange={(e) => setEditingBilling({ ...editingBilling, notes: e.target.value })}
+                  className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-brand-dark/5 focus:border-brand-dark outline-none transition-all font-medium h-24 resize-none"
+                  placeholder="Ex: Pago via Pix, desconto aplicado..."
+                />
+              </div>
+              <div className="flex gap-4 pt-4">
+                <button 
+                  type="button"
+                  onClick={() => setEditingBilling(null)}
+                  className="flex-1 py-4 bg-gray-50 text-gray-500 rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-gray-100 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isUpdating}
+                  className="flex-1 py-4 bg-brand-dark text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-gray-800 transition-all shadow-xl shadow-brand-dark/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUpdating ? 'Salvando...' : 'Confirmar'}
                 </button>
               </div>
             </form>

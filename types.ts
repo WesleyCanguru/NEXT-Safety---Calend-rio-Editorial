@@ -162,6 +162,8 @@ export interface Client {
   organic_reportei_url?: string | null;
   paid_reportei_url?: string | null;
   onboarding_completed?: boolean;
+  base_value?: number;
+  due_day?: number;
   created_at?: string;
 }
 

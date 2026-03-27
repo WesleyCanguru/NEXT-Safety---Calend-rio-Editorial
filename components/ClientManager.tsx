@@ -42,6 +42,8 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
     traffic_platforms: [] as string[],
     password: '',
     logo_url: '',
+    base_value: 0,
+    due_day: 10,
   });
   const [uploading, setUploading] = useState(false);
 
@@ -79,6 +81,8 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
         social_networks: socialNetworks,
         traffic_platforms: form.traffic_platforms,
         logo_url: form.logo_url || null,
+        base_value: form.base_value,
+        due_day: form.due_day,
       };
 
       let clientData;
@@ -210,6 +214,8 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
       traffic_platforms: [],
       password: '',
       logo_url: '',
+      base_value: 0,
+      due_day: 10,
     });
     setEditingClientId(null);
   };
@@ -232,6 +238,8 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
       traffic_platforms: client.traffic_platforms || [],
       password: '', // Não carregamos a senha
       logo_url: client.logo_url || '',
+      base_value: client.base_value || 0,
+      due_day: client.due_day || 10,
     });
     setEditingClientId(client.id);
     setShowForm(true);
@@ -496,6 +504,35 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
                       <span className="text-sm text-gray-700">{service}</span>
                     </label>
                   ))}
+                </div>
+              </div>
+
+              <div className="sm:col-span-2 mt-4 pt-6 border-t border-gray-100">
+                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">
+                  Configurações Financeiras (Padrão)
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Valor Base Mensal (R$)</label>
+                    <input 
+                      type="number" 
+                      value={form.base_value} 
+                      onChange={e => setForm(f => ({...f, base_value: Number(e.target.value)}))}
+                      placeholder="Ex: 1500"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Dia de Vencimento Padrão</label>
+                    <input 
+                      type="number" 
+                      value={form.due_day} 
+                      min={1} max={31}
+                      onChange={e => setForm(f => ({...f, due_day: Number(e.target.value)}))}
+                      placeholder="Ex: 10"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
+                  </div>
                 </div>
               </div>
 
