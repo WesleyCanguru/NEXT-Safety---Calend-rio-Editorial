@@ -18,6 +18,8 @@ import { ProspeccaoTab } from './ProspeccaoTab';
 import { ClientesTab } from './ClientesTab';
 import { Logo } from '../Logo';
 
+import { useAuth } from '../../lib/supabase';
+
 interface AgencyDashboardProps {
   onBack: () => void;
   onSelectClient: (client: any) => void;
@@ -26,7 +28,12 @@ interface AgencyDashboardProps {
 type Tab = 'financeiro' | 'prospeccao' | 'clientes';
 
 export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSelectClient }) => {
+  const { userRole } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('clientes');
+
+  if (userRole !== 'admin') {
+    return null;
+  }
 
   const tabs = [
     { id: 'clientes', label: 'Clientes', icon: Users },
@@ -40,9 +47,18 @@ export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSele
       <header className="bg-white/70 backdrop-blur-xl border-b border-black/[0.02] sticky top-0 z-50 shadow-[0_1px_10px_rgba(0,0,0,0.02)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20 sm:h-24">
-            <div className="flex flex-col">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">Painel Interno</span>
-              <span className="text-sm font-bold text-brand-dark uppercase tracking-widest">Canguru Digital</span>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={onBack}
+                className="p-3 rounded-2xl bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-brand-dark transition-all border border-black/[0.02]"
+                title="Voltar"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">Painel Interno</span>
+                <span className="text-sm font-bold text-brand-dark uppercase tracking-widest">Canguru Digital</span>
+              </div>
             </div>
 
             <div className="flex items-center gap-3 sm:gap-6">

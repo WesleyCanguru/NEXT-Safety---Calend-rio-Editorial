@@ -85,137 +85,139 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
       </div>
 
       {/* Header Fixo */}
-      <header className="bg-white/70 backdrop-blur-xl border-b border-black/[0.02] sticky top-0 z-50 shadow-[0_1px_10px_rgba(0,0,0,0.02)]">
-        {/* Linha Superior: Logo e Botões de Navegação */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20 sm:h-24">
-            {/* Área de Logos */}
-            <div className="flex items-center gap-4 sm:gap-10 overflow-hidden">
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                className="cursor-pointer flex items-center gap-2 sm:gap-4 shrink-0"
-                onClick={() => setView('dashboard')}
-              >
-                {activeClient ? (
-                  activeClient.logo_url ? (
-                    <img src={activeClient.logo_url} alt={activeClient.name} className="h-10 sm:h-20 w-auto max-w-[100px] sm:max-w-[200px] object-contain mix-blend-multiply" />
+      {view !== 'agencyDashboard' && (
+        <header className="bg-white/70 backdrop-blur-xl border-b border-black/[0.02] sticky top-0 z-50 shadow-[0_1px_10px_rgba(0,0,0,0.02)]">
+          {/* Linha Superior: Logo e Botões de Navegação */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-20 sm:h-24">
+              {/* Área de Logos */}
+              <div className="flex items-center gap-4 sm:gap-10 overflow-hidden">
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  className="cursor-pointer flex items-center gap-2 sm:gap-4 shrink-0"
+                  onClick={() => setView('dashboard')}
+                >
+                  {activeClient ? (
+                    activeClient.logo_url ? (
+                      <img src={activeClient.logo_url} alt={activeClient.name} className="h-10 sm:h-20 w-auto max-w-[100px] sm:max-w-[200px] object-contain mix-blend-multiply" />
+                    ) : (
+                      <span className="text-lg sm:text-3xl font-bold text-brand-dark tracking-tighter serif italic truncate max-w-[120px] sm:max-w-none">{activeClient.name}</span>
+                    )
                   ) : (
-                    <span className="text-lg sm:text-3xl font-bold text-brand-dark tracking-tighter serif italic truncate max-w-[120px] sm:max-w-none">{activeClient.name}</span>
-                  )
-                ) : (
-                  <Logo size="medium" />
-                )}
-                {activeClient && (
-                  <>
-                    <div className="h-6 w-px bg-gray-100 hidden sm:block"></div>
-                    <div className="flex items-center gap-1 sm:gap-2 opacity-40 hover:opacity-100 transition-opacity duration-500">
-                      <span className="text-[5px] sm:text-[7px] uppercase tracking-[0.3em] text-gray-400 font-bold">Strategy by</span>
-                      <div className="scale-75 sm:scale-100 origin-left">
-                        <Logo size="small" />
+                    <Logo size="medium" />
+                  )}
+                  {activeClient && (
+                    <>
+                      <div className="h-6 w-px bg-gray-100 hidden sm:block"></div>
+                      <div className="flex items-center gap-1 sm:gap-2 opacity-40 hover:opacity-100 transition-opacity duration-500">
+                        <span className="text-[5px] sm:text-[7px] uppercase tracking-[0.3em] text-gray-400 font-bold">Strategy by</span>
+                        <div className="scale-75 sm:scale-100 origin-left">
+                          <Logo size="small" />
+                        </div>
                       </div>
-                    </div>
-                  </>
-                )}
-              </motion.div>
-            </div>
-
-            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-              <div className="hidden md:flex flex-col items-end mr-4">
-                <span className="text-[8px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-0.5">Membro Premium</span>
-                <span className="text-[11px] font-bold text-brand-dark uppercase tracking-widest">{getRoleLabel()}</span>
+                    </>
+                  )}
+                </motion.div>
               </div>
-              {userRole === 'admin' && (
+
+              <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                <div className="hidden md:flex flex-col items-end mr-4">
+                  <span className="text-[8px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-0.5">Membro Premium</span>
+                  <span className="text-[11px] font-bold text-brand-dark uppercase tracking-widest">{getRoleLabel()}</span>
+                </div>
+                {userRole === 'admin' && (
+                  <button
+                    onClick={onGoToAgencyHome}
+                    className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] transition-all bg-gray-50/50 text-gray-500 hover:bg-gray-100 hover:text-brand-dark border border-black/[0.02]"
+                    title="Menu Inicial"
+                  >
+                    <Home size={14} />
+                    <span className="hidden sm:inline">Menu Inicial</span>
+                  </button>
+                )}
+                {userRole === 'admin' && (
+                  <button
+                    onClick={() => setView('agencyDashboard')}
+                    className={`flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] transition-all ${
+                      view === 'agencyDashboard'
+                        ? 'bg-brand-dark text-white shadow-xl shadow-brand-dark/20'
+                        : 'bg-gray-50/50 text-gray-500 hover:text-brand-dark hover:bg-gray-100 border border-black/[0.02]'
+                    }`}
+                    title="Painel Canguru"
+                  >
+                    <Shield size={14} />
+                    <span className="hidden sm:inline">Painel Canguru</span>
+                  </button>
+                )}
+                {userRole === 'admin' && (
+                  <button
+                    onClick={() => {
+                      setActiveClient(null);
+                      if (onGoToClientSelector) onGoToClientSelector();
+                    }}
+                    className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] transition-all bg-gray-50/50 text-gray-500 hover:bg-gray-100 hover:text-brand-dark border border-black/[0.02]"
+                    title="Trocar Cliente"
+                  >
+                    <Building2 size={14} />
+                    <span className="hidden sm:inline">Trocar Cliente</span>
+                  </button>
+                )}
                 <button
-                  onClick={onGoToAgencyHome}
-                  className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] transition-all bg-gray-50/50 text-gray-500 hover:bg-gray-100 hover:text-brand-dark border border-black/[0.02]"
-                  title="Menu Inicial"
+                  onClick={logout}
+                  className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-red-50/50 text-red-400 hover:bg-red-50 hover:text-red-600 transition-all active:scale-95 border border-red-100/20"
+                  title="Sair"
                 >
-                  <Home size={14} />
-                  <span className="hidden sm:inline">Menu Inicial</span>
+                  <LogOut size={16} className="sm:w-[18px] sm:h-[18px]" />
                 </button>
-              )}
-              {userRole === 'admin' && (
-                <button
-                  onClick={() => setView('agencyDashboard')}
-                  className={`flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] transition-all ${
-                    view === 'agencyDashboard'
-                      ? 'bg-brand-dark text-white shadow-xl shadow-brand-dark/20'
-                      : 'bg-gray-50/50 text-gray-500 hover:text-brand-dark hover:bg-gray-100 border border-black/[0.02]'
-                  }`}
-                  title="Painel Canguru"
-                >
-                  <Shield size={14} />
-                  <span className="hidden sm:inline">Painel Canguru</span>
-                </button>
-              )}
-              {userRole === 'admin' && (
-                <button
-                  onClick={() => {
-                    setActiveClient(null);
-                    if (onGoToClientSelector) onGoToClientSelector();
-                  }}
-                  className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] transition-all bg-gray-50/50 text-gray-500 hover:bg-gray-100 hover:text-brand-dark border border-black/[0.02]"
-                  title="Trocar Cliente"
-                >
-                  <Building2 size={14} />
-                  <span className="hidden sm:inline">Trocar Cliente</span>
-                </button>
-              )}
-              <button
-                onClick={logout}
-                className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-red-50/50 text-red-400 hover:bg-red-50 hover:text-red-600 transition-all active:scale-95 border border-red-100/20"
-                title="Sair"
-              >
-                <LogOut size={16} className="sm:w-[18px] sm:h-[18px]" />
-              </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Linha Inferior: Navegação dos Meses */}
-        <AnimatePresence>
-          {(view === 'home' || view === 'month-detail') && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="border-t border-black/[0.02] bg-white/30 overflow-hidden"
-            >
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-                  {monthlyPlans.map((plan) => {
-                    const monthName = MONTH_NAMES[plan.month - 1];
-                    const isActive = selectedMonth === monthName;
-                    
-                    const hasTheme = !!plan.theme && plan.theme.trim() !== '';
-                    const hasObjective = !!plan.objectives && plan.objectives.length > 0 && plan.objectives[0].trim() !== '';
-                    const isConfigured = hasTheme && hasObjective;
-                    const isLocked = userRole !== 'admin' && !isConfigured;
+          {/* Linha Inferior: Navegação dos Meses */}
+          <AnimatePresence>
+            {(view === 'home' || view === 'month-detail') && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="border-t border-black/[0.02] bg-white/30 overflow-hidden"
+              >
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+                    {monthlyPlans.map((plan) => {
+                      const monthName = MONTH_NAMES[plan.month - 1];
+                      const isActive = selectedMonth === monthName;
+                      
+                      const hasTheme = !!plan.theme && plan.theme.trim() !== '';
+                      const hasObjective = !!plan.objectives && plan.objectives.length > 0 && plan.objectives[0].trim() !== '';
+                      const isConfigured = hasTheme && hasObjective;
+                      const isLocked = userRole !== 'admin' && !isConfigured;
 
-                    return (
-                      <button
-                        key={plan.id}
-                        onClick={() => !isLocked && handleSelectMonth(monthName)}
-                        className={`
-                          whitespace-nowrap px-6 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] transition-all border
-                          ${isLocked 
-                            ? 'bg-gray-50 border-transparent text-gray-300 cursor-not-allowed opacity-60' 
-                            : isActive
-                              ? 'bg-brand-dark border-brand-dark text-white shadow-xl transform scale-105'
-                              : 'bg-white border-black/[0.03] text-gray-400 hover:border-brand-dark hover:text-brand-dark'
-                          }
-                        `}
-                      >
-                        {monthName}
-                      </button>
-                    );
-                  })}
+                      return (
+                        <button
+                          key={plan.id}
+                          onClick={() => !isLocked && handleSelectMonth(monthName)}
+                          className={`
+                            whitespace-nowrap px-6 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] transition-all border
+                            ${isLocked 
+                              ? 'bg-gray-50 border-transparent text-gray-300 cursor-not-allowed opacity-60' 
+                              : isActive
+                                ? 'bg-brand-dark border-brand-dark text-white shadow-xl transform scale-105'
+                                : 'bg-white border-black/[0.03] text-gray-400 hover:border-brand-dark hover:text-brand-dark'
+                            }
+                          `}
+                        >
+                          {monthName}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </header>
+      )}
 
       {/* Main Content */}
       <main className="flex-grow py-6 sm:py-10">
@@ -243,7 +245,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
-              {view === 'agencyDashboard' ? (
+              {view === 'agencyDashboard' && userRole === 'admin' ? (
                 <AgencyDashboard 
                   onBack={() => {
                     if (onExitAgencyDashboard) {
@@ -260,6 +262,18 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
                     }
                   }} 
                 />
+              ) : view === 'agencyDashboard' && userRole !== 'admin' ? (
+                <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+                  <Shield size={48} className="text-red-400 mb-4" />
+                  <h2 className="text-2xl font-bold text-brand-dark mb-2">Acesso Restrito</h2>
+                  <p className="text-gray-500 mb-6">Você não tem permissão para acessar esta área.</p>
+                  <button 
+                    onClick={() => setView('dashboard')}
+                    className="px-8 py-3 bg-brand-dark text-white rounded-2xl font-bold text-sm uppercase tracking-widest"
+                  >
+                    Voltar ao Dashboard
+                  </button>
+                </div>
               ) : view === 'website' ? (
                 <WebsiteView onBack={() => setView('dashboard')} />
               ) : view === 'paid-traffic' ? (
