@@ -490,7 +490,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
         className="mt-20 flex flex-col items-center gap-6"
       >
         <p className="text-[12px] text-gray-400 font-medium">
-          Precisa de ajuda? Entre em contato: <a href="mailto:contato@cangurudigital.com.br" className="text-brand-dark font-bold hover:underline">contato@cangurudigital.com.br</a>
+          Precisa de ajuda? Nos chame no grupo de WhatsApp.
         </p>
         <div className="flex items-center gap-4 select-none pointer-events-none opacity-5">
           <Sparkles size={16} />
