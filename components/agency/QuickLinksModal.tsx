@@ -18,7 +18,7 @@ interface QuickLinksModalProps {
   client: any;
   links: ClientQuickLink[];
   onClose: () => void;
-  onAdd: (clientId: string, link: Partial<ClientQuickLink>) => void;
+  onAdd: (link: Omit<ClientQuickLink, 'id' | 'created_at'>) => void;
   onDelete: (id: string) => void;
 }
 
@@ -32,7 +32,12 @@ export const QuickLinksModal: React.FC<QuickLinksModalProps> = ({ client, links,
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (newLink.label && newLink.url) {
-      onAdd(client.id, newLink);
+      onAdd({
+        client_id: client.id,
+        type: (newLink.type as any) || 'other',
+        label: newLink.label || '',
+        url: newLink.url || ''
+      });
       setNewLink({ type: 'other', label: '', url: '' });
     }
   };

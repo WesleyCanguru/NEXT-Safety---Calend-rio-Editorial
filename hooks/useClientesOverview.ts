@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 export function useClientesOverview() {
   const [clients, setClients] = useState<Client[]>([]);
   const [quickLinks, setQuickLinks] = useState<ClientQuickLink[]>([]);
-  const [stats, setStats] = useState<Record<string, { publishedToday: number, nextPublication: string | null, totalPublishedMonth: number, changesRequested: number, pendingApproval: number }>>({});
+  const [stats, setStats] = useState<Record<string, { publishedToday: number, nextPublication: string | null, totalPublishedMonth: number, changesRequested: number, pendingApproval: number, drafts: number }>>({});
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
@@ -32,7 +32,7 @@ export function useClientesOverview() {
 
       // Fetch Posts for stats
       const todayStr = dayjs().format('DD-MM-YYYY');
-      const currentMonthStr = dayjs().format('-MM-YYYY-');
+      const currentMonthStr = dayjs().format('MM-YYYY');
 
       const { data: postsData } = await supabase
         .from('posts')
@@ -40,27 +40,64 @@ export function useClientesOverview() {
 
       const posts = (postsData || []) as PostData[];
 
-      const statsMap: Record<string, { publishedToday: number, nextPublication: string | null, totalPublishedMonth: number, changesRequested: number, pendingApproval: number }> = {};
+      const statsMap: Record<string, { publishedToday: number, nextPublication: string | null, totalPublishedMonth: number, changesRequested: number, pendingApproval: number, drafts: number }> = {};
 
       clientList.forEach(client => {
         const clientPosts = posts.filter(p => p.client_id === client.id && p.status !== 'deleted');
         
-        const publishedToday = clientPosts.filter(p => p.status === 'published' && p.date_key.startsWith(todayStr)).length;
+        // Agrupar posts por data e tema para não duplicar a contagem (ex: Meta e LinkedIn no mesmo dia)
+        const groupedPostsMap = new Map<string, any>();
         
-        const totalPublishedMonth = clientPosts.filter(p => p.status === 'published' && p.date_key.includes(currentMonthStr)).length;
-        
-        const changesRequested = clientPosts.filter(p => p.status === 'changes_requested' && p.date_key.includes(currentMonthStr)).length;
-        
-        const pendingApproval = clientPosts.filter(p => p.status === 'pending_approval' && p.date_key.includes(currentMonthStr)).length;
-
-        const nextPost = clientPosts
-          .filter(p => (p.status === 'scheduled' || p.status === 'approved'))
-          .map(p => {
-            const parts = p.date_key.split('-');
-            if (parts.length >= 3) {
-              return { ...p, sortDate: dayjs(`${parts[2]}-${parts[1]}-${parts[0]}`).valueOf(), dateStr: `${parts[2]}-${parts[1]}-${parts[0]}` };
+        clientPosts.forEach(p => {
+          const parts = p.date_key.split('-'); // DD-MM-YYYY-platform-clientId
+          const dateStr = parts.length >= 3 ? `${parts[0]}-${parts[1]}-${parts[2]}` : p.date_key;
+          const theme = p.theme || 'Sem tema definido';
+          const groupKey = `${dateStr}-${theme}`;
+          
+          if (!groupedPostsMap.has(groupKey)) {
+            groupedPostsMap.set(groupKey, {
+              ...p,
+              groupStatus: p.status,
+              dateStr: dateStr
+            });
+          } else {
+            const existing = groupedPostsMap.get(groupKey);
+            const s1 = existing.groupStatus;
+            const s2 = p.status;
+            
+            // Hierarquia de status: changes_requested > pending_approval > draft > scheduled > approved > published
+            const hierarchy = ['changes_requested', 'pending_approval', 'draft', 'scheduled', 'approved', 'published'];
+            const i1 = hierarchy.indexOf(s1);
+            const i2 = hierarchy.indexOf(s2);
+            
+            // Se o status atual (s2) for mais prioritário (menor índice) que o existente (s1), atualiza
+            if (i2 !== -1 && (i1 === -1 || i2 < i1)) {
+              existing.groupStatus = s2;
             }
-            return { ...p, sortDate: 0, dateStr: '' };
+          }
+        });
+
+        const groupedPosts = Array.from(groupedPostsMap.values());
+        
+        const publishedToday = groupedPosts.filter(p => p.groupStatus === 'published' && p.dateStr === todayStr).length;
+        
+        const totalPublishedMonth = groupedPosts.filter(p => p.groupStatus === 'published' && p.dateStr.includes(currentMonthStr)).length;
+        
+        const changesRequested = groupedPosts.filter(p => p.groupStatus === 'changes_requested' && p.dateStr.includes(currentMonthStr)).length;
+        
+        const pendingApproval = groupedPosts.filter(p => p.groupStatus === 'pending_approval' && p.dateStr.includes(currentMonthStr)).length;
+
+        const drafts = groupedPosts.filter(p => p.groupStatus === 'draft' && p.dateStr.includes(currentMonthStr)).length;
+
+        const nextPost = groupedPosts
+          .filter(p => (p.groupStatus === 'scheduled' || p.groupStatus === 'approved'))
+          .map(p => {
+            const parts = p.dateStr.split('-');
+            if (parts.length >= 3) {
+              const isoDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+              return { ...p, sortDate: dayjs(isoDate).valueOf(), isoDate };
+            }
+            return { ...p, sortDate: 0, isoDate: '' };
           })
           .filter(p => p.sortDate >= dayjs().startOf('day').valueOf())
           .sort((a, b) => a.sortDate - b.sortDate)[0];
@@ -70,7 +107,8 @@ export function useClientesOverview() {
           totalPublishedMonth,
           changesRequested,
           pendingApproval,
-          nextPublication: nextPost ? nextPost.dateStr : null
+          drafts,
+          nextPublication: nextPost ? nextPost.isoDate : null
         };
       });
 
@@ -88,17 +126,23 @@ export function useClientesOverview() {
 
   const addQuickLink = async (link: Omit<ClientQuickLink, 'id' | 'created_at'>) => {
     try {
+      console.log('Tentando adicionar link:', link);
       const { data, error } = await supabase
         .from('client_quick_links')
         .insert([link])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro detalhado do Supabase:', error);
+        throw error;
+      }
+      
       setQuickLinks(prev => [...prev, data]);
       return data;
     } catch (error) {
-      console.error('Error adding quick link:', error);
+      console.error('Erro ao adicionar link rápido:', error);
+      alert('Erro ao salvar o link. Verifique se a tabela existe no Supabase.');
       throw error;
     }
   };

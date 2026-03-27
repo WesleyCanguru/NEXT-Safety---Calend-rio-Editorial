@@ -55,7 +55,7 @@ export const ClientesTab: React.FC<ClientesTabProps> = ({ onSelectClient }) => {
       {/* Clients Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {clients.map((client) => {
-          const clientStats = stats[client.id] || { publishedToday: 0, nextPublication: null, totalPublishedMonth: 0, changesRequested: 0, pendingApproval: 0 };
+          const clientStats = stats[client.id] || { publishedToday: 0, nextPublication: null, totalPublishedMonth: 0, changesRequested: 0, pendingApproval: 0, drafts: 0 };
           const clientLinks = quickLinks.filter(l => l.client_id === client.id);
 
           return (
@@ -113,6 +113,13 @@ export const ClientesTab: React.FC<ClientesTabProps> = ({ onSelectClient }) => {
                 <div className="space-y-1">
                   <p className="text-[8px] uppercase tracking-widest font-bold text-orange-400">Em Aprovação</p>
                   <span className="text-xl font-bold text-orange-500">{clientStats.pendingApproval}</span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[8px] uppercase tracking-widest font-bold text-gray-400">Rascunho</p>
+                  <span className="text-xl font-bold text-gray-500">{clientStats.drafts}</span>
+                </div>
+                <div className="space-y-1">
+                  {/* Empty space to keep grid balanced before Próxima Publicação */}
                 </div>
                 <div className="col-span-2 space-y-1">
                   <p className="text-[8px] uppercase tracking-widest font-bold text-gray-400">Próxima Publicação</p>

@@ -26,12 +26,12 @@ interface AgencyDashboardProps {
 type Tab = 'financeiro' | 'prospeccao' | 'clientes';
 
 export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSelectClient }) => {
-  const [activeTab, setActiveTab] = useState<Tab>('financeiro');
+  const [activeTab, setActiveTab] = useState<Tab>('clientes');
 
   const tabs = [
+    { id: 'clientes', label: 'Clientes', icon: Users },
     { id: 'financeiro', label: 'Financeiro', icon: DollarSign },
     { id: 'prospeccao', label: 'Prospecção', icon: Search },
-    { id: 'clientes', label: 'Clientes', icon: Users },
   ];
 
   return (
