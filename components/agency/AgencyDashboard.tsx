@@ -40,33 +40,12 @@ export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSele
       <header className="bg-white/70 backdrop-blur-xl border-b border-black/[0.02] sticky top-0 z-50 shadow-[0_1px_10px_rgba(0,0,0,0.02)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20 sm:h-24">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-4">
-                <Logo size="small" />
-                <div className="h-6 w-px bg-gray-100 hidden sm:block"></div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">Painel Interno</span>
-                  <span className="text-sm font-bold text-brand-dark uppercase tracking-widest">Canguru Digital</span>
-                </div>
-              </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">Painel Interno</span>
+              <span className="text-sm font-bold text-brand-dark uppercase tracking-widest">Canguru Digital</span>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="hidden md:flex flex-col items-end mr-4">
-                <span className="text-[8px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-0.5">Membro Premium</span>
-                <span className="text-[11px] font-bold text-brand-dark uppercase tracking-widest">Wesley (Diretor)</span>
-              </div>
-              <div className="bg-blue-50 text-blue-600 p-2 rounded-xl border border-blue-100">
-                <Shield size={18} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div className="border-t border-black/[0.02] bg-white/30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-8 py-4">
+            <div className="flex items-center gap-3 sm:gap-6">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -75,7 +54,7 @@ export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSele
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as Tab)}
                     className={`
-                      flex items-center gap-2 px-6 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] transition-all border
+                      flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] transition-all border
                       ${isActive
                         ? 'bg-brand-dark border-brand-dark text-white shadow-xl transform scale-105'
                         : 'bg-white border-black/[0.03] text-gray-400 hover:border-brand-dark hover:text-brand-dark'
@@ -83,7 +62,7 @@ export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSele
                     `}
                   >
                     <Icon size={14} />
-                    {tab.label}
+                    <span>{tab.label}</span>
                   </button>
                 );
               })}

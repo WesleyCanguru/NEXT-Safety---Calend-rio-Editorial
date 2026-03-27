@@ -99,19 +99,22 @@ export const ProspeccaoTab: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-6">
-          <div className="bg-white px-6 py-3 rounded-2xl border border-black/[0.03] shadow-sm flex items-center gap-3">
-            <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center text-red-600">
-              <Clock size={18} />
+          <div className="bg-white px-6 py-3 rounded-[2rem] border border-black/[0.03] shadow-sm flex items-center gap-4">
+            <div className="w-10 h-10 bg-red-50/50 rounded-2xl flex items-center justify-center text-red-600">
+              <Clock size={18} strokeWidth={1.5} />
             </div>
-            <span className="text-sm font-bold text-brand-dark uppercase tracking-widest">
-              {pendingFollowupsCount} leads com follow-up pendente
-            </span>
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 leading-tight">Follow-ups</span>
+              <span className="text-sm font-bold text-brand-dark uppercase tracking-widest">
+                {pendingFollowupsCount} pendentes
+              </span>
+            </div>
           </div>
         </div>
 
         <button 
           onClick={() => setShowNewLeadModal(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-gray-800 transition-all shadow-xl shadow-brand-dark/10"
+          className="flex items-center gap-3 px-8 py-4 bg-brand-dark text-white rounded-[2rem] font-bold text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-xl shadow-brand-dark/10"
         >
           <Plus size={18} />
           Novo Lead
