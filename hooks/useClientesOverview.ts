@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 export function useClientesOverview() {
   const [clients, setClients] = useState<Client[]>([]);
   const [quickLinks, setQuickLinks] = useState<ClientQuickLink[]>([]);
-  const [stats, setStats] = useState<Record<string, { publishedToday: number, nextPublication: string | null, totalPublishedMonth: number }>>({});
+  const [stats, setStats] = useState<Record<string, { publishedToday: number, nextPublication: string | null, totalPublishedMonth: number, changesRequested: number, pendingApproval: number }>>({});
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
@@ -30,36 +30,47 @@ export function useClientesOverview() {
 
       setQuickLinks((linksData || []) as ClientQuickLink[]);
 
-      // Fetch Editorial Posts for stats
-      const today = dayjs().format('YYYY-MM-DD');
-      const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
-      const endOfMonth = dayjs().endOf('month').format('YYYY-MM-DD');
+      // Fetch Posts for stats
+      const todayStr = dayjs().format('DD-MM-YYYY');
+      const currentMonthStr = dayjs().format('-MM-YYYY-');
 
       const { data: postsData } = await supabase
-        .from('editorial_posts')
-        .select('*')
-        .gte('scheduled_date', startOfMonth)
-        .lte('scheduled_date', endOfMonth);
+        .from('posts')
+        .select('*');
 
-      const posts = (postsData || []) as any[];
+      const posts = (postsData || []) as PostData[];
 
-      const statsMap: Record<string, { publishedToday: number, nextPublication: string | null, totalPublishedMonth: number }> = {};
+      const statsMap: Record<string, { publishedToday: number, nextPublication: string | null, totalPublishedMonth: number, changesRequested: number, pendingApproval: number }> = {};
 
       clientList.forEach(client => {
-        const clientPosts = posts.filter(p => p.client_id === client.id);
+        const clientPosts = posts.filter(p => p.client_id === client.id && p.status !== 'deleted');
         
-        const publishedToday = clientPosts.filter(p => p.status === 'published' && p.scheduled_date === today).length;
+        const publishedToday = clientPosts.filter(p => p.status === 'published' && p.date_key.startsWith(todayStr)).length;
         
-        const totalPublishedMonth = clientPosts.filter(p => p.status === 'published').length;
+        const totalPublishedMonth = clientPosts.filter(p => p.status === 'published' && p.date_key.includes(currentMonthStr)).length;
         
+        const changesRequested = clientPosts.filter(p => p.status === 'changes_requested' && p.date_key.includes(currentMonthStr)).length;
+        
+        const pendingApproval = clientPosts.filter(p => p.status === 'pending_approval' && p.date_key.includes(currentMonthStr)).length;
+
         const nextPost = clientPosts
-          .filter(p => (p.status === 'scheduled' || p.status === 'approved') && p.scheduled_date >= today)
-          .sort((a, b) => dayjs(a.scheduled_date).diff(dayjs(b.scheduled_date)))[0];
+          .filter(p => (p.status === 'scheduled' || p.status === 'approved'))
+          .map(p => {
+            const parts = p.date_key.split('-');
+            if (parts.length >= 3) {
+              return { ...p, sortDate: dayjs(`${parts[2]}-${parts[1]}-${parts[0]}`).valueOf(), dateStr: `${parts[2]}-${parts[1]}-${parts[0]}` };
+            }
+            return { ...p, sortDate: 0, dateStr: '' };
+          })
+          .filter(p => p.sortDate >= dayjs().startOf('day').valueOf())
+          .sort((a, b) => a.sortDate - b.sortDate)[0];
 
         statsMap[client.id] = {
           publishedToday,
           totalPublishedMonth,
-          nextPublication: nextPost ? nextPost.scheduled_date : null
+          changesRequested,
+          pendingApproval,
+          nextPublication: nextPost ? nextPost.dateStr : null
         };
       });
 

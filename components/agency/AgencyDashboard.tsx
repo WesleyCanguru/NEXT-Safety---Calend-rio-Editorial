@@ -41,12 +41,6 @@ export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSele
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20 sm:h-24">
             <div className="flex items-center gap-4">
-              <button 
-                onClick={onBack}
-                className="p-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-400 hover:text-brand-dark"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
               <div className="flex items-center gap-4">
                 <Logo size="small" />
                 <div className="h-6 w-px bg-gray-100 hidden sm:block"></div>

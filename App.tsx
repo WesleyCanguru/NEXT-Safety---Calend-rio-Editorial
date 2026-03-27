@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import dayjs from 'dayjs';
+import 'dayjs/locale/pt-br';
 import { Logo } from './components/Logo';
 import { AnnualOverview } from './components/AnnualOverview';
 import { MonthDetail } from './components/MonthDetail';
@@ -25,6 +27,8 @@ import { AiPhotosView } from './components/AiPhotosView';
 
 import { AgencyHome } from './components/agency/AgencyHome';
 import { AgencyDashboard } from './components/agency/AgencyDashboard';
+
+dayjs.locale('pt-br');
 
 type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'strategic-briefings' | 'documents' | 'paid-traffic' | 'website' | 'password-vault' | 'tutorials' | 'ai-photos' | 'agencyHome' | 'agencyDashboard';
 
