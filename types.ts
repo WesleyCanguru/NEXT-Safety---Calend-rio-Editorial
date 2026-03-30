@@ -228,3 +228,23 @@ export interface ClientQuickLink {
   url: string;
   created_at: string;
 }
+
+// --- NOVOS TIPOS PARA TAREFAS DA AGÊNCIA ---
+
+export type AgencyTaskPriority = 'urgent' | 'high' | 'normal' | 'low';
+export type AgencyTaskStatus = 'pending' | 'done';
+export type AgencyTaskRecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly' | 'custom_days';
+
+export interface AgencyTask {
+  id: string;
+  title: string;
+  description?: string;
+  priority: AgencyTaskPriority;
+  status: AgencyTaskStatus;
+  due_date?: string | null;
+  is_daily: boolean;
+  recurrence_type: AgencyTaskRecurrenceType;
+  recurrence_days?: number[] | null;
+  created_at: string;
+  completed_at?: string | null;
+}

@@ -11,11 +11,13 @@ import {
   LogOut,
   Building2,
   DollarSign,
-  Search
+  Search,
+  ClipboardList
 } from 'lucide-react';
 import { FinanceiroTab } from './FinanceiroTab';
 import { ProspeccaoTab } from './ProspeccaoTab';
 import { ClientesTab } from './ClientesTab';
+import { AgencyTasksTab } from './AgencyTasksTab';
 import { Logo } from '../Logo';
 
 import { useAuth } from '../../lib/supabase';
@@ -25,17 +27,18 @@ interface AgencyDashboardProps {
   onSelectClient: (client: any) => void;
 }
 
-type Tab = 'financeiro' | 'prospeccao' | 'clientes';
+type Tab = 'tasks' | 'financeiro' | 'prospeccao' | 'clientes';
 
 export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSelectClient }) => {
   const { userRole } = useAuth();
-  const [activeTab, setActiveTab] = useState<Tab>('clientes');
+  const [activeTab, setActiveTab] = useState<Tab>('tasks');
 
   if (userRole !== 'admin') {
     return null;
   }
 
   const tabs = [
+    { id: 'tasks', label: 'Processos', icon: ClipboardList },
     { id: 'clientes', label: 'Clientes', icon: Users },
     { id: 'financeiro', label: 'Financeiro', icon: DollarSign },
     { id: 'prospeccao', label: 'Prospecção', icon: Search },
@@ -98,6 +101,7 @@ export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSele
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
+              {activeTab === 'tasks' && <AgencyTasksTab />}
               {activeTab === 'financeiro' && <FinanceiroTab />}
               {activeTab === 'prospeccao' && <ProspeccaoTab />}
               {activeTab === 'clientes' && <ClientesTab onSelectClient={onSelectClient} />}

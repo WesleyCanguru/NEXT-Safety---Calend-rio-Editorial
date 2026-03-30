@@ -45,7 +45,7 @@ export const AgencyHome: React.FC<AgencyHomeProps> = ({ onManageAgency, onAccess
             </div>
             <h2 className="text-2xl font-bold text-brand-dark mb-4">Gerenciar a Agência</h2>
             <p className="text-gray-500 leading-relaxed mb-8">
-              Acesse o painel interno para gerenciar o financeiro, prospecção de novos leads e visão geral dos clientes.
+              Acesse o painel interno para gerenciar processos diários, financeiro, prospecção de novos leads e visão geral dos clientes.
             </p>
             <div className="flex items-center gap-2 text-blue-600 font-bold text-sm uppercase tracking-widest">
               Acessar Painel <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
