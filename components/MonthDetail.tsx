@@ -48,9 +48,6 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
   // Edit State
   const [isEditingPlan, setIsEditingPlan] = useState(false);
   const [editTheme, setEditTheme] = useState('');
-  const [editObjectives, setEditObjectives] = useState('');
-  const [editKeyDates, setEditKeyDates] = useState('');
-  const [editCampaigns, setEditCampaigns] = useState('');
   const [isSavingPlan, setIsSavingPlan] = useState(false);
 
   // Selection State
@@ -467,9 +464,6 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
   const handleEditPlan = () => {
     if (!currentPlan) return;
     setEditTheme(currentPlan.theme || '');
-    setEditObjectives(currentPlan.objectives?.join('\n') || '');
-    setEditKeyDates(currentPlan.key_dates?.join('\n') || '');
-    setEditCampaigns(currentPlan.campaigns?.join('\n') || '');
     setIsEditingPlan(true);
   };
 
@@ -477,15 +471,8 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
     if (!currentPlan) return;
     setIsSavingPlan(true);
     
-    const objectives = editObjectives.split('\n').map(s => s.trim()).filter(Boolean);
-    const key_dates = editKeyDates.split('\n').map(s => s.trim()).filter(Boolean);
-    const campaigns = editCampaigns.split('\n').map(s => s.trim()).filter(Boolean);
-
     const success = await updateMonthlyPlan(currentPlan.id, {
-      theme: editTheme,
-      objectives,
-      key_dates,
-      campaigns
+      theme: editTheme
     });
 
     if (success) {
@@ -798,35 +785,6 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                     placeholder="Ex: Inovação e Segurança"
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="premium-label text-white/60 mb-2 block">Objetivos</label>
-                    <textarea 
-                      value={editObjectives} 
-                      onChange={e => setEditObjectives(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white placeholder-white/20 focus:outline-none focus:border-white/40 transition-all h-24 resize-none font-medium text-sm"
-                      placeholder="Um por linha..."
-                    />
-                  </div>
-                  <div>
-                    <label className="premium-label text-white/60 mb-2 block">Datas Chave</label>
-                    <textarea 
-                      value={editKeyDates} 
-                      onChange={e => setEditKeyDates(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white placeholder-white/20 focus:outline-none focus:border-white/40 transition-all h-24 resize-none font-medium text-sm"
-                      placeholder="Uma por linha..."
-                    />
-                  </div>
-                  <div>
-                    <label className="premium-label text-white/60 mb-2 block">Campanhas</label>
-                    <textarea 
-                      value={editCampaigns} 
-                      onChange={e => setEditCampaigns(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white placeholder-white/20 focus:outline-none focus:border-white/40 transition-all h-24 resize-none font-medium text-sm"
-                      placeholder="Uma por linha..."
-                    />
-                  </div>
-                </div>
                 <div className="flex justify-end gap-4 mt-6">
                   <button 
                     onClick={() => setIsEditingPlan(false)}
@@ -849,34 +807,6 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                 <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-white/80 text-[10px] font-bold uppercase tracking-[0.2em] mb-6 mt-2">
                   <Target size={12} className="text-white/40" />
                   Tema: <span className="text-white">{currentPlan.theme || 'Não definido'}</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
-                   <div className="md:col-span-1">
-                      <h4 className="flex items-center gap-2 text-brand-green font-bold text-sm uppercase tracking-wider mb-2"><Target size={16} /> Objetivos</h4>
-                      <ul className="text-gray-300 leading-relaxed text-sm space-y-1">
-                        {currentPlan.objectives?.map((obj, i) => <li key={i}>• {obj}</li>)}
-                        {(!currentPlan.objectives || currentPlan.objectives.length === 0) && <li>Nenhum objetivo definido.</li>}
-                      </ul>
-                   </div>
-                   <div className="bg-white/5 rounded-xl p-4 border border-white/10 md:col-span-2">
-                      <h4 className="flex items-center gap-2 text-white font-bold text-sm uppercase tracking-wider mb-3"><BarChart3 size={16} /> Visão Geral</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs text-purple-300 font-bold uppercase mb-1">Datas Chave</p>
-                          <ul className="text-sm text-gray-400 space-y-1">
-                            {currentPlan.key_dates?.map((item, i) => <li key={i}>• {item}</li>)}
-                            {(!currentPlan.key_dates || currentPlan.key_dates.length === 0) && <li>Nenhuma data chave.</li>}
-                          </ul>
-                        </div>
-                        <div>
-                          <p className="text-xs text-blue-300 font-bold uppercase mb-1">Campanhas / Entregáveis</p>
-                          <ul className="text-sm text-gray-400 space-y-1">
-                            {currentPlan.campaigns?.map((item, i) => <li key={i}>• {item}</li>)}
-                            {(!currentPlan.campaigns || currentPlan.campaigns.length === 0) && <li>Nenhuma campanha.</li>}
-                          </ul>
-                        </div>
-                      </div>
-                   </div>
                 </div>
               </>
             )}

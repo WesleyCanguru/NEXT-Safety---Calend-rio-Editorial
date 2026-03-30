@@ -96,8 +96,11 @@ export const LoginScreen: React.FC = () => {
               </div>
               
               <p className="text-[15px] text-gray-600 leading-relaxed font-medium max-w-md mx-auto">
-                "O canguru carrega seu filhote em uma bolsa — sempre perto, sempre protegido. 
-                <span className="text-brand-dark font-bold"> Bolsa é isso:</span> o lugar onde a Canguru Digital guarda tudo da sua marca. Estratégia, conteúdo, relatórios e acessos — em um só lugar, para você sempre ter o que precisa, quando precisar."
+                "O canguru carrega seu filhote em uma bolsa,<br />
+                sempre perto, sempre protegido.<br /><br />
+                <span className="text-brand-dark font-bold">Bolsa é isso:</span> o lugar onde a Canguru Digital guarda tudo da sua marca.<br /><br />
+                Estratégia, conteúdo, relatórios e acessos em um só lugar,<br />
+                para você sempre ter o que precisa, quando precisar."
               </p>
             </div>
 

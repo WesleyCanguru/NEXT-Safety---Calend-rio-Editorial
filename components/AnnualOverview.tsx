@@ -279,8 +279,7 @@ export const AnnualOverview: React.FC<AnnualOverviewProps> = ({ onSelectMonth })
               const postCount = postCounts[monthName.toUpperCase()] || 0;
               
               const hasTheme = !!plan.theme && plan.theme.trim() !== '';
-              const hasObjective = !!plan.objectives && plan.objectives.length > 0 && plan.objectives[0].trim() !== '';
-              const isConfigured = hasTheme && hasObjective;
+              const isConfigured = hasTheme;
               
               const isLocked = !isAdmin && !isConfigured;
 
@@ -297,7 +296,7 @@ export const AnnualOverview: React.FC<AnnualOverviewProps> = ({ onSelectMonth })
                       month: monthName,
                       title: plan.theme || 'Sem tema definido',
                       color: 'blue', 
-                      function: plan.objectives?.[0] || 'Objetivo não definido'
+                      function: ''
                     }} 
                     onClick={() => onSelectMonth(monthName)}
                     postCount={postCount}

@@ -84,18 +84,6 @@ export const MonthCard: React.FC<MonthCardProps> = ({ data, onClick, postCount =
           </div>
         </div>
 
-        {/* Function */}
-        <div className="flex items-start gap-4 text-[14px] text-gray-500 font-medium leading-relaxed bg-gray-50/50 p-5 rounded-3xl border border-black/[0.01] mt-auto">
-          <div className={`w-10 h-10 rounded-2xl bg-white shadow-sm border border-black/[0.03] flex items-center justify-center flex-shrink-0 ${isLocked ? 'text-gray-400' : style.text}`}>
-            <Target size={18} />
-          </div>
-          <div className="pt-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-1">Objetivo Principal</p>
-            <p className={isLocked ? 'text-gray-400 font-medium' : 'text-brand-dark font-bold'}>
-              {isLocked ? 'Preparando estratégico' : data.function}
-            </p>
-          </div>
-        </div>
       </div>
     </motion.div>
   );
