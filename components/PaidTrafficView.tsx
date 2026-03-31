@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useAuth, supabase } from '../lib/supabase';
+import React, { useState, useEffect } from 'react';
+import { supabase, useAuth } from '../lib/supabase';
+import { processTrafficStrategyPdf } from '../src/services/geminiService';
+import { TrafficStrategyData } from '../types';
 import {
   ChevronLeft,
   Target,
@@ -12,150 +14,130 @@ import {
   Zap,
   Globe,
   Upload,
-  FileText,
   Loader2,
-  Trash2,
-  Edit2,
-  Check,
-  X
+  FileText
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { PaidTrafficStrategy } from '../types';
-import { generatePaidTrafficStrategy } from '../src/services/geminiPaidTraffic';
-import * as pdfjsLib from 'pdfjs-dist';
+import { motion } from 'motion/react';
 
-// Configuração do worker do PDF.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+const CALABRES_STRATEGY: TrafficStrategyData = {
+  kpis: {
+    monthlyBudget: "R$ 600",
+    budgetDetails: "R$ 25/dia (segunda a sábado a principio para quesito de teste) (Mês 1 = aprendizado)",
+    priorityGoal: "5 clientes",
+    goalDetails: "Objetivo para o Mês",
+    averageTicket: "R$ 2.000",
+    ticketDetails: "Por cliente fechado"
+  },
+  strategicDecision: {
+    title: "Decisão Estratégica",
+    items: [
+      {
+        title: "100% Google Ads (Rede de Pesquisa)",
+        description: "O público já está com o problema e buscando solução agora. O Google captura essa intenção ativa. O Meta Ads fará sentido quando o tráfego orgânico já existir e houver público para remarketing (previsto para os meses 3 ou 4).",
+        color: "brand-dark"
+      },
+      {
+        title: "Destino: Landing Pages Exclusivas por Conjunto",
+        description: "Cada conjunto de anúncios direciona para uma landing page própria, com copy alinhada à intenção de busca de cada público. As páginas já estão publicadas e os links estão configurados nos grupos de anúncios.",
+        color: "green-500"
+      }
+    ]
+  },
+  campaignStructure: {
+    title: "Estrutura das Campanhas",
+    sets: [
+      {
+        id: "Conjunto 1",
+        name: "Direito do Consumidor e Bancário",
+        destination: "https://consumidor.calabreselimaadvocacia.com.br/",
+        destinationUrl: "https://consumidor.calabreselimaadvocacia.com.br/",
+        audience: "Público: Pessoas que tiveram conta bloqueada, plano de saúde negado, seguro não pago, produto com defeito ou serviço não prestado. Já têm o problema e estão buscando solução com urgência.",
+        keywords: ["[conta bloqueada o que fazer]", "[banco bloqueou minha conta]", "[plano de saúde negou tratamento]", "[seguro não quer pagar sinistro]", "\"advogado direito de consumidor\"", "\"advogado conta bloqueada\""],
+        preFilledMessage: "Olá! Vi o anúncio e preciso de ajuda com uma situação urgente. Podem me dizer como funciona o atendimento?"
+      },
+      {
+        id: "Conjunto 2",
+        name: "Direito de Família",
+        destination: "https://familia.calabreselimaadvocacia.com.br/",
+        destinationUrl: "https://familia.calabreselimaadvocacia.com.br/",
+        audience: "Público: Pessoas passando por divórcio, disputas de guarda, pensão alimentícia ou inventário. Momento emocional delicado — a copy precisa ser acolhedora e transmitir segurança.",
+        keywords: ["[advogado divórcio]", "[pensão alimentícia advogado]", "[guarda compartilhada advogado]", "[inventário advogado]", "\"advogado direito de família\"", "como pedir pensão alimentícia"],
+        preFilledMessage: "Olá! Vi o anúncio e estou passando por uma situação familiar. Gostaria de entender como vocês podem me ajudar."
+      },
+      {
+        id: "Conjunto 3",
+        name: "Cível e Indenizações",
+        destination: "http://indenizacao.calabreselimaadvocacia.com.br/",
+        destinationUrl: "http://indenizacao.calabreselimaadvocacia.com.br/",
+        audience: "Público: Pessoas que sofreram dano moral, prejuízo por falha de serviço, acidente ou descumprimento de contrato. Sentem-se lesadas e querem justiça.",
+        keywords: ["[dano moral advogado]", "[indenização por dano material]", "[cobrar empresa na justiça]", "\"advogado direito civil\"", "\"cobrar indenização de empresa\"", "como processar empresa por dano"],
+        preFilledMessage: "Olá! Vi o anúncio e acredito que tive um direito violado. Gostaria de saber se tenho base para buscar indenização."
+      }
+    ]
+  },
+  phase2: {
+    title: "Fase 2 — Escala",
+    description: "Quando a meta de 5 clientes for batida e a verba subir para R$ 1.500/mês, ativaremos a Campanha 2 focada nas áreas de crescimento.",
+    campaigns: [
+      { title: "Campanha 1 (Mantida)", areas: "Família, Cível, Consumidor", budget: "R$ 900/mês" },
+      { title: "Campanha 2 (Nova)", areas: "Bancário e Imobiliário", budget: "R$ 600/mês" }
+    ]
+  },
+  alert: {
+    title: "Atenção ao Atendimento",
+    message: "Lembre-se de orientar sua equipe a responder os leads do WhatsApp em até 1 hora durante o horário comercial. A velocidade de resposta de vocês é o principal fator de conversão nesse modelo de campanha!"
+  }
+};
 
 export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
-  const { activeClient, userRole } = useAuth();
-  const [strategy, setStrategy] = useState<PaidTrafficStrategy | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedStrategy, setEditedStrategy] = useState<PaidTrafficStrategy | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { activeClient, userRole, refreshActiveClient } = useAuth();
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const isAdmin = userRole === 'admin';
+  const isCalabres = activeClient?.id === 'e817fbf9-0985-4453-b710-34623af870d6' || activeClient?.name?.includes('Calabres');
+  const isNextSafety = activeClient?.id === '75b00b27-61ee-4b23-8721-70748ccb0789' || activeClient?.name?.includes('Next Safety');
 
-  useEffect(() => {
-    if (activeClient) {
-      fetchStrategy();
-    }
-  }, [activeClient]);
-
-  const fetchStrategy = async () => {
-    if (!activeClient) return;
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('client_paid_traffic_strategies')
-        .select('*')
-        .eq('client_id', activeClient.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching strategy:', error);
-      } else if (data) {
-        setStrategy(data);
-        setEditedStrategy(data);
-      } else {
-        setStrategy(null);
-        setEditedStrategy(null);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const extractTextFromPdf = async (file: File): Promise<string> => {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let fullText = '';
-    
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map((item: any) => item.str).join(' ');
-      fullText += pageText + '\n';
-    }
-    
-    return fullText;
-  };
+  const strategyData = activeClient?.traffic_strategy_data || (isCalabres ? CALABRES_STRATEGY : null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !activeClient) return;
 
-    setUploading(true);
-    try {
-      // 1. Extrair texto do PDF
-      const pdfText = await extractTextFromPdf(file);
-
-      // 2. Gerar estratégia com Gemini
-      const generatedData = await generatePaidTrafficStrategy(pdfText);
-
-      // 3. Salvar no Supabase
-      const { error } = await supabase
-        .from('client_paid_traffic_strategies')
-        .upsert({
-          client_id: activeClient.id,
-          ...generatedData,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) throw error;
-
-      await fetchStrategy();
-      alert('Estratégia gerada com sucesso!');
-    } catch (error) {
-      console.error('Error uploading strategy:', error);
-      alert('Erro ao processar o PDF. Tente novamente.');
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+    if (file.type !== 'application/pdf') {
+      setUploadError('Por favor, envie apenas arquivos PDF.');
+      return;
     }
-  };
 
-  const handleSaveEdit = async () => {
-    if (!editedStrategy || !activeClient) return;
-
-    try {
-      const { error } = await supabase
-        .from('client_paid_traffic_strategies')
-        .upsert({
-          ...editedStrategy,
-          client_id: activeClient.id,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) throw error;
-
-      setStrategy(editedStrategy);
-      setIsEditing(false);
-      alert('Estratégia atualizada com sucesso!');
-    } catch (error) {
-      console.error('Error updating strategy:', error);
-      alert('Erro ao salvar as alterações.');
-    }
-  };
-
-  const handleDeleteStrategy = async () => {
-    if (!activeClient || !confirm('Tem certeza que deseja excluir esta estratégia?')) return;
+    setIsUploading(true);
+    setUploadError(null);
 
     try {
-      const { error } = await supabase
-        .from('client_paid_traffic_strategies')
-        .delete()
-        .eq('client_id', activeClient.id);
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(',')[1];
+        try {
+          const processedData = await processTrafficStrategyPdf(base64);
+          
+          const { error } = await supabase
+            .from('clients')
+            .update({ traffic_strategy_data: processedData })
+            .eq('id', activeClient.id);
 
-      if (error) throw error;
-
-      setStrategy(null);
-      setEditedStrategy(null);
-      alert('Estratégia excluída.');
-    } catch (error) {
-      console.error('Error deleting strategy:', error);
+          if (error) throw error;
+          
+          await refreshActiveClient();
+          setIsUploading(false);
+        } catch (err) {
+          console.error('Error processing PDF:', err);
+          setUploadError('Erro ao processar a estratégia com IA. Tente novamente.');
+          setIsUploading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Error reading file:', err);
+      setUploadError('Erro ao ler o arquivo.');
+      setIsUploading(false);
     }
   };
 
@@ -171,60 +153,6 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-brand-dark animate-spin" />
-      </div>
-    );
-  }
-
-  // Se não houver estratégia e for Next Safety, mostrar vazio ou opção de upload
-  // Se for Calabres & Lima e não houver no banco, poderíamos mostrar o hardcoded original, 
-  // mas o usuário quer poder alterar, então o ideal é que tudo venha do banco.
-  
-  const displayStrategy = strategy || (activeClient?.name?.includes('Calabres') ? {
-    monthly_budget: 600,
-    daily_budget: "R$ 25/dia (segunda a sábado a principio para quesito de teste) (Mês 1 = aprendizado)",
-    priority_goal: "5 clientes",
-    avg_ticket: 2000,
-    strategic_decision: "100% Google Ads (Rede de Pesquisa). O público já está com o problema e buscando solução agora. O Google captura essa intenção ativa. O Meta Ads fará sentido quando o tráfego orgânico já existir e houver público para remarketing (previsto para os meses 3 ou 4).",
-    campaign_structure: {
-      sets: [
-        {
-          id: "Conjunto 1",
-          title: "Direito do Consumidor e Bancário",
-          destination_url: "https://consumidor.calabreselimaadvocacia.com.br/",
-          audience: "Pessoas que tiveram conta bloqueada, plano de saúde negado, seguro não pago, produto com defeito ou serviço não prestado. Já têm o problema e estão buscando solução com urgência.",
-          keywords: ["[conta bloqueada o que fazer]", "[banco bloqueou minha conta]", "[plano de saúde negou tratamento]", "[seguro não quer pagar sinistro]", "\"advogado direito de consumidor\"", "\"advogado conta bloqueada\""],
-          prefilled_message: "Olá! Vi o anúncio e preciso de ajuda com uma situação urgente. Podem me dizer como funciona o atendimento?"
-        },
-        {
-          id: "Conjunto 2",
-          title: "Direito de Família",
-          destination_url: "https://familia.calabreselimaadvocacia.com.br/",
-          audience: "Pessoas passando por divórcio, disputas de guarda, pensão alimentícia ou inventário. Momento emocional delicado — a copy precisa ser acolhedora e transmitir segurança.",
-          keywords: ["[advogado divórcio]", "[pensão alimentícia advogado]", "[guarda compartilhada advogado]", "[inventário advogado]", "\"advogado direito de família\"", "como pedir pensão alimentícia"],
-          prefilled_message: "Olá! Vi o anúncio e estou passando por uma situação familiar. Gostaria de entender como vocês podem me ajudar."
-        },
-        {
-          id: "Conjunto 3",
-          title: "Cível e Indenizações",
-          destination_url: "http://indenizacao.calabreselimaadvocacia.com.br/",
-          audience: "Pessoas que sofreram dano moral, prejuízo por falha de serviço, acidente ou descumprimento de contrato. Sentem-se lesadas e querem justiça.",
-          keywords: ["[dano moral advogado]", "[indenização por dano material]", "[cobrar empresa na justiça]", "\"advogado direito civil\"", "\"cobrar indenização de empresa\"", "como processar empresa por dano"],
-          prefilled_message: "Olá! Vi o anúncio e acredito que tive um direito violado. Gostaria de saber se tenho base para buscar indenização."
-        }
-      ]
-    },
-    phase_2_description: "Quando a meta de 5 clientes for batida e a verba subir para R$ 1.500/mês, ativaremos a Campanha 2 focada nas áreas de crescimento.",
-    phase_2_campaigns: [
-      { title: "Campanha 1 (Mantida)", description: "Família, Cível, Consumidor", value: "R$ 900/mês" },
-      { title: "Campanha 2 (Nova)", description: "Bancário e Imobiliário", value: "R$ 600/mês" }
-    ],
-    alert_message: "Lembre-se de orientar sua equipe a responder os leads do WhatsApp em até 1 hora durante o horário comercial. A velocidade de resposta de vocês é o principal fator de conversão nesse modelo de campanha!"
-  } : null);
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-20">
@@ -247,45 +175,37 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
           </div>
           
           <div className="flex items-center gap-3">
-            {isAdmin && (
-              <>
-                <input 
-                  type="file" 
-                  ref={fileInputRef}
-                  onChange={handleFileUpload}
-                  accept=".pdf"
+            {userRole === 'admin' && (
+              <div className="relative">
+                <input
+                  type="file"
+                  id="pdf-upload"
                   className="hidden"
+                  accept=".pdf"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
                 />
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors font-medium text-sm shadow-sm disabled:opacity-50"
+                <label
+                  htmlFor="pdf-upload"
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all font-medium text-sm shadow-sm cursor-pointer ${
+                    isUploading 
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                      : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                  }`}
                 >
-                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                  Subir PDF Estratégia
-                </button>
-                
-                {displayStrategy && !isEditing && (
-                  <button 
-                    onClick={() => {
-                      setEditedStrategy(displayStrategy);
-                      setIsEditing(true);
-                    }}
-                    className="p-2 text-gray-400 hover:text-brand-dark transition-colors"
-                  >
-                    <Edit2 className="w-5 h-5" />
-                  </button>
-                )}
-                
-                {strategy && (
-                  <button 
-                    onClick={handleDeleteStrategy}
-                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                )}
-              </>
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Subir Estratégia (PDF)
+                    </>
+                  )}
+                </label>
+              </div>
             )}
 
             {activeClient?.paid_reportei_url && (
@@ -301,6 +221,14 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
             )}
           </div>
         </div>
+        {uploadError && (
+          <div className="max-w-5xl mx-auto mt-4 px-2">
+            <div className="bg-red-50 text-red-600 text-xs py-2 px-4 rounded-lg flex items-center gap-2">
+              <AlertTriangle className="w-3 h-3" />
+              {uploadError}
+            </div>
+          </div>
+        )}
       </div>
 
       <motion.div 
@@ -309,49 +237,16 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
         initial="hidden"
         animate="visible"
       >
-        {!displayStrategy ? (
-          <div className="bg-white rounded-3xl p-12 border border-dashed border-gray-300 flex flex-col items-center justify-center text-center">
-            <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-              <FileText className="w-8 h-8 text-gray-300" />
+        {!strategyData ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+              <FileText className="w-10 h-10 text-gray-300" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900">Nenhuma estratégia definida</h3>
-            <p className="text-gray-500 mt-2 max-w-sm">
-              {isAdmin 
-                ? "Suba um arquivo PDF com a estratégia para que a IA possa processar e exibir as informações aqui."
-                : "A estratégia de tráfego pago para este cliente ainda não foi definida pela agência."}
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Sem Estratégia Definida</h3>
+            <p className="text-gray-500 max-w-md">
+              Ainda não há uma estratégia de tráfego configurada para este cliente. 
+              {userRole === 'admin' && ' Faça o upload de um PDF para gerar a estratégia automaticamente.'}
             </p>
-            {isAdmin && (
-              <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 bg-brand-dark text-white px-6 py-3 rounded-xl hover:bg-brand-dark/90 transition-colors font-medium"
-                >
-                  <Upload className="w-5 h-5" />
-                  Subir PDF Estratégia
-                </button>
-                <button 
-                  onClick={() => {
-                    setEditedStrategy({
-                      monthly_budget: 0,
-                      daily_budget: "",
-                      priority_goal: "",
-                      avg_ticket: 0,
-                      strategic_decision: "",
-                      campaign_structure: { sets: [] },
-                      phase_2_description: "",
-                      phase_2_campaigns: [],
-                      alert_message: "",
-                      updated_at: new Date().toISOString()
-                    } as PaidTrafficStrategy);
-                    setIsEditing(true);
-                  }}
-                  className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-                >
-                  <Edit2 className="w-5 h-5" />
-                  Adicionar Manualmente
-                </button>
-              </div>
-            )}
           </div>
         ) : (
           <>
@@ -365,26 +260,8 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
                   </div>
                   <h3 className="font-medium text-white/80">Verba Mensal</h3>
                 </div>
-                {isEditing ? (
-                  <input 
-                    type="number"
-                    value={editedStrategy?.monthly_budget || 0}
-                    onChange={(e) => setEditedStrategy(prev => ({ ...(prev || {}), monthly_budget: Number(e.target.value) } as PaidTrafficStrategy))}
-                    className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 w-full text-white text-2xl font-bold"
-                  />
-                ) : (
-                  <p className="text-3xl font-bold">R$ {displayStrategy.monthly_budget}</p>
-                )}
-                {isEditing ? (
-                  <textarea 
-                    value={editedStrategy?.daily_budget || ''}
-                    onChange={(e) => setEditedStrategy(prev => ({ ...(prev || {}), daily_budget: e.target.value } as PaidTrafficStrategy))}
-                    className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 w-full text-white text-sm mt-2"
-                    rows={2}
-                  />
-                ) : (
-                  <p className="text-sm text-white/60 mt-2">{displayStrategy.daily_budget}</p>
-                )}
+                <p className="text-3xl font-bold">{strategyData.kpis.monthlyBudget}</p>
+                <p className="text-sm text-white/60 mt-2">{strategyData.kpis.budgetDetails}</p>
               </motion.div>
 
               <motion.div variants={itemVariants} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
@@ -394,17 +271,8 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
                   </div>
                   <h3 className="font-medium text-gray-500">Meta Prioritária</h3>
                 </div>
-                {isEditing ? (
-                  <input 
-                    type="text"
-                    value={editedStrategy?.priority_goal || ''}
-                    onChange={(e) => setEditedStrategy(prev => ({ ...(prev || {}), priority_goal: e.target.value } as PaidTrafficStrategy))}
-                    className="border border-gray-200 rounded-lg px-3 py-2 w-full text-gray-900 text-2xl font-bold"
-                  />
-                ) : (
-                  <p className="text-3xl font-bold text-gray-900">{displayStrategy.priority_goal}</p>
-                )}
-                <p className="text-sm text-gray-500 mt-2">Objetivo para o Mês</p>
+                <p className="text-3xl font-bold text-gray-900">{strategyData.kpis.priorityGoal}</p>
+                <p className="text-sm text-gray-500 mt-2">{strategyData.kpis.goalDetails}</p>
               </motion.div>
 
               <motion.div variants={itemVariants} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
@@ -414,17 +282,8 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
                   </div>
                   <h3 className="font-medium text-gray-500">Ticket Médio</h3>
                 </div>
-                {isEditing ? (
-                  <input 
-                    type="number"
-                    value={editedStrategy?.avg_ticket || 0}
-                    onChange={(e) => setEditedStrategy(prev => ({ ...(prev || {}), avg_ticket: Number(e.target.value) } as PaidTrafficStrategy))}
-                    className="border border-gray-200 rounded-lg px-3 py-2 w-full text-gray-900 text-2xl font-bold"
-                  />
-                ) : (
-                  <p className="text-3xl font-bold text-gray-900">R$ {displayStrategy.avg_ticket}</p>
-                )}
-                <p className="text-sm text-gray-500 mt-2">Por cliente fechado</p>
+                <p className="text-3xl font-bold text-gray-900">{strategyData.kpis.averageTicket}</p>
+                <p className="text-sm text-gray-500 mt-2">{strategyData.kpis.ticketDetails}</p>
               </motion.div>
             </div>
 
@@ -432,99 +291,45 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
             <motion.div variants={itemVariants} className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm">
               <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
                 <Search className="w-6 h-6 text-brand-dark" />
-                Decisão Estratégica
+                {strategyData.strategicDecision.title}
               </h2>
-              {isEditing ? (
-                <textarea 
-                  value={editedStrategy?.strategic_decision || ''}
-                  onChange={(e) => setEditedStrategy(prev => ({ ...(prev || {}), strategic_decision: e.target.value } as PaidTrafficStrategy))}
-                  className="border border-gray-200 rounded-xl px-4 py-3 w-full text-gray-600 leading-relaxed"
-                  rows={4}
-                />
-              ) : (
-                <div className="space-y-6">
-                  <div className="flex gap-4">
-                    <div className="w-1.5 bg-brand-dark rounded-full shrink-0"></div>
+              <div className="space-y-6">
+                {strategyData.strategicDecision.items.map((item, idx) => (
+                  <div key={idx} className="flex gap-4">
+                    <div className={`w-1.5 rounded-full shrink-0 ${item.color === 'brand-dark' ? 'bg-brand-dark' : 'bg-green-500'}`}></div>
                     <div>
-                      <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
-                        {displayStrategy.strategic_decision}
+                      <h3 className="font-bold text-gray-900 text-lg">{item.title}</h3>
+                      <p className="text-gray-600 mt-2 leading-relaxed">
+                        {item.description}
                       </p>
                     </div>
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
             </motion.div>
 
             {/* Estrutura das Campanhas */}
             <motion.div variants={itemVariants}>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Estrutura das Campanhas</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">{strategyData.campaignStructure.title}</h2>
               
               <div className="space-y-6">
-                {displayStrategy.campaign_structure.sets.map((set, index) => (
-                  <div key={index} className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+                {strategyData.campaignStructure.sets.map((set, idx) => (
+                  <div key={idx} className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
                     <div className="bg-gray-50 px-8 py-5 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
                         <span className="text-xs font-bold tracking-wider text-gray-500 uppercase mb-1 block">{set.id}</span>
-                        {isEditing ? (
-                          <input 
-                            type="text"
-                            value={set.title || ''}
-                            onChange={(e) => {
-                              const newSets = [...(editedStrategy?.campaign_structure.sets || [])];
-                              if (newSets[index]) {
-                                newSets[index].title = e.target.value;
-                                setEditedStrategy(prev => ({ ...(prev || {}), campaign_structure: { ...(prev?.campaign_structure || { sets: [] }), sets: newSets } } as PaidTrafficStrategy));
-                              }
-                            }}
-                            className="border border-gray-200 rounded-lg px-3 py-1 text-lg font-bold text-gray-900 w-full"
-                          />
-                        ) : (
-                          <h3 className="text-lg font-bold text-gray-900">{set.title}</h3>
-                        )}
+                        <h3 className="text-lg font-bold text-gray-900">{set.name}</h3>
                       </div>
                       <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-700 shadow-sm">
                         <Globe className="w-4 h-4 text-blue-500" />
-                        Destino: {isEditing ? (
-                          <input 
-                            type="text"
-                            value={set.destination_url || ''}
-                            onChange={(e) => {
-                              const newSets = [...(editedStrategy?.campaign_structure.sets || [])];
-                              if (newSets[index]) {
-                                newSets[index].destination_url = e.target.value;
-                                setEditedStrategy(prev => ({ ...(prev || {}), campaign_structure: { ...(prev?.campaign_structure || { sets: [] }), sets: newSets } } as PaidTrafficStrategy));
-                              }
-                            }}
-                            className="border border-gray-200 rounded-lg px-2 py-0.5 text-blue-600 w-full"
-                          />
-                        ) : (
-                          <a href={set.destination_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate max-w-[200px]">
-                            {set.destination_url}
-                          </a>
-                        )}
+                        Destino: <a href={set.destinationUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{set.destination}</a>
                       </div>
                     </div>
                     
                     <div className="p-8">
-                      <div className="mb-6">
-                        <strong className="text-gray-900 block mb-2">Público:</strong>
-                        {isEditing ? (
-                          <textarea 
-                            value={set.audience || ''}
-                            onChange={(e) => {
-                              const newSets = [...(editedStrategy?.campaign_structure.sets || [])];
-                              if (newSets[index]) {
-                                newSets[index].audience = e.target.value;
-                                setEditedStrategy(prev => ({ ...(prev || {}), campaign_structure: { ...(prev?.campaign_structure || { sets: [] }), sets: newSets } } as PaidTrafficStrategy));
-                              }
-                            }}
-                            className="border border-gray-200 rounded-xl px-4 py-3 w-full text-gray-600 text-sm"
-                            rows={3}
-                          />
-                        ) : (
-                          <p className="text-gray-600">{set.audience}</p>
-                        )}
-                      </div>
+                      <p className="text-gray-600 mb-6">
+                        {set.audience}
+                      </p>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
@@ -532,51 +337,20 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
                             <Search className="w-4 h-4 text-gray-400" />
                             Palavras-chave Principais
                           </h4>
-                          {isEditing ? (
-                            <textarea 
-                              value={(set.keywords || []).join('\n')}
-                              onChange={(e) => {
-                                const newSets = [...(editedStrategy?.campaign_structure.sets || [])];
-                                if (newSets[index]) {
-                                  newSets[index].keywords = e.target.value.split('\n');
-                                  setEditedStrategy(prev => ({ ...(prev || {}), campaign_structure: { ...(prev?.campaign_structure || { sets: [] }), sets: newSets } } as PaidTrafficStrategy));
-                                }
-                              }}
-                              className="border border-gray-200 rounded-xl px-4 py-3 w-full text-gray-600 font-mono text-sm"
-                              rows={5}
-                              placeholder="Uma palavra por linha"
-                            />
-                          ) : (
-                            <ul className="space-y-2 font-mono text-sm text-gray-600 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                              {set.keywords.map((kw, kIndex) => (
-                                <li key={kIndex}>{kw}</li>
-                              ))}
-                            </ul>
-                          )}
+                          <ul className="space-y-2 font-mono text-sm text-gray-600 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            {set.keywords.map((kw, kidx) => (
+                              <li key={kidx}>{kw}</li>
+                            ))}
+                          </ul>
                         </div>
                         <div>
                           <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                             <MessageCircle className="w-4 h-4 text-gray-400" />
                             Mensagem Pré-preenchida
                           </h4>
-                          {isEditing ? (
-                            <textarea 
-                              value={set.prefilled_message || ''}
-                              onChange={(e) => {
-                                const newSets = [...(editedStrategy?.campaign_structure.sets || [])];
-                                if (newSets[index]) {
-                                  newSets[index].prefilled_message = e.target.value;
-                                  setEditedStrategy(prev => ({ ...(prev || {}), campaign_structure: { ...(prev?.campaign_structure || { sets: [] }), sets: newSets } } as PaidTrafficStrategy));
-                                }
-                              }}
-                              className="border border-gray-200 rounded-xl px-4 py-3 w-full text-gray-600 text-sm"
-                              rows={3}
-                            />
-                          ) : (
-                            <div className="bg-green-50 border border-green-100 p-4 rounded-xl text-green-900 text-sm italic">
-                              "{set.prefilled_message}"
-                            </div>
-                          )}
+                          <div className="bg-green-50 border border-green-100 p-4 rounded-xl text-green-900 text-sm italic">
+                            "{set.preFilledMessage}"
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -592,71 +366,19 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-6">
                   <Zap className="w-6 h-6 text-orange-400" />
-                  <h2 className="text-2xl font-bold">Fase 2 — Escala</h2>
+                  <h2 className="text-2xl font-bold">{strategyData.phase2.title}</h2>
                 </div>
                 
-                {isEditing ? (
-                  <textarea 
-                    value={editedStrategy?.phase_2_description || ''}
-                    onChange={(e) => setEditedStrategy(prev => ({ ...(prev || {}), phase_2_description: e.target.value } as PaidTrafficStrategy))}
-                    className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 w-full text-white mb-8"
-                    rows={3}
-                  />
-                ) : (
-                  <p className="text-gray-300 mb-8 max-w-2xl">
-                    {displayStrategy.phase_2_description}
-                  </p>
-                )}
+                <p className="text-gray-300 mb-8 max-w-2xl">
+                  {strategyData.phase2.description}
+                </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {displayStrategy.phase_2_campaigns.map((camp, cIndex) => (
-                    <div key={cIndex} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-                      {isEditing ? (
-                        <>
-                          <input 
-                            type="text"
-                            value={camp.title || ''}
-                            onChange={(e) => {
-                              const newCamps = [...(editedStrategy?.phase_2_campaigns || [])];
-                              if (newCamps[cIndex]) {
-                                newCamps[cIndex].title = e.target.value;
-                                setEditedStrategy(prev => ({ ...(prev || {}), phase_2_campaigns: newCamps } as PaidTrafficStrategy));
-                              }
-                            }}
-                            className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white font-bold mb-2 w-full"
-                          />
-                          <input 
-                            type="text"
-                            value={camp.description || ''}
-                            onChange={(e) => {
-                              const newCamps = [...(editedStrategy?.phase_2_campaigns || [])];
-                              if (newCamps[cIndex]) {
-                                newCamps[cIndex].description = e.target.value;
-                                setEditedStrategy(prev => ({ ...(prev || {}), phase_2_campaigns: newCamps } as PaidTrafficStrategy));
-                              }
-                            }}
-                            className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-gray-300 text-sm mb-4 w-full"
-                          />
-                          <input 
-                            type="text"
-                            value={camp.value || ''}
-                            onChange={(e) => {
-                              const newCamps = [...(editedStrategy?.phase_2_campaigns || [])];
-                              if (newCamps[cIndex]) {
-                                newCamps[cIndex].value = e.target.value;
-                                setEditedStrategy(prev => ({ ...(prev || {}), phase_2_campaigns: newCamps } as PaidTrafficStrategy));
-                              }
-                            }}
-                            className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-orange-400 font-bold w-full"
-                          />
-                        </>
-                      ) : (
-                        <>
-                          <h3 className="font-bold text-lg mb-2">{camp.title}</h3>
-                          <p className="text-gray-300 text-sm mb-4">{camp.description}</p>
-                          <div className="text-2xl font-bold text-orange-400">{camp.value}</div>
-                        </>
-                      )}
+                  {strategyData.phase2.campaigns.map((camp, idx) => (
+                    <div key={idx} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                      <h3 className="font-bold text-lg mb-2">{camp.title}</h3>
+                      <p className="text-gray-300 text-sm mb-4">{camp.areas}</p>
+                      <div className="text-2xl font-bold text-orange-400">{camp.budget}</div>
                     </div>
                   ))}
                 </div>
@@ -666,52 +388,13 @@ export const PaidTrafficView: React.FC<{ onBack?: () => void }> = ({ onBack }) =
             {/* Alerta */}
             <motion.div variants={itemVariants} className="bg-amber-50 border border-amber-200 rounded-2xl p-6 flex gap-4">
               <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0" />
-              <div className="flex-1">
-                <h4 className="font-bold text-amber-900">Atenção ao Atendimento</h4>
-                {isEditing ? (
-                  <textarea 
-                    value={editedStrategy?.alert_message || ''}
-                    onChange={(e) => setEditedStrategy(prev => ({ ...(prev || {}), alert_message: e.target.value } as PaidTrafficStrategy))}
-                    className="border border-amber-200 rounded-xl px-4 py-3 w-full text-amber-800 text-sm mt-1 bg-white"
-                    rows={3}
-                  />
-                ) : (
-                  <p className="text-amber-800 text-sm mt-1">
-                    {displayStrategy.alert_message}
-                  </p>
-                )}
+              <div>
+                <h4 className="font-bold text-amber-900">{strategyData.alert.title}</h4>
+                <p className="text-amber-800 text-sm mt-1">
+                  {strategyData.alert.message}
+                </p>
               </div>
             </motion.div>
-
-            {/* Floating Save/Cancel for Edit Mode */}
-            <AnimatePresence>
-              {isEditing && (
-                <motion.div 
-                  initial={{ y: 100 }}
-                  animate={{ y: 0 }}
-                  exit={{ y: 100 }}
-                  className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white border border-gray-200 rounded-2xl p-4 shadow-2xl z-50 flex items-center gap-4"
-                >
-                  <button 
-                    onClick={() => {
-                      setIsEditing(false);
-                      setEditedStrategy(strategy);
-                    }}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors font-medium"
-                  >
-                    <X className="w-5 h-5" />
-                    Cancelar
-                  </button>
-                  <button 
-                    onClick={handleSaveEdit}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-dark text-white hover:bg-brand-dark/90 transition-colors font-medium shadow-lg shadow-brand-dark/20"
-                  >
-                    <Check className="w-5 h-5" />
-                    Salvar Alterações
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </>
         )}
       </motion.div>

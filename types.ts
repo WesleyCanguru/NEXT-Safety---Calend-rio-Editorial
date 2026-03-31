@@ -143,6 +143,50 @@ export interface PostData {
   bullets?: string[];
 }
 
+export interface TrafficStrategyData {
+  kpis: {
+    monthlyBudget: string;
+    budgetDetails: string;
+    priorityGoal: string;
+    goalDetails: string;
+    averageTicket: string;
+    ticketDetails: string;
+  };
+  strategicDecision: {
+    title: string;
+    items: {
+      title: string;
+      description: string;
+      color: string;
+    }[];
+  };
+  campaignStructure: {
+    title: string;
+    sets: {
+      id: string;
+      name: string;
+      destination: string;
+      destinationUrl: string;
+      audience: string;
+      keywords: string[];
+      preFilledMessage: string;
+    }[];
+  };
+  phase2: {
+    title: string;
+    description: string;
+    campaigns: {
+      title: string;
+      areas: string;
+      budget: string;
+    }[];
+  };
+  alert: {
+    title: string;
+    message: string;
+  };
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -165,6 +209,7 @@ export interface Client {
   base_value?: number;
   due_day?: number;
   created_at?: string;
+  traffic_strategy_data?: TrafficStrategyData | null;
 }
 
 // --- NOVOS TIPOS PARA GESTÃO DA AGÊNCIA ---
@@ -247,33 +292,4 @@ export interface AgencyTask {
   recurrence_days?: number[] | null;
   created_at: string;
   completed_at?: string | null;
-}
-
-export interface PaidTrafficStrategy {
-  id: string;
-  client_id: string;
-  monthly_budget: number;
-  daily_budget: string;
-  priority_goal: string;
-  avg_ticket: number;
-  strategic_decision: string;
-  campaign_structure: {
-    sets: {
-      id: string;
-      title: string;
-      destination_url: string;
-      audience: string;
-      keywords: string[];
-      prefilled_message: string;
-    }[];
-  };
-  phase_2_description: string;
-  phase_2_campaigns: {
-    title: string;
-    description: string;
-    value: string;
-  }[];
-  alert_message: string;
-  pdf_url?: string | null;
-  updated_at: string;
 }
