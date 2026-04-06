@@ -1,10 +1,86 @@
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { supabase, hashPassword } from '../lib/supabase';
-import { Client } from '../types';
+import { Client, ClientLeadConfig } from '../types';
 import { getAnnualOverviewTemplate } from '../constants';
-import { ArrowLeft, Plus, Check, X, Building2, Lock, Globe, Edit2 } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Plus, 
+  Check, 
+  X, 
+  Building2, 
+  Lock, 
+  Globe, 
+  Edit2, 
+  GripVertical,
+  Settings,
+  Layout,
+  Users,
+  Briefcase,
+  TrendingUp,
+  Calendar,
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
+  AlertCircle,
+  FileText,
+  DollarSign,
+  PieChart,
+  BarChart3,
+  ArrowUpRight,
+  ArrowDownRight
+} from 'lucide-react';
+import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  horizontalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+const SortableItem = ({ id, onRemove }: { id: string, onRemove: () => void }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-1 bg-white px-3 py-1.5 rounded-xl border border-black/[0.05] text-sm font-medium text-gray-700 cursor-grab active:cursor-grabbing group"
+    >
+      <GripVertical size={12} className="text-gray-300 group-hover:text-gray-500" {...attributes} {...listeners} />
+      {id}
+      <button 
+        onClick={(e) => { e.stopPropagation(); onRemove(); }}
+        className="text-gray-400 hover:text-red-500 ml-1"
+      >
+        <X size={14} />
+      </button>
+    </div>
+  );
+};
 
 interface ClientManagerProps {
   onBack: () => void;
@@ -26,6 +102,37 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEndStages = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      const oldIndex = (form as any).kanban_stages.indexOf(active.id);
+      const newIndex = (form as any).kanban_stages.indexOf(over?.id);
+      setForm(f => ({
+        ...f,
+        kanban_stages: arrayMove((f as any).kanban_stages, oldIndex, newIndex)
+      }));
+    }
+  };
+
+  const handleDragEndSpecs = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      const oldIndex = (form as any).specialty_options.indexOf(active.id);
+      const newIndex = (form as any).specialty_options.indexOf(over?.id);
+      setForm(f => ({
+        ...f,
+        specialty_options: arrayMove((f as any).specialty_options, oldIndex, newIndex)
+      }));
+    }
+  };
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [form, setForm] = useState({
@@ -107,6 +214,8 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
         await supabase.from('client_lead_configs').upsert({
           client_id: editingClientId,
           is_enabled: form.is_lead_tracking_enabled,
+          kanban_stages: (form as any).kanban_stages || ['Novo Lead', 'Em Contato', 'Reunião Agendada', 'Proposta Enviada', 'Fechado'],
+          specialty_options: (form as any).specialty_options || [],
           updated_at: new Date().toISOString()
         }, { onConflict: 'client_id' });
       } else {
@@ -146,7 +255,9 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
         // Save lead tracking config for new client
         await supabase.from('client_lead_configs').insert([{
           client_id: clientData.id,
-          is_enabled: form.is_lead_tracking_enabled
+          is_enabled: form.is_lead_tracking_enabled,
+          kanban_stages: (form as any).kanban_stages || ['Novo Lead', 'Em Contato', 'Reunião Agendada', 'Proposta Enviada', 'Fechado'],
+          specialty_options: (form as any).specialty_options || []
         }]);
       }
 
@@ -236,6 +347,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
       base_value: 0,
       due_day: 10,
       is_lead_tracking_enabled: false,
+      ...{ kanban_stages: ['Novo Lead', 'Em Contato', 'Reunião Agendada', 'Proposta Enviada', 'Fechado'], specialty_options: [] }
     });
     setEditingClientId(null);
   };
@@ -269,6 +381,10 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
       base_value: client.base_value || 0,
       due_day: client.due_day || 10,
       is_lead_tracking_enabled: leadConfig?.is_enabled || false,
+      ...{ 
+        kanban_stages: leadConfig?.kanban_stages || ['Novo Lead', 'Em Contato', 'Reunião Agendada', 'Proposta Enviada', 'Fechado'], 
+        specialty_options: leadConfig?.specialty_options || [] 
+      }
     });
     setEditingClientId(client.id);
     setShowForm(true);
@@ -591,7 +707,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">
                   Acompanhamento de Leads
                 </h3>
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-6">
                   <button
                     onClick={() => setForm(f => ({ ...f, is_lead_tracking_enabled: !f.is_lead_tracking_enabled }))}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
@@ -606,6 +722,108 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
                   </button>
                   <span className="text-sm font-medium text-gray-700">Ativar Acompanhamento de Leads</span>
                 </div>
+
+                {form.is_lead_tracking_enabled && (
+                  <div className="space-y-6 bg-gray-50 p-6 rounded-2xl border border-black/[0.05]">
+                    {/* Kanban Stages */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        Estágios do Kanban
+                      </label>
+                      <p className="text-[10px] text-gray-400 mb-3">
+                        Arraste para reordenar. Pressione Enter para adicionar um novo estágio. O estágio "Perdido" é automático.
+                      </p>
+                      <DndContext 
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEndStages}
+                      >
+                        <SortableContext 
+                          items={(form as any).kanban_stages || []}
+                          strategy={horizontalListSortingStrategy}
+                        >
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {(form as any).kanban_stages?.map((stage: string, index: number) => (
+                              <SortableItem 
+                                key={stage} 
+                                id={stage} 
+                                onRemove={() => {
+                                  const newStages = [...((form as any).kanban_stages || [])];
+                                  newStages.splice(index, 1);
+                                  setForm(f => ({ ...f, kanban_stages: newStages }));
+                                }}
+                              />
+                            ))}
+                            <input 
+                              type="text"
+                              placeholder="Adicionar estágio..."
+                              className="bg-transparent border-none text-sm focus:ring-0 w-40 p-0"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  const val = e.currentTarget.value.trim();
+                                  if (val && !((form as any).kanban_stages || []).includes(val)) {
+                                    setForm(f => ({ ...f, kanban_stages: [...((f as any).kanban_stages || []), val] }));
+                                    e.currentTarget.value = '';
+                                  }
+                                }
+                              }}
+                            />
+                          </div>
+                        </SortableContext>
+                      </DndContext>
+                    </div>
+
+                    {/* Specialties */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        Especialidades (Tags)
+                      </label>
+                      <p className="text-[10px] text-gray-400 mb-3">
+                        Arraste para reordenar. Pressione Enter para adicionar uma nova especialidade.
+                      </p>
+                      <DndContext 
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEndSpecs}
+                      >
+                        <SortableContext 
+                          items={(form as any).specialty_options || []}
+                          strategy={horizontalListSortingStrategy}
+                        >
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {(form as any).specialty_options?.map((spec: string, index: number) => (
+                              <SortableItem 
+                                key={spec} 
+                                id={spec} 
+                                onRemove={() => {
+                                  const newSpecs = [...((form as any).specialty_options || [])];
+                                  newSpecs.splice(index, 1);
+                                  setForm(f => ({ ...f, specialty_options: newSpecs }));
+                                }}
+                              />
+                            ))}
+                            <input 
+                              type="text"
+                              placeholder="Adicionar especialidade..."
+                              className="bg-transparent border-none text-sm focus:ring-0 w-48 p-0"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  const val = e.currentTarget.value.trim();
+                                  if (val && !((form as any).specialty_options || []).includes(val)) {
+                                    setForm(f => ({ ...f, specialty_options: [...((f as any).specialty_options || []), val] }));
+                                    e.currentTarget.value = '';
+                                  }
+                                }
+                              }}
+                            />
+                          </div>
+                        </SortableContext>
+                      </DndContext>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Seção de Acesso */}

@@ -274,11 +274,25 @@ export interface Lead {
   created_at: string;
 }
 
+export interface PublicationIdea {
+  id: string;
+  client_id: string;
+  theme: string;
+  format: string;
+  suggested_date: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'published';
+  feedback: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
 export interface ClientLeadConfig {
   id: string;
   client_id: string;
   is_enabled: boolean;
   location_options: string[];
+  kanban_stages?: string[];
+  specialty_options?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -288,6 +302,14 @@ export interface ClientLead {
   client_id: string;
   lead_date: string;
   origin: string;
+  lead_name?: string;
+  phone?: string;
+  source?: string;
+  specialty?: string;
+  potential?: 'alto' | 'baixo' | null;
+  kanban_stage?: string;
+  position: number;
+  loss_reason?: string;
   quality: 'bom' | 'ruim';
   quote_sent: boolean;
   closed: boolean;

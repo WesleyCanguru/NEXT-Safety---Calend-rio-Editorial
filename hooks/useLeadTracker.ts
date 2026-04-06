@@ -20,40 +20,19 @@ export function useLeadTracker() {
     }
   };
 
-  const fetchLeads = async (clientId: string, date: string): Promise<ClientLead[]> => {
+  const fetchLeads = async (clientId: string): Promise<ClientLead[]> => {
     try {
       const { data, error } = await supabase
         .from('client_leads')
         .select('*')
         .eq('client_id', clientId)
-        .eq('lead_date', date)
+        .order('position', { ascending: true })
         .order('created_at', { ascending: true });
 
       if (error) throw error;
       return data || [];
     } catch (error) {
       console.error('Error fetching leads:', error);
-      return [];
-    }
-  };
-
-  const fetchMonthLeads = async (clientId: string, monthYear: string): Promise<ClientLead[]> => {
-    // monthYear is YYYY-MM
-    try {
-      const startDate = dayjs(monthYear).startOf('month').format('YYYY-MM-DD');
-      const endDate = dayjs(monthYear).endOf('month').format('YYYY-MM-DD');
-
-      const { data, error } = await supabase
-        .from('client_leads')
-        .select('*')
-        .eq('client_id', clientId)
-        .gte('lead_date', startDate)
-        .lte('lead_date', endDate);
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching month leads:', error);
       return [];
     }
   };
@@ -70,6 +49,56 @@ export function useLeadTracker() {
       return data;
     } catch (error) {
       console.error('Error adding lead:', error);
+      throw error;
+    }
+  };
+
+  const updateLeadStage = async (id: string, stage: string, lossReason?: string, position?: number) => {
+    try {
+      const updateData: any = { kanban_stage: stage };
+      if (stage === 'Perdido' && lossReason) {
+        updateData.loss_reason = lossReason;
+      } else if (stage !== 'Perdido') {
+        updateData.loss_reason = null;
+      }
+
+      if (position !== undefined) {
+        updateData.position = position;
+      }
+
+      const { data, error } = await supabase
+        .from('client_leads')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating lead stage:', error);
+      throw error;
+    }
+  };
+
+  const updateLeadsPositions = async (leads: { id: string, position: number, kanban_stage?: string }[]) => {
+    try {
+      const promises = leads.map(l => 
+        supabase
+          .from('client_leads')
+          .update({ 
+            position: l.position, 
+            ...(l.kanban_stage ? { kanban_stage: l.kanban_stage } : {}),
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', l.id)
+      );
+
+      const results = await Promise.all(promises);
+      const firstError = results.find(r => r.error);
+      if (firstError) throw firstError.error;
+    } catch (error) {
+      console.error('Error updating leads positions:', error);
       throw error;
     }
   };
@@ -128,8 +157,9 @@ export function useLeadTracker() {
   return {
     fetchConfig,
     fetchLeads,
-    fetchMonthLeads,
     addLead,
+    updateLeadStage,
+    updateLeadsPositions,
     updateLead,
     deleteLead,
     upsertConfig
