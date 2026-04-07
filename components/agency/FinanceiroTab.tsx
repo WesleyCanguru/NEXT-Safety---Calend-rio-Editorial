@@ -22,12 +22,21 @@ import dayjs from 'dayjs';
 
 export const FinanceiroTab: React.FC = () => {
   const [currentMonthYear, setCurrentMonthYear] = useState(dayjs().format('YYYY-MM'));
-  const { billings, expenses, loading, updateBilling, addExpense, updateExpense, deleteExpense } = useAgencyFinanceiro(currentMonthYear);
+  const { billings, expenses, loading, updateBilling, deleteBilling, addExpense, updateExpense, deleteExpense } = useAgencyFinanceiro(currentMonthYear);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [showSporadicModal, setShowSporadicModal] = useState(false);
+  const [deletingSporadicBilling, setDeletingSporadicBilling] = useState<any>(null);
   const [editingBilling, setEditingBilling] = useState<any>(null);
+  const [newSporadicBilling, setNewSporadicBilling] = useState({
+    sporadic_name: '',
+    base_value: 0,
+    due_day: 10,
+    notes: ''
+  });
   const [newExpense, setNewExpense] = useState({ 
     description: '', 
     category: 'fixed' as 'fixed' | 'variable', 
+    expense_type: 'tools' as 'tools' | 'freelancers' | 'extras',
     amount: 0,
     due_day: 10,
     notes: ''
@@ -67,6 +76,7 @@ export const FinanceiroTab: React.FC = () => {
     await addExpense({ 
       description: newExpense.description,
       category: newExpense.category,
+      expense_type: newExpense.expense_type,
       amount: newExpense.amount,
       month_year: currentMonthYear,
       due_date,
@@ -76,7 +86,7 @@ export const FinanceiroTab: React.FC = () => {
     });
     
     setShowExpenseModal(false);
-    setNewExpense({ description: '', category: 'fixed', amount: 0, due_day: 10, notes: '' });
+    setNewExpense({ description: '', category: 'fixed', expense_type: 'tools', amount: 0, due_day: 10, notes: '' });
   };
 
   const handleMarkExpensePaid = async (expense: any, paidAt?: string) => {
@@ -90,6 +100,23 @@ export const FinanceiroTab: React.FC = () => {
       paid_at: paidAt || new Date().toISOString()
     });
     setPayingExpense(null);
+  };
+
+  const handleAddSporadicBilling = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await updateBilling({
+      is_sporadic: true,
+      sporadic_name: newSporadicBilling.sporadic_name,
+      base_value: newSporadicBilling.base_value,
+      extra_value: 0,
+      total_value: newSporadicBilling.base_value,
+      due_day: newSporadicBilling.due_day,
+      notes: newSporadicBilling.notes,
+      month_year: currentMonthYear,
+      status: 'pending'
+    });
+    setShowSporadicModal(false);
+    setNewSporadicBilling({ sporadic_name: '', base_value: 0, due_day: 10, notes: '' });
   };
 
   const handleUpdateBilling = async (e: React.FormEvent) => {
@@ -188,13 +215,22 @@ export const FinanceiroTab: React.FC = () => {
           </button>
         </div>
 
-        <button 
-          onClick={() => setShowExpenseModal(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-[2rem] font-bold text-[10px] uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg shadow-brand-dark/10"
-        >
-          <Plus size={16} />
-          Nova Despesa
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowSporadicModal(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-white text-brand-dark border border-black/[0.05] rounded-[2rem] font-bold text-[10px] uppercase tracking-widest hover:bg-gray-50 transition-all shadow-sm"
+          >
+            <Plus size={16} />
+            Faturamento Esporádico
+          </button>
+          <button 
+            onClick={() => setShowExpenseModal(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-[2rem] font-bold text-[10px] uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg shadow-brand-dark/10"
+          >
+            <Plus size={16} />
+            Nova Despesa
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -250,10 +286,21 @@ export const FinanceiroTab: React.FC = () => {
                 <tr key={billing.id} className="hover:bg-gray-50/30 transition-colors">
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-3 min-w-[180px]">
-                      <div className="w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-[10px]" style={{ backgroundColor: billing.client?.color }}>
-                        {billing.client?.initials}
-                      </div>
-                      <span className="font-bold text-sm text-brand-dark whitespace-normal leading-tight">{billing.client?.name}</span>
+                      {billing.is_sporadic ? (
+                        <>
+                          <div className="w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-[10px] bg-gray-400">
+                            ES
+                          </div>
+                          <span className="font-bold text-sm text-brand-dark whitespace-normal leading-tight">{billing.sporadic_name} <span className="text-[10px] text-gray-400 font-normal ml-1">(Esporádico)</span></span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-[10px]" style={{ backgroundColor: billing.client?.color }}>
+                            {billing.client?.initials}
+                          </div>
+                          <span className="font-bold text-sm text-brand-dark whitespace-normal leading-tight">{billing.client?.name}</span>
+                        </>
+                      )}
                     </div>
                   </td>
                   <td className="px-8 py-5">
@@ -295,6 +342,15 @@ export const FinanceiroTab: React.FC = () => {
                         <div className="px-4 py-2 bg-gray-50 text-gray-400 rounded-xl text-[9px] font-bold uppercase tracking-widest border border-gray-100 whitespace-nowrap">
                           Recebido
                         </div>
+                      )}
+                      {billing.is_sporadic && (
+                        <button 
+                          onClick={() => setDeletingSporadicBilling(billing)}
+                          className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                          title="Excluir Faturamento"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       )}
                     </div>
                   </td>
@@ -339,6 +395,11 @@ export const FinanceiroTab: React.FC = () => {
                     <span className={`px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest ${expense.category === 'fixed' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
                       {expense.category === 'fixed' ? 'Fixa' : 'Variável'}
                     </span>
+                    {expense.expense_type && (
+                      <span className="ml-2 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest bg-gray-100 text-gray-600">
+                        {expense.expense_type === 'tools' ? 'Ferramentas' : expense.expense_type === 'freelancers' ? 'Freelancers' : 'Custos Extras'}
+                      </span>
+                    )}
                   </td>
                   <td className="px-8 py-5">
                     <span className="font-bold text-sm text-brand-dark">{formatCurrency(expense.amount)}</span>
@@ -428,7 +489,7 @@ export const FinanceiroTab: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Categoria</label>
+                  <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Recorrência</label>
                   <select 
                     value={newExpense.category}
                     onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value as 'fixed' | 'variable' })}
@@ -438,6 +499,19 @@ export const FinanceiroTab: React.FC = () => {
                     <option value="variable">Variável</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Tipo de Despesa</label>
+                <select 
+                  value={newExpense.expense_type}
+                  onChange={(e) => setNewExpense({ ...newExpense, expense_type: e.target.value as 'tools' | 'freelancers' | 'extras' })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-sm font-medium appearance-none"
+                >
+                  <option value="tools">Ferramentas</option>
+                  <option value="freelancers">Freelancers</option>
+                  <option value="extras">Custos Extras</option>
+                </select>
               </div>
 
               {newExpense.category === 'fixed' && (
@@ -485,6 +559,88 @@ export const FinanceiroTab: React.FC = () => {
         </div>
       )}
 
+      {/* Sporadic Billing Modal */}
+      {showSporadicModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brand-dark/20 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl border border-black/[0.03]"
+          >
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-xl font-bold text-brand-dark">Faturamento Esporádico</h3>
+              <button onClick={() => setShowSporadicModal(false)} className="p-2 hover:bg-gray-50 rounded-xl transition-colors">
+                <X size={20} className="text-gray-400" />
+              </button>
+            </div>
+            <form onSubmit={handleAddSporadicBilling} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Nome do Serviço / Cliente</label>
+                <input 
+                  type="text" 
+                  required
+                  value={newSporadicBilling.sporadic_name}
+                  onChange={(e) => setNewSporadicBilling({ ...newSporadicBilling, sporadic_name: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-sm font-medium"
+                  placeholder="Ex: Criação de Landing Page"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Valor (R$)</label>
+                  <input 
+                    type="number" 
+                    required
+                    step="0.01"
+                    value={newSporadicBilling.base_value}
+                    onChange={(e) => setNewSporadicBilling({ ...newSporadicBilling, base_value: Number(e.target.value) })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-sm font-medium"
+                    placeholder="0,00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Dia Vencimento</label>
+                  <input 
+                    type="number" 
+                    required min={1} max={31}
+                    value={newSporadicBilling.due_day}
+                    onChange={(e) => setNewSporadicBilling({ ...newSporadicBilling, due_day: Number(e.target.value) })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-sm font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Notas</label>
+                <textarea 
+                  value={newSporadicBilling.notes}
+                  onChange={(e) => setNewSporadicBilling({ ...newSporadicBilling, notes: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-sm font-medium resize-none"
+                  rows={2}
+                  placeholder="Observações..."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button 
+                  type="button"
+                  onClick={() => setShowSporadicModal(false)}
+                  className="flex-1 px-6 py-3 border border-gray-100 text-gray-400 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-gray-50 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 px-6 py-3 bg-brand-dark text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg shadow-brand-dark/10"
+                >
+                  Adicionar
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
       {/* Billing Edit Modal */}
       {editingBilling && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brand-dark/20 backdrop-blur-sm">
@@ -496,7 +652,9 @@ export const FinanceiroTab: React.FC = () => {
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h3 className="text-xl font-bold text-brand-dark">Editar Faturamento</h3>
-                <p className="text-[9px] uppercase tracking-widest font-bold text-gray-400">{editingBilling.client?.name}</p>
+                <p className="text-[9px] uppercase tracking-widest font-bold text-gray-400">
+                  {editingBilling.is_sporadic ? editingBilling.sporadic_name : editingBilling.client?.name}
+                </p>
               </div>
               <button onClick={() => setEditingBilling(null)} className="p-2 hover:bg-gray-50 rounded-xl transition-colors">
                 <X size={20} className="text-gray-400" />
@@ -612,6 +770,41 @@ export const FinanceiroTab: React.FC = () => {
                   Confirmar
                 </button>
               </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+      {/* Delete Sporadic Billing Modal */}
+      {deletingSporadicBilling && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-brand-dark/20 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl border border-black/[0.03] text-center"
+          >
+            <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-brand-dark mb-2">Excluir Faturamento?</h3>
+            <p className="text-sm text-gray-500 mb-8">
+              Tem certeza que deseja excluir o faturamento esporádico <strong>{deletingSporadicBilling.sporadic_name}</strong>? Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setDeletingSporadicBilling(null)}
+                className="flex-1 px-6 py-3 border border-gray-100 text-gray-400 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-gray-50 transition-all"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={async () => {
+                  await deleteBilling(deletingSporadicBilling.id);
+                  setDeletingSporadicBilling(null);
+                }}
+                className="flex-1 px-6 py-3 bg-rose-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/10"
+              >
+                Excluir
+              </button>
             </div>
           </motion.div>
         </div>

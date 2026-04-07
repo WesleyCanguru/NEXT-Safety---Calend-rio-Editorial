@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { AgencyBilling, AgencyExpense, Client } from '../types';
 
+import dayjs from 'dayjs';
+
 export function useAgencyFinanceiro(monthYear: string) {
   const [billings, setBillings] = useState<AgencyBilling[]>([]);
   const [expenses, setExpenses] = useState<AgencyExpense[]>([]);
@@ -30,7 +32,7 @@ export function useAgencyFinanceiro(monthYear: string) {
 
       // If a client doesn't have a billing record for this month, we should ideally create one or show it as pending
       // For now, let's just merge them in memory for the UI
-      const existingClientIds = new Set(currentBillings.map(b => b.client_id));
+      const existingClientIds = new Set(currentBillings.filter(b => !b.is_sporadic).map(b => b.client_id));
       const missingClients = clients.filter(c => !existingClientIds.has(c.id));
 
       const placeholderBillings: AgencyBilling[] = missingClients.map(c => ({
@@ -45,7 +47,8 @@ export function useAgencyFinanceiro(monthYear: string) {
         notes: null,
         paid_at: null,
         created_at: new Date().toISOString(),
-        client: c
+        client: c,
+        is_sporadic: false
       }));
 
       setBillings([...currentBillings, ...placeholderBillings]);
@@ -57,7 +60,43 @@ export function useAgencyFinanceiro(monthYear: string) {
         .eq('month_year', monthYear)
         .order('created_at', { ascending: false });
 
-      setExpenses((expensesData || []) as AgencyExpense[]);
+      let currentExpenses = (expensesData || []) as AgencyExpense[];
+
+      // Check if we need to carry over fixed expenses from previous month
+      const hasFixedExpenses = currentExpenses.some(e => e.category === 'fixed');
+      if (!hasFixedExpenses) {
+        const prevMonth = dayjs(monthYear + '-01').subtract(1, 'month').format('YYYY-MM');
+        const { data: prevExpenses } = await supabase
+          .from('agency_expenses')
+          .select('*')
+          .eq('month_year', prevMonth)
+          .eq('category', 'fixed');
+
+        if (prevExpenses && prevExpenses.length > 0) {
+          const newExpensesToInsert = prevExpenses.map(e => ({
+            description: e.description,
+            category: e.category,
+            expense_type: e.expense_type,
+            amount: e.amount,
+            month_year: monthYear,
+            due_date: e.due_date ? dayjs(monthYear + '-01').date(dayjs(e.due_date).date()).format('YYYY-MM-DD') : null,
+            paid: false,
+            paid_at: null,
+            notes: e.notes
+          }));
+
+          const { data: insertedExpenses } = await supabase
+            .from('agency_expenses')
+            .insert(newExpensesToInsert)
+            .select();
+
+          if (insertedExpenses) {
+            currentExpenses = [...currentExpenses, ...insertedExpenses];
+          }
+        }
+      }
+
+      setExpenses(currentExpenses);
     } catch (error) {
       console.error('Error fetching financeiro data:', error);
     } finally {
@@ -88,9 +127,11 @@ export function useAgencyFinanceiro(monthYear: string) {
         status: billing.status || existing?.status || 'pending',
         notes: billing.notes !== undefined ? billing.notes : (existing?.notes || null),
         paid_at: billing.paid_at !== undefined ? billing.paid_at : (existing?.paid_at || null),
+        is_sporadic: billing.is_sporadic !== undefined ? billing.is_sporadic : (existing?.is_sporadic || false),
+        sporadic_name: billing.sporadic_name !== undefined ? billing.sporadic_name : (existing?.sporadic_name || null),
       };
 
-      if (billing.id?.startsWith('temp-')) {
+      if (billing.id?.startsWith('temp-') || !billing.id) {
         const { data, error } = await supabase
           .from('agency_billing')
           .insert([dbData])
@@ -99,7 +140,11 @@ export function useAgencyFinanceiro(monthYear: string) {
         if (error) throw error;
         if (data && data.length > 0) {
           const inserted = data[0];
-          setBillings(prev => prev.map(b => b.client_id === inserted.client_id ? inserted : b));
+          if (billing.id?.startsWith('temp-')) {
+            setBillings(prev => prev.map(b => b.client_id === inserted.client_id && !b.is_sporadic ? inserted : b));
+          } else {
+            setBillings(prev => [...prev, inserted]);
+          }
         }
       } else {
         const { data, error } = await supabase
@@ -113,6 +158,17 @@ export function useAgencyFinanceiro(monthYear: string) {
           const updated = data[0];
           setBillings(prev => prev.map(b => b.id === updated.id ? updated : b));
         }
+      }
+
+      // Update client base_value and due_day so it carries over to next months
+      if (dbData.client_id && !dbData.is_sporadic) {
+        await supabase
+          .from('clients')
+          .update({
+            base_value: dbData.base_value,
+            due_day: dbData.due_day
+          })
+          .eq('id', dbData.client_id);
       }
     } catch (error) {
       console.error('Error updating billing:', error);
@@ -168,11 +224,27 @@ export function useAgencyFinanceiro(monthYear: string) {
     }
   };
 
+  const deleteBilling = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('agency_billing')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      setBillings(prev => prev.filter(b => b.id !== id));
+    } catch (error) {
+      console.error('Error deleting billing:', error);
+      throw error;
+    }
+  };
+
   return {
     billings,
     expenses,
     loading,
     updateBilling,
+    deleteBilling,
     addExpense,
     updateExpense,
     deleteExpense,

@@ -115,6 +115,7 @@ export const LeadTrackerView: React.FC<LeadTrackerViewProps> = ({ clientId, conf
 
   // Drag and Drop State
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [originalStage, setOriginalStage] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -273,6 +274,8 @@ export const LeadTrackerView: React.FC<LeadTrackerViewProps> = ({ clientId, conf
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+    const lead = leads.find(l => l.id === event.active.id);
+    if (lead) setOriginalStage(lead.kanban_stage);
   };
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -325,14 +328,14 @@ export const LeadTrackerView: React.FC<LeadTrackerViewProps> = ({ clientId, conf
       targetStage = overLead?.kanban_stage || activeLead.kanban_stage;
     }
 
-    if (targetStage === 'Perdido' && activeLead.kanban_stage !== 'Perdido') {
+    if (targetStage === 'Perdido' && originalStage !== 'Perdido') {
       setLeadToLose(activeId);
       setLossReason(LOSS_REASONS[0]);
       setIsLossModalOpen(true);
       return;
     }
 
-    if (targetStage === 'Fechado' && activeLead.kanban_stage !== 'Fechado') {
+    if (targetStage === 'Fechado' && originalStage !== 'Fechado') {
       setLeadToWin(activeId);
       setDealValue(0);
       setIsWonModalOpen(true);
@@ -344,7 +347,7 @@ export const LeadTrackerView: React.FC<LeadTrackerViewProps> = ({ clientId, conf
     const oldIndex = stageLeads.findIndex(l => l.id === activeId);
     const newIndex = stageLeads.findIndex(l => l.id === overId);
 
-    if (activeLead.kanban_stage !== targetStage) {
+    if (originalStage !== targetStage) {
       await updateLeadStage(activeId, targetStage);
     }
 
@@ -385,7 +388,17 @@ export const LeadTrackerView: React.FC<LeadTrackerViewProps> = ({ clientId, conf
     }
   };
 
-  const handleConfirmLoss = async () => {
+  const handleCancelLoss = () => {
+    setIsLossModalOpen(false);
+    setLeadToLose(null);
+    loadData();
+  };
+
+  const handleCancelWin = () => {
+    setIsWonModalOpen(false);
+    setLeadToWin(null);
+    loadData();
+  };
     if (!leadToLose || !lossReason) return;
     try {
       await updateLeadStage(leadToLose, 'Perdido', lossReason);
@@ -851,7 +864,7 @@ export const LeadTrackerView: React.FC<LeadTrackerViewProps> = ({ clientId, conf
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsLossModalOpen(false)}
+              onClick={handleCancelLoss}
               className="absolute inset-0 bg-brand-dark/40 backdrop-blur-sm"
             />
             
@@ -875,7 +888,7 @@ export const LeadTrackerView: React.FC<LeadTrackerViewProps> = ({ clientId, conf
 
               <div className="flex gap-3">
                 <button 
-                  onClick={() => setIsLossModalOpen(false)}
+                  onClick={handleCancelLoss}
                   className="flex-1 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-colors"
                 >
                   Cancelar

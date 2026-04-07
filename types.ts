@@ -227,7 +227,7 @@ export interface PostIdea {
 
 export interface AgencyBilling {
   id: string;
-  client_id: string;
+  client_id?: string | null;
   month_year: string; // YYYY-MM
   base_value: number;
   extra_value: number;
@@ -238,12 +238,15 @@ export interface AgencyBilling {
   paid_at: string | null;
   created_at: string;
   client?: Client;
+  is_sporadic?: boolean;
+  sporadic_name?: string | null;
 }
 
 export interface AgencyExpense {
   id: string;
   description: string;
   category: 'fixed' | 'variable';
+  expense_type?: 'tools' | 'freelancers' | 'extras';
   amount: number;
   month_year: string; // YYYY-MM
   due_date?: string | null; // DATE
