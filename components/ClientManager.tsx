@@ -50,7 +50,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const SortableItem = ({ id, onRemove }: { id: string, onRemove: () => void }) => {
+const SortableItem: React.FC<{ id: string, onRemove: () => void }> = ({ id, onRemove }) => {
   const {
     attributes,
     listeners,
