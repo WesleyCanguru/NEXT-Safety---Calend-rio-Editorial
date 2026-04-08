@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase, useAuth } from '../lib/supabase';
 import {
-  BarChart2,
-  Calendar,
   FileText,
-  Monitor,
   File,
   Plus,
   Download,
@@ -13,118 +10,116 @@ import {
   UploadCloud,
   AlertCircle,
   Folder,
-  ChevronLeft
+  ChevronLeft,
+  ChevronRight,
+  FolderPlus,
+  Image as ImageIcon,
+  Video,
+  FileArchive
 } from 'lucide-react';
+import { ClientFolder } from '../types';
 
 interface Document {
   id: string;
   client_id: string;
+  folder_id: string | null;
   title: string;
   description?: string;
   file_name: string;
   file_path: string;
   file_type: string;
   file_size?: number;
-  category: 'report' | 'editorial_calendar' | 'contract' | 'presentation' | 'other';
-  month?: number;
-  year?: number;
-  uploaded_by?: string;
   created_at: string;
 }
-
-interface CategoryConfig {
-  id: string;
-  label: string;
-  icon: any;
-  color: string;
-  bg: string;
-  border: string;
-  isCustom?: boolean;
-}
-
-const DEFAULT_CATEGORIES: CategoryConfig[] = [
-  { id: 'report', label: 'Relatório', icon: BarChart2, color: 'text-blue-600', bg: 'bg-blue-100', border: 'border-blue-200' },
-  { id: 'editorial_calendar', label: 'Calendário Editorial', icon: Calendar, color: 'text-purple-600', bg: 'bg-purple-100', border: 'border-purple-200' },
-  { id: 'contract', label: 'Contrato', icon: FileText, color: 'text-green-600', bg: 'bg-green-100', border: 'border-green-200' },
-  { id: 'presentation', label: 'Apresentação', icon: Monitor, color: 'text-orange-600', bg: 'bg-orange-100', border: 'border-orange-200' },
-  { id: 'other', label: 'Outro', icon: File, color: 'text-gray-600', bg: 'bg-gray-100', border: 'border-gray-200' },
-];
-
-const MONTH_NAMES = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-];
 
 export const DocumentsView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const { activeClient, userRole } = useAuth();
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [customCategories, setCustomCategories] = useState<CategoryConfig[]>([]);
-  const [deletedPredefined, setDeletedPredefined] = useState<string[]>([]);
+  const [folders, setFolders] = useState<ClientFolder[]>([]);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [breadcrumbs, setBreadcrumbs] = useState<{id: string, name: string}[]>([]);
+  
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>('all');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Form state
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<string>('report');
-  const [month, setMonth] = useState<string>('');
-  const [year, setYear] = useState<number>(new Date().getFullYear());
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  
-  // Category form state
-  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newFolderName, setNewFolderName] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (activeClient) {
-      fetchDocuments();
+      fetchData();
     }
-  }, [activeClient]);
+  }, [activeClient, currentFolderId]);
 
-  const fetchDocuments = async () => {
+  const fetchData = async () => {
     if (!activeClient) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch folders
+      let foldersQuery = supabase
+        .from('client_folders')
+        .select('*')
+        .eq('client_id', activeClient.id)
+        .order('name', { ascending: true });
+        
+      if (currentFolderId) {
+        foldersQuery = foldersQuery.eq('parent_id', currentFolderId);
+      } else {
+        foldersQuery = foldersQuery.is('parent_id', null);
+      }
+      
+      const { data: foldersData, error: foldersError } = await foldersQuery;
+      if (foldersError) throw foldersError;
+      setFolders(foldersData || []);
+
+      // Fetch documents
+      let docsQuery = supabase
         .from('documents')
         .select('*')
         .eq('client_id', activeClient.id)
+        .neq('file_type', 'category')
+        .neq('file_type', 'deleted_category')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      const allDocs = data || [];
-      const actualDocs = allDocs.filter(d => d.file_type !== 'category' && d.file_type !== 'deleted_category');
-      const customCategoryDocs = allDocs.filter(d => d.file_type === 'category');
-      const deletedCategoryDocs = allDocs.filter(d => d.file_type === 'deleted_category');
+      if (currentFolderId) {
+        docsQuery = docsQuery.eq('folder_id', currentFolderId);
+      } else {
+        docsQuery = docsQuery.is('folder_id', null);
+      }
 
-      setDocuments(actualDocs);
-      setCustomCategories(customCategoryDocs.map(d => ({
-        id: d.id,
-        label: d.title,
-        icon: Folder,
-        color: 'text-gray-600',
-        bg: 'bg-gray-100',
-        border: 'border-gray-200',
-        isCustom: true
-      })));
-      setDeletedPredefined(deletedCategoryDocs.map(d => d.title));
+      const { data: docsData, error: docsError } = await docsQuery;
+      if (docsError) throw docsError;
+      setDocuments(docsData || []);
+
     } catch (err) {
-      console.error('Error fetching documents:', err);
+      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const allCategories = [
-    ...DEFAULT_CATEGORIES.filter(c => !deletedPredefined.includes(c.id)),
-    ...customCategories
-  ];
+  const navigateToFolder = (folder: ClientFolder) => {
+    setBreadcrumbs([...breadcrumbs, { id: folder.id, name: folder.name }]);
+    setCurrentFolderId(folder.id);
+  };
+
+  const navigateToBreadcrumb = (index: number) => {
+    if (index === -1) {
+      setBreadcrumbs([]);
+      setCurrentFolderId(null);
+    } else {
+      const newBreadcrumbs = breadcrumbs.slice(0, index + 1);
+      setBreadcrumbs(newBreadcrumbs);
+      setCurrentFolderId(newBreadcrumbs[newBreadcrumbs.length - 1].id);
+    }
+  };
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return '';
@@ -132,6 +127,14 @@ export const DocumentsView: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
       return `${Math.round(bytes / 1024)} KB`;
     }
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType.includes('image')) return <ImageIcon className="w-8 h-8 text-blue-500" />;
+    if (fileType.includes('video')) return <Video className="w-8 h-8 text-purple-500" />;
+    if (fileType.includes('pdf')) return <FileText className="w-8 h-8 text-red-500" />;
+    if (fileType.includes('zip') || fileType.includes('rar')) return <FileArchive className="w-8 h-8 text-orange-500" />;
+    return <File className="w-8 h-8 text-gray-500" />;
   };
 
   const handlePreview = async (doc: Document) => {
@@ -174,20 +177,19 @@ export const DocumentsView: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
     }
   };
 
-  const handleDelete = async (doc: Document) => {
-    if (!window.confirm(`Tem certeza que deseja excluir o documento "${doc.title}"?`)) {
+  const handleDeleteDoc = async (doc: Document, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm(`Tem certeza que deseja excluir o arquivo "${doc.title}"?`)) {
       return;
     }
 
     try {
-      // 1. Delete from storage
       const { error: storageError } = await supabase.storage
         .from('client-documents')
         .remove([doc.file_path]);
 
       if (storageError) throw storageError;
 
-      // 2. Delete from database
       const { error: dbError } = await supabase
         .from('documents')
         .delete()
@@ -195,18 +197,37 @@ export const DocumentsView: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
 
       if (dbError) throw dbError;
 
-      // 3. Update local state
       setDocuments(documents.filter(d => d.id !== doc.id));
     } catch (err) {
       console.error('Error deleting document:', err);
-      alert('Erro ao excluir documento.');
+      alert('Erro ao excluir arquivo.');
+    }
+  };
+
+  const handleDeleteFolder = async (folder: ClientFolder, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm(`Tem certeza que deseja excluir a pasta "${folder.name}" e todo o seu conteúdo?`)) {
+      return;
+    }
+
+    try {
+      const { error: dbError } = await supabase
+        .from('client_folders')
+        .delete()
+        .eq('id', folder.id);
+
+      if (dbError) throw dbError;
+
+      setFolders(folders.filter(f => f.id !== folder.id));
+    } catch (err) {
+      console.error('Error deleting folder:', err);
+      alert('Erro ao excluir pasta.');
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      // Check size (max 50MB)
       if (file.size > 50 * 1024 * 1024) {
         setError('O arquivo deve ter no máximo 50MB.');
         setSelectedFile(null);
@@ -214,6 +235,9 @@ export const DocumentsView: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
         return;
       }
       setSelectedFile(file);
+      if (!title) {
+        setTitle(file.name);
+      }
       setError(null);
     }
   };
@@ -221,10 +245,6 @@ export const DocumentsView: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeClient) return;
-    if (!title.trim()) {
-      setError('O título é obrigatório.');
-      return;
-    }
     if (!selectedFile) {
       setError('Selecione um arquivo para fazer upload.');
       return;
@@ -238,38 +258,29 @@ export const DocumentsView: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
       const safeFileName = selectedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
       const filePath = `${activeClient.id}/${timestamp}_${safeFileName}`;
 
-      // 1. Upload to storage
       const { error: uploadError } = await supabase.storage
         .from('client-documents')
         .upload(filePath, selectedFile);
 
       if (uploadError) throw uploadError;
 
-      const isCustomCategory = customCategories.some(c => c.id === category);
-      const dbCategory = isCustomCategory ? 'other' : category;
-      const dbDescription = isCustomCategory ? `[CAT:${category}] ${description.trim()}` : description.trim() || null;
-
-      // 2. Insert record to database
       const { error: dbError } = await supabase
         .from('documents')
         .insert({
           client_id: activeClient.id,
-          title: title.trim(),
-          description: dbDescription,
+          folder_id: currentFolderId,
+          title: title.trim() || selectedFile.name,
           file_name: selectedFile.name,
           file_path: filePath,
           file_type: selectedFile.type || 'application/octet-stream',
           file_size: selectedFile.size,
-          category: dbCategory,
-          month: month ? parseInt(month) : null,
-          year: year || null
+          category: 'other' // Keep for backwards compatibility if needed
         });
 
       if (dbError) throw dbError;
 
-      // Success
-      await fetchDocuments();
-      closeModal();
+      await fetchData();
+      closeUploadModal();
     } catch (err: any) {
       console.error('Error uploading document:', err);
       setError(err.message || 'Erro ao fazer upload do documento.');
@@ -278,111 +289,53 @@ export const DocumentsView: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
     }
   };
 
-  const handleCreateCategory = async (e: React.FormEvent) => {
+  const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeClient || !newCategoryName.trim()) return;
+    if (!activeClient || !newFolderName.trim()) return;
 
     setUploading(true);
     setError(null);
 
     try {
       const { error: dbError } = await supabase
-        .from('documents')
+        .from('client_folders')
         .insert({
           client_id: activeClient.id,
-          title: newCategoryName.trim(),
-          file_name: '__category__',
-          file_path: '__category__' + Date.now(),
-          file_type: 'category',
-          category: 'other'
+          parent_id: currentFolderId,
+          name: newFolderName.trim()
         });
 
       if (dbError) throw dbError;
 
-      await fetchDocuments();
-      setIsCategoryModalOpen(false);
-      setNewCategoryName('');
+      await fetchData();
+      closeFolderModal();
     } catch (err: any) {
-      console.error('Error creating category:', err);
-      setError(err.message || 'Erro ao criar categoria.');
+      console.error('Error creating folder:', err);
+      setError(err.message || 'Erro ao criar pasta.');
     } finally {
       setUploading(false);
     }
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
-    if (!activeClient) return;
-    if (!window.confirm('Tem certeza que deseja excluir esta categoria? Os documentos não serão excluídos, mas ficarão sem categoria.')) {
-      return;
-    }
-
-    try {
-      const isCustom = customCategories.some(c => c.id === categoryId);
-      
-      if (isCustom) {
-        // Delete the category document
-        const { error } = await supabase
-          .from('documents')
-          .delete()
-          .eq('id', categoryId);
-        if (error) throw error;
-      } else {
-        // Add to deleted predefined categories
-        const { error } = await supabase
-          .from('documents')
-          .insert({
-            client_id: activeClient.id,
-            title: categoryId,
-            file_name: '__deleted_category__',
-            file_path: '__deleted_category__' + Date.now(),
-            file_type: 'deleted_category',
-            category: 'other'
-          });
-        if (error) throw error;
-      }
-
-      await fetchDocuments();
-      if (filter === categoryId) {
-        setFilter('all');
-      }
-    } catch (err) {
-      console.error('Error deleting category:', err);
-      alert('Erro ao excluir categoria.');
-    }
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
+  const closeUploadModal = () => {
+    setIsUploadModalOpen(false);
     setTitle('');
-    setDescription('');
-    setCategory('report');
-    setMonth('');
-    setYear(new Date().getFullYear());
     setSelectedFile(null);
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const filteredDocuments = filter === 'all' 
-    ? documents 
-    : documents.filter(d => {
-        let customCategoryId = null;
-        if (d.description && d.description.startsWith('[CAT:')) {
-          const match = d.description.match(/^\[CAT:([^\]]+)\]/);
-          if (match) customCategoryId = match[1];
-        }
-        
-        if (customCategoryId) {
-          return customCategoryId === filter;
-        }
-        return d.category === filter;
-      });
+  const closeFolderModal = () => {
+    setIsFolderModalOpen(false);
+    setNewFolderName('');
+    setError(null);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-white border-b border-gray-200 px-6 py-4 shrink-0">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             {onBack && (
               <button 
@@ -393,384 +346,295 @@ export const DocumentsView: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
                 <ChevronLeft className="w-6 h-6" />
               </button>
             )}
-            <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
-              <FileText className="w-5 h-5 text-orange-600" />
+            <div className="w-10 h-10 bg-brand-dark/10 rounded-xl flex items-center justify-center">
+              <Folder className="w-5 h-5 text-brand-dark" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Documentos</h1>
-              <p className="text-sm text-gray-500">Gerencie arquivos e apresentações</p>
+              <h1 className="text-xl font-bold text-gray-900">Documentos e Arquivos</h1>
+              <p className="text-sm text-gray-500">Gerencie seus arquivos como no Google Drive</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {(userRole === 'admin' || userRole === 'team') && (
               <button
-                onClick={() => setIsCategoryModalOpen(true)}
+                onClick={() => setIsFolderModalOpen(true)}
                 className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium shadow-sm"
               >
-                <Folder className="w-4 h-4" />
-                Nova Categoria
+                <FolderPlus className="w-4 h-4" />
+                Nova Pasta
               </button>
             )}
             <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium shadow-sm"
+              onClick={() => setIsUploadModalOpen(true)}
+              className="flex items-center gap-2 bg-brand-dark text-white px-4 py-2 rounded-lg hover:bg-brand-dark/90 transition-colors text-sm font-medium shadow-sm"
             >
-              <Plus className="w-4 h-4" />
-              Novo Documento
+              <UploadCloud className="w-4 h-4" />
+              Fazer Upload
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-6">
-        {/* Filter Bar */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              filter === 'all' 
-                ? 'bg-gray-800 text-white' 
-                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-            }`}
+      <div className="flex-1 max-w-6xl w-full mx-auto px-6 py-6 flex flex-col">
+        {/* Breadcrumbs */}
+        <div className="flex items-center gap-2 mb-8 text-sm font-medium text-gray-600 overflow-x-auto pb-2">
+          <button 
+            onClick={() => navigateToBreadcrumb(-1)}
+            className={`hover:text-brand-dark transition-colors flex items-center gap-2 ${!currentFolderId ? 'text-brand-dark font-bold' : ''}`}
           >
-            Todos
+            <Folder className="w-4 h-4" />
+            Meu Drive
           </button>
-          {allCategories.map((config) => (
-            <div key={config.id} className="relative group flex items-center">
-              <button
-                onClick={() => setFilter(config.id)}
-                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5 ${
-                  filter === config.id 
-                    ? `${config.bg} ${config.color} border ${config.border}` 
-                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
+          {breadcrumbs.map((crumb, index) => (
+            <React.Fragment key={crumb.id}>
+              <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
+              <button 
+                onClick={() => navigateToBreadcrumb(index)}
+                className={`hover:text-brand-dark transition-colors whitespace-nowrap ${index === breadcrumbs.length - 1 ? 'text-brand-dark font-bold' : ''}`}
               >
-                <config.icon className="w-3.5 h-3.5" />
-                {config.label}
+                {crumb.name}
               </button>
-              {(userRole === 'admin' || userRole === 'team') && (
-                <button
-                  onClick={() => handleDeleteCategory(config.id)}
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-red-100 text-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Excluir categoria"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
+            </React.Fragment>
           ))}
         </div>
 
-        {/* Document List */}
         {loading ? (
-          <div className="flex justify-center py-16">
-            <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
-          </div>
-        ) : filteredDocuments.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl border border-gray-200 border-dashed">
-            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <File className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-1">Nenhum documento encontrado</h3>
-            <p className="text-gray-500 text-sm">
-              {filter === 'all' 
-                ? 'Faça o upload do seu primeiro documento clicando no botão acima.'
-                : `Nenhum documento da categoria "${allCategories.find(c => c.id === filter)?.label || 'Desconhecida'}" encontrado.`}
-            </p>
+          <div className="flex items-center justify-center py-20">
+            <div className="w-8 h-8 border-4 border-brand-dark border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredDocuments.map((doc) => {
-              let customCategoryId = null;
-              let displayDescription = doc.description;
-              if (doc.description && doc.description.startsWith('[CAT:')) {
-                const match = doc.description.match(/^\[CAT:([^\]]+)\]\s*(.*)$/);
-                if (match) {
-                  customCategoryId = match[1];
-                  displayDescription = match[2];
-                }
-              }
-
-              const config = allCategories.find(c => c.id === (customCategoryId || doc.category)) || allCategories.find(c => c.id === 'other') || DEFAULT_CATEGORIES[4];
-              const Icon = config.icon;
-              
-              return (
-                <div 
-                  key={doc.id} 
-                  onClick={() => handlePreview(doc)}
-                  className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full cursor-pointer"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${config.bg} ${config.color}`}>
-                      <Icon className="w-3 h-3" />
-                      {config.label}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {new Date(doc.created_at).toLocaleDateString('pt-BR')}
-                    </span>
-                  </div>
-                  
-                  <h3 className="font-bold text-gray-900 mb-1 line-clamp-1" title={doc.title}>
-                    {doc.title}
-                  </h3>
-                  
-                  {displayDescription && (
-                    <p className="text-sm text-gray-500 mb-3 line-clamp-2 flex-grow">
-                      {displayDescription}
-                    </p>
-                  )}
-                  
-                  {!displayDescription && <div className="flex-grow"></div>}
-
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex flex-col">
-                        <span className="text-xs text-gray-500 truncate max-w-[150px]" title={doc.file_name}>
-                          {doc.file_name}
-                        </span>
-                        {(doc.month || doc.year) && (
-                          <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mt-0.5">
-                            {doc.month ? MONTH_NAMES[doc.month - 1] : ''} {doc.year}
-                          </span>
-                        )}
+          <div className="space-y-8">
+            {/* Folders Section */}
+            {folders.length > 0 && (
+              <section>
+                <h2 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Pastas</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {folders.map(folder => (
+                    <div 
+                      key={folder.id}
+                      onClick={() => navigateToFolder(folder)}
+                      className="group bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-3 cursor-pointer hover:border-brand-dark/30 hover:shadow-md transition-all"
+                    >
+                      <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-brand-dark/5 transition-colors">
+                        <Folder className="w-5 h-5 text-gray-500 group-hover:text-brand-dark transition-colors" fill="currentColor" fillOpacity={0.2} />
                       </div>
-                      <span className="text-xs font-medium text-gray-400">
-                        {formatFileSize(doc.file_size)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => handleDownload(doc, e)}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        Download
-                      </button>
+                      <span className="font-medium text-gray-800 truncate flex-1">{folder.name}</span>
                       {(userRole === 'admin' || userRole === 'team') && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(doc);
-                          }}
-                          className="flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-lg transition-colors"
-                          title="Excluir documento"
+                        <button 
+                          onClick={(e) => handleDeleteFolder(folder, e)}
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>
-                  </div>
+                  ))}
                 </div>
-              );
-            })}
+              </section>
+            )}
+
+            {/* Files Section */}
+            {(documents.length > 0 || folders.length === 0) && (
+              <section>
+                {folders.length > 0 && (
+                  <h2 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Arquivos</h2>
+                )}
+                
+                {documents.length === 0 && folders.length === 0 ? (
+                  <div className="bg-white border border-dashed border-gray-300 rounded-3xl p-12 flex flex-col items-center justify-center text-center">
+                    <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
+                      <Folder className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Esta pasta está vazia</h3>
+                    <p className="text-gray-500 mb-6 max-w-md">
+                      Faça upload de arquivos ou crie novas pastas para organizar seus documentos.
+                    </p>
+                    <button
+                      onClick={() => setIsUploadModalOpen(true)}
+                      className="bg-brand-dark text-white px-6 py-3 rounded-xl font-bold hover:bg-brand-dark/90 transition-colors shadow-lg shadow-brand-dark/20"
+                    >
+                      Fazer Upload de Arquivo
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {documents.map(doc => (
+                      <div 
+                        key={doc.id}
+                        onClick={() => handlePreview(doc)}
+                        className="group bg-white border border-gray-200 rounded-2xl p-4 flex flex-col gap-3 cursor-pointer hover:border-brand-dark/30 hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center shrink-0">
+                            {getFileIcon(doc.file_type)}
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={(e) => handleDownload(doc, e)}
+                              className="p-1.5 text-gray-400 hover:text-brand-dark hover:bg-brand-dark/5 rounded-lg transition-colors"
+                              title="Baixar"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                            {(userRole === 'admin' || userRole === 'team') && (
+                              <button 
+                                onClick={(e) => handleDeleteDoc(doc, e)}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Excluir"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900 text-sm line-clamp-2 mb-1" title={doc.title}>
+                            {doc.title}
+                          </h4>
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span className="truncate max-w-[120px]">{new Date(doc.created_at).toLocaleDateString()}</span>
+                            <span>{formatFileSize(doc.file_size)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
           </div>
         )}
       </div>
 
       {/* Upload Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">Novo Documento</h2>
-              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 transition-colors">
-                <X className="w-5 h-5" />
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Fazer Upload</h3>
+              <button onClick={closeUploadModal} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                <X className="w-5 h-5 text-gray-400" />
               </button>
             </div>
-            
-            <div className="p-6 overflow-y-auto">
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 text-sm text-red-700">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>{error}</span>
-                </div>
-              )}
 
-              <form id="upload-form" onSubmit={handleUpload} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3 text-red-600">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <p className="text-sm font-medium">{error}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleUpload} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">Arquivo</label>
+                <div 
+                  className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Ex: Relatório de Performance - Março"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    required
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
                   />
+                  {selectedFile ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <File className="w-8 h-8 text-brand-dark" />
+                      <span className="text-sm font-medium text-gray-900">{selectedFile.name}</span>
+                      <span className="text-xs text-gray-500">{formatFileSize(selectedFile.size)}</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <UploadCloud className="w-8 h-8 text-gray-400" />
+                      <span className="text-sm font-medium text-gray-600">Clique para selecionar um arquivo</span>
+                      <span className="text-xs text-gray-400">Máximo 50MB</span>
+                    </div>
+                  )}
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Breve descrição do documento..."
-                    rows={2}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"
-                  />
-                </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">Nome do Arquivo (Opcional)</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="Ex: Contrato Assinado"
+                  className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none transition-all"
+                />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoria *</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    required
-                  >
-                    {allCategories.map((config) => (
-                      <option key={config.id} value={config.id}>{config.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Mês (Opcional)</label>
-                    <select
-                      value={month}
-                      onChange={(e) => setMonth(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    >
-                      <option value="">Selecione...</option>
-                      {MONTH_NAMES.map((m, i) => (
-                        <option key={i + 1} value={i + 1}>{m}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ano</label>
-                    <input
-                      type="number"
-                      value={year}
-                      onChange={(e) => setYear(Number(e.target.value))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Arquivo *</label>
-                  <div 
-                    className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${
-                      selectedFile ? 'border-orange-300 bg-orange-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
-                    }`}
-                  >
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept=".pdf,.ppt,.pptx,.jpg,.jpeg,.png"
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
-                      <UploadCloud className={`w-8 h-8 mb-2 ${selectedFile ? 'text-orange-500' : 'text-gray-400'}`} />
-                      {selectedFile ? (
-                        <>
-                          <span className="text-sm font-medium text-gray-900">{selectedFile.name}</span>
-                          <span className="text-xs text-gray-500 mt-1">{formatFileSize(selectedFile.size)}</span>
-                          <span className="text-xs text-orange-600 font-medium mt-2 hover:underline">Trocar arquivo</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-sm font-medium text-gray-900">Clique para selecionar</span>
-                          <span className="text-xs text-gray-500 mt-1">PDF, PPTX, PNG, JPG (Max 50MB)</span>
-                        </>
-                      )}
-                    </label>
-                  </div>
-                </div>
-              </form>
-            </div>
-            
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={closeModal}
-                disabled={uploading}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
               <button
                 type="submit"
-                form="upload-form"
-                disabled={uploading || !selectedFile || !title.trim()}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
+                disabled={uploading || !selectedFile}
+                className="w-full py-4 bg-brand-dark text-white rounded-xl font-bold hover:bg-brand-dark/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {uploading ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Enviando...
                   </>
                 ) : (
                   <>
-                    <UploadCloud className="w-4 h-4" />
+                    <UploadCloud className="w-5 h-5" />
                     Fazer Upload
                   </>
                 )}
               </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
-      {/* Category Modal */}
-      {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">Nova Categoria</h2>
-              <button onClick={() => setIsCategoryModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
-                <X className="w-5 h-5" />
+
+      {/* New Folder Modal */}
+      {isFolderModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Nova Pasta</h3>
+              <button onClick={closeFolderModal} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                <X className="w-5 h-5 text-gray-400" />
               </button>
             </div>
-            
-            <div className="p-6">
-              <form id="category-form" onSubmit={handleCreateCategory} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Categoria *</label>
-                  <input
-                    type="text"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="Ex: Relatórios Trimestrais"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    required
-                  />
-                </div>
-              </form>
-            </div>
-            
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setIsCategoryModalOpen(false)}
-                disabled={uploading}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
+
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3 text-red-600">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <p className="text-sm font-medium">{error}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateFolder} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">Nome da Pasta</label>
+                <input
+                  autoFocus
+                  type="text"
+                  value={newFolderName}
+                  onChange={e => setNewFolderName(e.target.value)}
+                  placeholder="Ex: Imagens da Campanha"
+                  className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none transition-all"
+                />
+              </div>
+
               <button
                 type="submit"
-                form="category-form"
-                disabled={uploading || !newCategoryName.trim()}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
+                disabled={uploading || !newFolderName.trim()}
+                className="w-full py-4 bg-brand-dark text-white rounded-xl font-bold hover:bg-brand-dark/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {uploading ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Salvando...
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Criando...
                   </>
                 ) : (
                   <>
-                    <Plus className="w-4 h-4" />
-                    Criar Categoria
+                    <FolderPlus className="w-5 h-5" />
+                    Criar Pasta
                   </>
                 )}
               </button>
-            </div>
+            </form>
           </div>
         </div>
       )}

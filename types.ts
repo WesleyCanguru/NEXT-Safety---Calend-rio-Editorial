@@ -188,6 +188,14 @@ export interface TrafficStrategyData {
   };
 }
 
+export interface ClientFolder {
+  id: string;
+  client_id: string;
+  parent_id: string | null;
+  name: string;
+  created_at: string;
+}
+
 export interface Client {
   id: string;
   name: string;

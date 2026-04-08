@@ -458,7 +458,7 @@ export const LeadTrackerView: React.FC<LeadTrackerViewProps> = ({ clientId, conf
   }, [leads, stages, selectedMonth]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 h-[calc(100vh-120px)] flex flex-col">
+    <div className="space-y-8 animate-in fade-in duration-500 min-h-[calc(100vh-120px)] flex flex-col">
       {/* Styled Title Header */}
       <div className="relative overflow-hidden rounded-[2rem] bg-[#111111] text-white p-8 sm:p-12 shrink-0">
         <div className="absolute top-0 right-0 w-1/2 h-full opacity-10 pointer-events-none">
@@ -586,7 +586,7 @@ export const LeadTrackerView: React.FC<LeadTrackerViewProps> = ({ clientId, conf
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex-1 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex-1 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 min-h-[800px]">
           <div className="flex gap-6 h-full min-w-max">
             {/* Active Stages */}
             {stages.map(stage => (
