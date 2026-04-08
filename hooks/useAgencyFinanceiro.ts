@@ -110,7 +110,11 @@ export function useAgencyFinanceiro(monthYear: string) {
 
   const updateBilling = async (billing: Partial<AgencyBilling>) => {
     try {
-      const existing = billings.find(b => b.id === billing.id || b.client_id === billing.client_id);
+      const existing = billings.find(b => {
+        if (billing.id && b.id === billing.id) return true;
+        if (billing.client_id && b.client_id === billing.client_id && !b.is_sporadic) return true;
+        return false;
+      });
       
       const base = billing.base_value !== undefined ? billing.base_value : (existing?.base_value || 0);
       const extra = billing.extra_value !== undefined ? billing.extra_value : (existing?.extra_value || 0);
@@ -118,7 +122,7 @@ export function useAgencyFinanceiro(monthYear: string) {
 
       // Define exactly what we want to save to the DB to avoid sending extra fields
       const dbData = {
-        client_id: billing.client_id || existing?.client_id,
+        client_id: billing.client_id || existing?.client_id || null,
         month_year: billing.month_year || existing?.month_year || monthYear,
         base_value: base,
         extra_value: extra,

@@ -58,6 +58,18 @@ export const FinanceiroTab: React.FC = () => {
     return { totalToReceive, totalReceived, totalOpen, totalExpenses, totalFixedExpenses, totalVariableExpenses, result };
   }, [billings, expenses]);
 
+  const sortedBillings = useMemo(() => {
+    return [...billings].sort((a, b) => (a.due_day || 0) - (b.due_day || 0));
+  }, [billings]);
+
+  const sortedExpenses = useMemo(() => {
+    return [...expenses].sort((a, b) => {
+      const dayA = a.due_date ? dayjs(a.due_date).date() : 99;
+      const dayB = b.due_date ? dayjs(b.due_date).date() : 99;
+      return dayA - dayB;
+    });
+  }, [expenses]);
+
   const handlePrevMonth = () => setCurrentMonthYear(dayjs(currentMonthYear).subtract(1, 'month').format('YYYY-MM'));
   const handleNextMonth = () => setCurrentMonthYear(dayjs(currentMonthYear).add(1, 'month').format('YYYY-MM'));
 
@@ -282,7 +294,7 @@ export const FinanceiroTab: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {billings.map((billing) => (
+              {sortedBillings.map((billing) => (
                 <tr key={billing.id} className="hover:bg-gray-50/30 transition-colors">
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-3 min-w-[180px]">
@@ -383,7 +395,7 @@ export const FinanceiroTab: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {expenses.map((expense) => (
+              {sortedExpenses.map((expense) => (
                 <tr key={expense.id} className="hover:bg-gray-50/30 transition-colors group">
                   <td className="px-8 py-5">
                     <div className="flex flex-col min-w-[200px]">
