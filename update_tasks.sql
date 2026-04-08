@@ -1,0 +1,1 @@
+ALTER TABLE agency_tasks ADD COLUMN client_id UUID REFERENCES clients(id) ON DELETE SET NULL;

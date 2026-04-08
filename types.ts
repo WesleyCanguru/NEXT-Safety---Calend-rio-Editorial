@@ -340,6 +340,7 @@ export type AgencyTaskRecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly' |
 
 export interface AgencyTask {
   id: string;
+  client_id?: string | null;
   title: string;
   description?: string;
   priority: AgencyTaskPriority;
@@ -350,4 +351,5 @@ export interface AgencyTask {
   recurrence_days?: number[] | null;
   created_at: string;
   completed_at?: string | null;
+  client?: { id: string; name: string; color: string; initials: string };
 }

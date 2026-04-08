@@ -14,7 +14,8 @@ import {
   Filter,
   MoreVertical,
   X,
-  Check
+  Check,
+  Edit2
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { AgencyTask, AgencyTaskPriority, AgencyTaskRecurrenceType } from '../../types';
@@ -41,10 +42,14 @@ const WEEK_DAYS = [
 
 export const AgencyTasksTab: React.FC = () => {
   const [tasks, setTasks] = useState<AgencyTask[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [editingTask, setEditingTask] = useState<AgencyTask | null>(null);
+  const [filterClient, setFilterClient] = useState<string>('all');
   const [newTask, setNewTask] = useState({
     title: '',
+    client_id: '' as string | null,
     priority: 'normal' as AgencyTaskPriority,
     recurrence_type: 'none' as AgencyTaskRecurrenceType,
     recurrence_days: [] as number[],
@@ -53,14 +58,28 @@ export const AgencyTasksTab: React.FC = () => {
 
   useEffect(() => {
     fetchTasks();
+    fetchClients();
   }, []);
+
+  const fetchClients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, name, color, initials')
+        .order('name');
+      if (error) throw error;
+      setClients(data || []);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    }
+  };
 
   const fetchTasks = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('agency_tasks')
-        .select('*')
+        .select('*, client:clients(id, name, color, initials)')
         .order('status', { ascending: true })
         .order('priority', { ascending: false }) // Urgent first
         .order('due_date', { ascending: true, nullsFirst: false });
@@ -83,6 +102,7 @@ export const AgencyTasksTab: React.FC = () => {
         .from('agency_tasks')
         .insert([{
           title: newTask.title,
+          client_id: newTask.client_id || null,
           priority: newTask.priority,
           recurrence_type: newTask.recurrence_type,
           recurrence_days: newTask.recurrence_type === 'custom_days' ? newTask.recurrence_days : null,
@@ -98,11 +118,39 @@ export const AgencyTasksTab: React.FC = () => {
         setTasks(prev => [data[0], ...prev]);
       }
       setIsAddingTask(false);
-      setNewTask({ title: '', priority: 'normal', recurrence_type: 'none', recurrence_days: [], due_date: '' });
+      setNewTask({ title: '', client_id: '', priority: 'normal', recurrence_type: 'none', recurrence_days: [], due_date: '' });
       fetchTasks(); // Refresh to ensure correct ordering
     } catch (error: any) {
       console.error('Error adding task:', error);
       alert(`Erro ao salvar tarefa: ${error.message || 'Erro desconhecido'}. \n\nCertifique-se de que rodou o SQL para adicionar as novas colunas no Supabase.`);
+    }
+  };
+
+  const handleEditTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTask || !editingTask.title.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('agency_tasks')
+        .update({
+          title: editingTask.title,
+          client_id: editingTask.client_id || null,
+          priority: editingTask.priority,
+          recurrence_type: editingTask.recurrence_type,
+          recurrence_days: editingTask.recurrence_type === 'custom_days' ? editingTask.recurrence_days : null,
+          is_daily: editingTask.recurrence_type === 'daily',
+          due_date: editingTask.due_date || null,
+        })
+        .eq('id', editingTask.id);
+
+      if (error) throw error;
+      
+      setEditingTask(null);
+      fetchTasks(); // Refresh to ensure correct ordering
+    } catch (error: any) {
+      console.error('Error updating task:', error);
+      alert(`Erro ao atualizar tarefa: ${error.message || 'Erro desconhecido'}.`);
     }
   };
 
@@ -162,10 +210,16 @@ export const AgencyTasksTab: React.FC = () => {
     return { label: date.format('DD [de] MMM'), color: 'text-gray-600 bg-gray-50' };
   };
 
-  const urgentTasks = tasks.filter(t => t.priority === 'urgent' && t.status === 'pending');
-  const recurringTasks = tasks.filter(t => t.recurrence_type !== 'none' && t.status === 'pending');
-  const otherTasks = tasks.filter(t => t.priority !== 'urgent' && t.recurrence_type === 'none' && t.status === 'pending');
-  const completedTasks = tasks.filter(t => t.status === 'done');
+  const filteredTasks = tasks.filter(t => {
+    if (filterClient === 'all') return true;
+    if (filterClient === 'internal') return !t.client_id;
+    return t.client_id === filterClient;
+  });
+
+  const urgentTasks = filteredTasks.filter(t => t.priority === 'urgent' && t.status === 'pending');
+  const recurringTasks = filteredTasks.filter(t => t.recurrence_type !== 'none' && t.status === 'pending');
+  const otherTasks = filteredTasks.filter(t => t.priority !== 'urgent' && t.recurrence_type === 'none' && t.status === 'pending');
+  const completedTasks = filteredTasks.filter(t => t.status === 'done');
 
   const toggleDay = (dayId: number) => {
     setNewTask(prev => ({
@@ -174,6 +228,20 @@ export const AgencyTasksTab: React.FC = () => {
         ? prev.recurrence_days.filter(d => d !== dayId)
         : [...prev.recurrence_days, dayId]
     }));
+  };
+
+  const toggleDayEdit = (dayId: number) => {
+    if (!editingTask) return;
+    setEditingTask(prev => {
+      if (!prev) return prev;
+      const currentDays = prev.recurrence_days || [];
+      return {
+        ...prev,
+        recurrence_days: currentDays.includes(dayId)
+          ? currentDays.filter(d => d !== dayId)
+          : [...currentDays, dayId]
+      };
+    });
   };
 
   return (
@@ -211,6 +279,20 @@ export const AgencyTasksTab: React.FC = () => {
               </div>
 
               <form onSubmit={handleAddTask} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Cliente / Projeto</label>
+                  <select
+                    value={newTask.client_id || ''}
+                    onChange={e => setNewTask({ ...newTask, client_id: e.target.value || null })}
+                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all appearance-none"
+                  >
+                    <option value="">Canguru Digital (Interno)</option>
+                    {clients.map(client => (
+                      <option key={client.id} value={client.id}>{client.name}</option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Título da Tarefa</label>
                   <input
@@ -301,7 +383,147 @@ export const AgencyTasksTab: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Task Lists */}
+      {/* Edit Task Modal/Form */}
+      <AnimatePresence>
+        {editingTask && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brand-dark/20 backdrop-blur-sm"
+          >
+            <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl border border-black/[0.05] max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-brand-dark">Editar Tarefa</h3>
+                <button onClick={() => setEditingTask(null)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                  <X size={20} className="text-gray-400" />
+                </button>
+              </div>
+
+              <form onSubmit={handleEditTask} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Cliente / Projeto</label>
+                  <select
+                    value={editingTask.client_id || ''}
+                    onChange={e => setEditingTask({ ...editingTask, client_id: e.target.value || null })}
+                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all appearance-none"
+                  >
+                    <option value="">Canguru Digital (Interno)</option>
+                    {clients.map(client => (
+                      <option key={client.id} value={client.id}>{client.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Título da Tarefa</label>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={editingTask.title}
+                    onChange={e => setEditingTask({ ...editingTask, title: e.target.value })}
+                    placeholder="Ex: Checar contas de anúncios"
+                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Prioridade</label>
+                    <select
+                      value={editingTask.priority}
+                      onChange={e => setEditingTask({ ...editingTask, priority: e.target.value as AgencyTaskPriority })}
+                      className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all appearance-none"
+                    >
+                      <option value="low">Baixa</option>
+                      <option value="normal">Normal</option>
+                      <option value="high">Alta</option>
+                      <option value="urgent">Urgente</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Data Limite</label>
+                    <input
+                      type="date"
+                      value={editingTask.due_date || ''}
+                      onChange={e => setEditingTask({ ...editingTask, due_date: e.target.value })}
+                      className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Repetição</label>
+                    <select
+                      value={editingTask.recurrence_type}
+                      onChange={e => setEditingTask({ ...editingTask, recurrence_type: e.target.value as AgencyTaskRecurrenceType })}
+                      className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all appearance-none"
+                    >
+                      <option value="none">Nenhuma</option>
+                      <option value="daily">Diária</option>
+                      <option value="weekly">Semanal</option>
+                      <option value="monthly">Mensal</option>
+                      <option value="custom_days">Dias Específicos</option>
+                    </select>
+                  </div>
+
+                  {editingTask.recurrence_type === 'custom_days' && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Dias da Semana</label>
+                      <div className="flex flex-wrap gap-2">
+                        {WEEK_DAYS.map(day => (
+                          <button
+                            key={day.id}
+                            type="button"
+                            onClick={() => toggleDayEdit(day.id)}
+                            className={`
+                              px-3 py-2 rounded-xl text-[10px] font-bold uppercase transition-all border
+                              ${(editingTask.recurrence_days || []).includes(day.id)
+                                ? 'bg-brand-dark border-brand-dark text-white'
+                                : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-brand-dark/20'
+                              }
+                            `}
+                          >
+                            {day.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-4 bg-brand-dark text-white rounded-2xl font-bold uppercase tracking-widest hover:shadow-xl transition-all transform hover:-translate-y-1"
+                >
+                  Salvar Alterações
+                </button>
+              </form>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Filter and Task Lists */}
+      <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-2 text-gray-400">
+          <Filter size={18} />
+          <span className="text-xs font-bold uppercase tracking-widest">Filtrar por Cliente:</span>
+        </div>
+        <select
+          value={filterClient}
+          onChange={(e) => setFilterClient(e.target.value)}
+          className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-medium text-brand-dark focus:ring-2 focus:ring-brand-dark/10 outline-none"
+        >
+          <option value="all">Todos</option>
+          <option value="internal">Canguru Digital (Interno)</option>
+          {clients.map(c => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Urgent & Daily Column */}
         <div className="lg:col-span-2 space-y-8">
@@ -314,7 +536,7 @@ export const AgencyTasksTab: React.FC = () => {
               </div>
               <div className="grid gap-3">
                 {urgentTasks.map(task => (
-                  <TaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} />
+                  <TaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} />
                 ))}
               </div>
             </section>
@@ -329,7 +551,7 @@ export const AgencyTasksTab: React.FC = () => {
             <div className="grid gap-3">
               {recurringTasks.length > 0 ? (
                 recurringTasks.map(task => (
-                  <TaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} />
+                  <TaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} />
                 ))
               ) : (
                 <EmptyState message="Nenhum processo recorrente pendente." />
@@ -346,7 +568,7 @@ export const AgencyTasksTab: React.FC = () => {
             <div className="grid gap-3">
               {otherTasks.length > 0 ? (
                 otherTasks.map(task => (
-                  <TaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} />
+                  <TaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} />
                 ))
               ) : (
                 <EmptyState message="Nenhuma outra tarefa pendente." />
@@ -365,7 +587,7 @@ export const AgencyTasksTab: React.FC = () => {
             <div className="grid gap-3 opacity-60">
               {completedTasks.length > 0 ? (
                 completedTasks.map(task => (
-                  <TaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} />
+                  <TaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} />
                 ))
               ) : (
                 <EmptyState message="Nenhuma tarefa concluída ainda." />
@@ -382,9 +604,10 @@ interface TaskCardProps {
   task: AgencyTask;
   onToggle: (task: AgencyTask) => void;
   onDelete: (id: string) => void;
+  onEdit: (task: AgencyTask) => void;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, onEdit }) => {
   const isDone = task.status === 'done';
   const dueDateInfo = getDueDateLabel(task.due_date);
 
@@ -449,6 +672,15 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete }) => {
           <h4 className={`font-bold text-sm truncate ${isDone ? 'text-gray-400 line-through' : 'text-brand-dark'}`}>
             {task.title}
           </h4>
+          {task.client ? (
+            <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tighter text-white" style={{ backgroundColor: task.client.color }}>
+              {task.client.name}
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded-full bg-brand-dark text-white text-[8px] font-black uppercase tracking-tighter">
+              Canguru Digital
+            </span>
+          )}
           {recurrenceLabel && (
             <span className="px-2 py-0.5 rounded-full bg-brand-dark/5 text-brand-dark text-[8px] font-black uppercase tracking-tighter">
               {recurrenceLabel}
@@ -476,12 +708,20 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete }) => {
         </div>
       </div>
 
-      <button
-        onClick={() => onDelete(task.id)}
-        className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-      >
-        <Trash2 size={16} />
-      </button>
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+        <button
+          onClick={() => onEdit(task)}
+          className="p-2 text-gray-300 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
+        >
+          <Edit2 size={16} />
+        </button>
+        <button
+          onClick={() => onDelete(task.id)}
+          className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
     </motion.div>
   );
 };
