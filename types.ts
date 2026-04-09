@@ -340,6 +340,51 @@ export interface ClientQuickLink {
   created_at: string;
 }
 
+// --- NOVOS TIPOS PARA CRM DA AGÊNCIA ---
+
+export interface KanbanStage {
+  id: string;
+  name: string;
+  color: string;
+  auto_advance_days: number | null;
+}
+
+export interface FormField {
+  key: string;
+  label: string;
+  type: 'text' | 'select' | 'textarea';
+  required: boolean;
+  options?: string[];
+  placeholder?: string;
+}
+
+export interface AgencyCRM {
+  id: string;
+  name: string;
+  description: string | null;
+  kanban_stages: KanbanStage[];
+  form_fields: FormField[];
+  auto_advance_time: string;
+  position: number;
+  created_at: string;
+}
+
+export interface AgencyLead {
+  id: string;
+  crm_id: string;
+  name: string;
+  stage: string;
+  stage_entered_at: string;
+  next_stage_at: string | null;
+  auto_advance_paused: boolean;
+  kanban_position: number;
+  loss_reason: string | null;
+  form_data: Record<string, any>;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // --- NOVOS TIPOS PARA TAREFAS DA AGÊNCIA ---
 
 export type AgencyTaskPriority = 'urgent' | 'high' | 'normal' | 'low';

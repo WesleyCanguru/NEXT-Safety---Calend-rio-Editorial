@@ -15,7 +15,7 @@ import {
   ClipboardList
 } from 'lucide-react';
 import { FinanceiroTab } from './FinanceiroTab';
-import { ProspeccaoTab } from './ProspeccaoTab';
+import { AgencyCRMTab } from './AgencyCRMTab';
 import { ClientesTab } from './ClientesTab';
 import { AgencyTasksTab } from './AgencyTasksTab';
 import { Logo } from '../Logo';
@@ -41,7 +41,7 @@ export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSele
     { id: 'tasks', label: 'Processos', icon: ClipboardList },
     { id: 'clientes', label: 'Clientes', icon: Users },
     { id: 'financeiro', label: 'Financeiro', icon: DollarSign },
-    { id: 'prospeccao', label: 'Prospecção', icon: Search },
+    { id: 'prospeccao', label: 'CRM', icon: Search },
   ];
 
   return (
@@ -106,7 +106,11 @@ export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSele
             >
               {activeTab === 'tasks' && <AgencyTasksTab />}
               {activeTab === 'financeiro' && <FinanceiroTab />}
-              {activeTab === 'prospeccao' && <ProspeccaoTab />}
+              {activeTab === 'prospeccao' && (
+                <div className="h-[calc(100vh-12rem)] bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                  <AgencyCRMTab />
+                </div>
+              )}
               {activeTab === 'clientes' && <ClientesTab onSelectClient={onSelectClient} />}
             </motion.div>
           </AnimatePresence>

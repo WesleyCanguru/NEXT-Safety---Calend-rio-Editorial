@@ -125,6 +125,7 @@ export const DocumentsView: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
   const [foldersPosition, setFoldersPosition] = useState<'top' | 'mixed'>('top');
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{ type: 'file' | 'folder', id: string, name: string } | null>(null);
 
   // Preview state
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
@@ -287,50 +288,55 @@ export const DocumentsView: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
 
   const handleDeleteDoc = async (doc: Document, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm(`Tem certeza que deseja excluir o arquivo "${doc.title}"?`)) {
-      return;
-    }
+    setConfirmDelete({ type: 'file', id: doc.id, name: doc.title });
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!confirmDelete) return;
 
     try {
-      const { error: storageError } = await supabase.storage
-        .from('client-documents')
-        .remove([doc.file_path]);
+      if (confirmDelete.type === 'file') {
+        const doc = documents.find(d => d.id === confirmDelete.id);
+        if (!doc) return;
 
-      if (storageError) throw storageError;
+        const { error: storageError } = await supabase.storage
+          .from('client-documents')
+          .remove([doc.file_path]);
 
-      const { error: dbError } = await supabase
-        .from('documents')
-        .delete()
-        .eq('id', doc.id);
+        if (storageError) throw storageError;
 
-      if (dbError) throw dbError;
+        const { error: dbError } = await supabase
+          .from('documents')
+          .delete()
+          .eq('id', doc.id);
 
-      setDocuments(documents.filter(d => d.id !== doc.id));
+        if (dbError) throw dbError;
+
+        setDocuments(documents.filter(d => d.id !== doc.id));
+      } else {
+        const folder = folders.find(f => f.id === confirmDelete.id);
+        if (!folder) return;
+
+        const { error: dbError } = await supabase
+          .from('client_folders')
+          .delete()
+          .eq('id', folder.id);
+
+        if (dbError) throw dbError;
+
+        setFolders(folders.filter(f => f.id !== folder.id));
+      }
     } catch (err) {
-      console.error('Error deleting document:', err);
-      alert('Erro ao excluir arquivo.');
+      console.error(`Error deleting ${confirmDelete.type}:`, err);
+      alert(`Erro ao excluir ${confirmDelete.type === 'file' ? 'arquivo' : 'pasta'}.`);
+    } finally {
+      setConfirmDelete(null);
     }
   };
 
   const handleDeleteFolder = async (folder: ClientFolder, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm(`Tem certeza que deseja excluir a pasta "${folder.name}" e todo o seu conteúdo?`)) {
-      return;
-    }
-
-    try {
-      const { error: dbError } = await supabase
-        .from('client_folders')
-        .delete()
-        .eq('id', folder.id);
-
-      if (dbError) throw dbError;
-
-      setFolders(folders.filter(f => f.id !== folder.id));
-    } catch (err) {
-      console.error('Error deleting folder:', err);
-      alert('Erro ao excluir pasta.');
-    }
+    setConfirmDelete({ type: 'folder', id: folder.id, name: folder.name });
   };
 
   const processFiles = async (files: FileList | File[]) => {
@@ -761,6 +767,10 @@ export const DocumentsView: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
                               <div className="flex-1 bg-gray-50 relative flex items-center justify-center overflow-hidden">
                                 {doc.file_type.includes('image') ? (
                                   <img src={getFileUrl(doc.file_path)} alt={doc.title} className="w-full h-full object-cover" />
+                                ) : doc.file_type.includes('video') ? (
+                                  <video src={getFileUrl(doc.file_path)} className="w-full h-full object-cover" muted playsInline />
+                                ) : doc.file_type.includes('pdf') ? (
+                                  <iframe src={`${getFileUrl(doc.file_path)}#toolbar=0&navpanes=0&scrollbar=0`} className="w-full h-full pointer-events-none overflow-hidden" />
                                 ) : (
                                   <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center">
                                     {getFileIcon(doc.file_type)}
@@ -842,6 +852,10 @@ export const DocumentsView: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
                           <div className="flex-1 bg-gray-50 relative flex items-center justify-center overflow-hidden">
                             {item.file_type.includes('image') ? (
                               <img src={getFileUrl(item.file_path)} alt={item.title} className="w-full h-full object-cover" />
+                            ) : item.file_type.includes('video') ? (
+                              <video src={getFileUrl(item.file_path)} className="w-full h-full object-cover" muted playsInline />
+                            ) : item.file_type.includes('pdf') ? (
+                              <iframe src={`${getFileUrl(item.file_path)}#toolbar=0&navpanes=0&scrollbar=0`} className="w-full h-full pointer-events-none overflow-hidden" />
                             ) : (
                               <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center">
                                 {getFileIcon(item.file_type)}
@@ -1107,6 +1121,34 @@ export const DocumentsView: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Confirmation Modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Confirmar Exclusão</h3>
+              <p className="text-sm text-gray-600">
+                Tem certeza que deseja excluir {confirmDelete.type === 'file' ? 'o arquivo' : 'a pasta'} <strong>"{confirmDelete.name}"</strong>?
+                {confirmDelete.type === 'folder' && " Todo o seu conteúdo será removido."} Esta ação não pode ser desfeita.
+              </p>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors font-medium text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDeleteAction}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm shadow-sm"
+              >
+                Excluir
+              </button>
             </div>
           </div>
         </div>
