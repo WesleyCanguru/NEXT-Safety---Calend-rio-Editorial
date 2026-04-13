@@ -61,7 +61,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
   };
 
   const handleBackToHome = () => {
-    setView('home');
+    setView('dashboard');
     setSelectedMonth(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -175,7 +175,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
 
           {/* Linha Inferior: Navegação dos Meses */}
           <AnimatePresence>
-            {(view === 'home' || view === 'month-detail') && (
+            {(view === 'month-detail') && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
@@ -230,7 +230,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
                 exit={{ opacity: 0, x: -10 }}
                 className="mb-12 flex items-center gap-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em]"
               >
-                <span onClick={handleBackToHome} className="cursor-pointer hover:text-brand-dark transition-colors">Mapa Anual</span>
+                <span onClick={handleBackToHome} className="cursor-pointer hover:text-brand-dark transition-colors">Dashboard</span>
                 <ChevronRight size={12} className="opacity-30" />
                 <span className="text-brand-dark">{selectedMonth}</span>
               </motion.div>
@@ -341,7 +341,12 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
               ) : view === 'dashboard' ? (
                 <ClientHome
                   onNavigateToOnboarding={() => setView('onboarding')}
-                  onNavigateToMapa={() => setView('home')}
+                  onNavigateToMapa={() => {
+                    const currentMonthName = MONTH_NAMES[dayjs().month()];
+                    setSelectedMonth(currentMonthName);
+                    setView('month-detail');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                   onNavigateToBriefings={() => setView('briefings')}
                   onNavigateToStrategicBriefings={() => setView('strategic-briefings')}
                   onNavigateToDocuments={() => setView('documents')}

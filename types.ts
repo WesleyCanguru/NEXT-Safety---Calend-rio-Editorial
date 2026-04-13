@@ -110,12 +110,12 @@ export type UserRole = 'admin' | 'approver' | 'team';
 
 export type PostStatus = 
   | 'draft'               // Cinza (Em Produção)
-  | 'pending_approval'    // Laranja (Em Aprovação)
-  | 'changes_requested'   // Vermelho (Ajustes Solicitados)
+  | 'pending_approval'    // Laranja (Esperando Aprovação)
+  | 'changes_requested'   // Amarelo (Ajustes Solicitados)
   | 'rejected'            // Vermelho Escuro (Reprovado)
   | 'internal_review'     // Deprecated (Mantido por segurança)
   | 'scheduled'           // Roxo (Programado)
-  | 'approved'            // Azul (Aprovado e pronto)
+  | 'approved'            // Azul (Aprovado)
   | 'published'           // Verde (Publicado)
   | 'deleted';            // Removido (Lógica para ocultar posts estáticos)
 

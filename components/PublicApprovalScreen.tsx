@@ -344,8 +344,8 @@ export const PublicApprovalScreen: React.FC = () => {
 
   const getStatusLabel = (s?: string) => {
     const map: Record<string, string> = {
-        'draft': 'Rascunho',
-        'pending_approval': 'Aprovação Pendente',
+        'draft': 'Em Produção',
+        'pending_approval': 'Esperando Aprovação',
         'changes_requested': 'Ajustes Solicitados',
         'rejected': 'Reprovado',
         'internal_review': 'Discussão Interna',

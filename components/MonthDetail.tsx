@@ -509,7 +509,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
   const getStatusLabel = (s: PostStatus) => {
     switch(s) {
       case 'draft': return 'Em Produção';
-      case 'pending_approval': return 'Em Aprovação';
+      case 'pending_approval': return 'Esperando Aprovação';
       case 'changes_requested': return 'Ajustes';
       case 'internal_review': return 'Discussão';
       case 'approved': return 'Aprovado';
@@ -523,7 +523,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
     switch(status) {
       case 'draft': return 'bg-gray-100 border-gray-200 hover:bg-gray-200';
       case 'pending_approval': return 'bg-orange-100 border-orange-200 hover:bg-orange-200';
-      case 'changes_requested': return 'bg-red-100 border-red-200 hover:bg-red-200';
+      case 'changes_requested': return 'bg-yellow-100 border-yellow-200 hover:bg-yellow-200';
       case 'rejected': return 'bg-rose-100 border-rose-200 hover:bg-rose-200';
       case 'internal_review': return 'bg-purple-100 border-purple-200 hover:bg-purple-200';
       case 'approved': return 'bg-blue-100 border-blue-200 hover:bg-blue-200';

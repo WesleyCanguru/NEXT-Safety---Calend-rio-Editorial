@@ -32,8 +32,8 @@ const POST_TYPES = [
 ];
 
 const STATUS_OPTIONS: { value: PostStatus; label: string }[] = [
-    { value: 'draft', label: 'Rascunho' },
-    { value: 'pending_approval', label: 'Em Aprovação' },
+    { value: 'draft', label: 'Em Produção' },
+    { value: 'pending_approval', label: 'Esperando Aprovação' },
     { value: 'changes_requested', label: 'Ajustes Solicitados' },
     { value: 'approved', label: 'Aprovado' },
     { value: 'scheduled', label: 'Programado' },
@@ -556,8 +556,8 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
 
   const getStatusLabel = (s: string) => {
     const map: Record<string, string> = {
-        'draft': 'Rascunho',
-        'pending_approval': 'Em Aprovação',
+        'draft': 'Em Produção',
+        'pending_approval': 'Esperando Aprovação',
         'changes_requested': 'Ajustes Solicitados',
         'rejected': 'Reprovado',
         'internal_review': 'Discussão Interna',
