@@ -10,6 +10,7 @@ import { ConfirmModal } from './ConfirmModal';
 interface PostModalProps {
   dayContent: DailyContent;
   dateKey: string;
+  groupKeys?: string[];
   onClose: () => void;
   onUpdate?: () => void;
   isNew?: boolean; 
@@ -41,7 +42,7 @@ const STATUS_OPTIONS: { value: PostStatus; label: string }[] = [
     { value: 'published', label: 'Publicado' }
 ];
 
-export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClose, onUpdate, isNew = false, defaultDate = '' }) => {
+export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, groupKeys, onClose, onUpdate, isNew = false, defaultDate = '' }) => {
   const { userRole, activeClient } = useAuth();
   const canComment = !!userRole;
   const commentsEndRef = useRef<HTMLDivElement>(null);
@@ -140,23 +141,67 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
             .eq('client_id', activeClient?.id)
             .maybeSingle();
 
-         // Load COUNTERPART post data (se abri o Meta, tenta achar o Linkedin do mesmo dia)
          const currentPlat = dateKey.includes('linkedin') ? 'linkedin' : 'meta';
-         const otherPlat = currentPlat === 'linkedin' ? 'meta' : 'linkedin';
-         const baseKey = `${currentD}-${currentM}-${currentY}`;
-         
-         // Extract suffix if present (e.g. timestamp or client_id)
-         const parts = dateKey.split('-');
-         const suffix = parts.length > 4 ? parts.slice(4).join('-') : '';
-         
-         const otherKey = suffix ? `${baseKey}-${otherPlat}-${suffix}` : `${baseKey}-${otherPlat}`;
+         let otherPostData = null;
+         let foundKeys = [dateKey];
+         let platformsFound: ('meta' | 'linkedin')[] = [currentPlat];
+         let metaCap = '';
+         let linkedCap = '';
 
-         const { data: otherPostData } = await supabase
-            .from('posts')
-            .select('*')
-            .eq('date_key', otherKey)
-            .eq('client_id', activeClient?.id)
-            .maybeSingle();
+         if (groupKeys && groupKeys.length > 0) {
+             const { data: groupPosts } = await supabase
+                 .from('posts')
+                 .select('*')
+                 .in('date_key', groupKeys)
+                 .eq('client_id', activeClient?.id)
+                 .neq('status', 'deleted');
+                 
+             if (groupPosts) {
+                 foundKeys = groupPosts.map(p => p.date_key);
+                 groupPosts.forEach(p => {
+                     const plat = p.date_key.includes('linkedin') ? 'linkedin' : 'meta';
+                     if (!platformsFound.includes(plat)) platformsFound.push(plat);
+                     if (plat === 'meta') metaCap = p.caption || '';
+                     else linkedCap = p.caption || '';
+                     
+                     if (p.date_key !== dateKey) {
+                         otherPostData = p;
+                     }
+                 });
+             }
+         } else {
+             // Fallback to old logic if groupKeys not provided
+             const otherPlat = currentPlat === 'linkedin' ? 'meta' : 'linkedin';
+             const baseKey = `${currentD}-${currentM}-${currentY}`;
+             
+             // Extract suffix if present (e.g. timestamp or client_id)
+             const parts = dateKey.split('-');
+             const suffix = parts.length > 4 ? parts.slice(4).join('-') : '';
+             
+             const otherKey = suffix ? `${baseKey}-${otherPlat}-${suffix}` : `${baseKey}-${otherPlat}`;
+
+             const { data: fetchedOther } = await supabase
+                .from('posts')
+                .select('*')
+                .eq('date_key', otherKey)
+                .eq('client_id', activeClient?.id)
+                .maybeSingle();
+                
+             otherPostData = fetchedOther;
+             
+             if (currentPlat === 'meta') {
+                 metaCap = mainPostData?.caption || '';
+             } else {
+                 linkedCap = mainPostData?.caption || '';
+             }
+
+             if (otherPostData && otherPostData.status !== 'deleted') {
+                 platformsFound.push(otherPlat);
+                 if (otherPlat === 'meta') metaCap = otherPostData.caption || '';
+                 else linkedCap = otherPostData.caption || '';
+                 foundKeys.push(otherPostData.date_key);
+             }
+         }
 
          // Populate State
          const primaryData = mainPostData || { 
@@ -172,27 +217,6 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
          setEditedTheme(primaryData.theme || dayContent.theme);
          setEditedType(primaryData.type || dayContent.type);
          setEditedBullets(primaryData.bullets ? primaryData.bullets.join('\n') : (dayContent.bullets ? dayContent.bullets.join('\n') : ''));
-         
-         // Captions & Platforms
-         const platformsFound: ('meta' | 'linkedin')[] = [currentPlat];
-         let metaCap = '';
-         let linkedCap = '';
-
-         // Guardar chaves originais para caso de "Move" (Alteração de data)
-         const foundKeys = [dateKey];
-
-         if (currentPlat === 'meta') {
-             metaCap = primaryData.caption || '';
-         } else {
-             linkedCap = primaryData.caption || '';
-         }
-
-         if (otherPostData && otherPostData.status !== 'deleted') {
-             platformsFound.push(otherPlat);
-             if (otherPlat === 'meta') metaCap = otherPostData.caption || '';
-             else linkedCap = otherPostData.caption || '';
-             foundKeys.push(otherPostData.date_key);
-         }
          
          setOriginalKeys(foundKeys); // Armazena chaves originais
          setSelectedPlatforms(platformsFound);
@@ -360,24 +384,26 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, onClo
               // A Data Mudou! Precisamos "deletar" os posts da data antiga.
               // Percorre todas as chaves originais (ex: Meta e LinkedIn da data antiga) e marca como deleted
               for (const oldKey of originalKeys) {
-                  await supabase.from('posts').upsert({
+                  const { error: delErr } = await supabase.from('posts').upsert({
                       date_key: oldKey,
                       client_id: activeClient?.id,
                       status: 'deleted',
                       last_updated: new Date().toISOString()
                   }, { onConflict: 'date_key' });
+                  if (delErr) console.error("Error marking old post as deleted:", delErr);
               }
           } else {
               // A data NÃO mudou, mas precisamos verificar se alguma plataforma foi desmarcada
               for (const oldKey of originalKeys) {
                   const plat = oldKey.split('-')[3]; // meta ou linkedin
                   if (!selectedPlatforms.includes(plat as any)) {
-                      await supabase.from('posts').upsert({
+                      const { error: delErr } = await supabase.from('posts').upsert({
                           date_key: oldKey,
                           client_id: activeClient?.id,
                           status: 'deleted',
                           last_updated: new Date().toISOString()
                       }, { onConflict: 'date_key' });
+                      if (delErr) console.error("Error marking unchecked platform as deleted:", delErr);
                   }
               }
           }

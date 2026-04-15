@@ -35,7 +35,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
   
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedPost, setSelectedPost] = useState<{content: DailyContent, key: string} | null>(null);
+  const [selectedPost, setSelectedPost] = useState<{content: DailyContent, key: string, groupKeys?: string[]} | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newPostDefaultDate, setNewPostDefaultDate] = useState<string>('');
 
@@ -363,8 +363,8 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
       });
   };
 
-  const handleOpenPost = (item: { content: DailyContent, key: string }) => {
-    setSelectedPost(item);
+  const handleOpenPost = (group: GroupedPost) => {
+    setSelectedPost({ content: group.content, key: group.primaryKey, groupKeys: group.keys });
     setIsCreatingNew(false);
     setModalOpen(true);
   };
@@ -638,7 +638,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                return (
                 <div 
                   key={idx}
-                  onClick={() => handleOpenPost({ content: group.content, key: group.primaryKey })}
+                  onClick={() => handleOpenPost(group)}
                   className={`p-3 rounded-xl border shadow-sm cursor-pointer hover:scale-[1.02] ${statusColor} ${isSelected ? 'ring-2 ring-brand-dark' : ''} relative group/card shrink-0 transition-all duration-300`}
                   draggable
                   onDragStart={(e) => handleDragStart(e, group.primaryKey)}
@@ -889,7 +889,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                    return (
                       <div 
                         key={idx} 
-                        onClick={() => handleOpenPost({ content: group.content, key: group.primaryKey })} 
+                        onClick={() => handleOpenPost(group)} 
                         className={`p-4 rounded-xl border flex flex-col md:flex-row gap-4 cursor-pointer hover:shadow-md transition-all ${statusColor} ${isSelected ? 'ring-2 ring-brand-dark' : ''} md:items-center relative group`}
                         draggable
                         onDragStart={(e) => handleDragStart(e, group.primaryKey)}
