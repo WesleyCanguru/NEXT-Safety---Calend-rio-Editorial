@@ -93,7 +93,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
         .from('client_lead_configs')
         .select('*')
         .eq('client_id', activeClient.id)
-        .single();
+        .maybeSingle();
       
       if (configData) {
         setLeadConfig(configData);

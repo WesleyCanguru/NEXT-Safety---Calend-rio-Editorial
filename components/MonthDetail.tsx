@@ -164,11 +164,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
       const y = parts[2];
       const platform = parts[3] as 'meta' | 'linkedin';
       
-      const postMonthName = new Date(parseInt(y), parseInt(m) - 1, parseInt(d))
-        .toLocaleString('pt-BR', { month: 'long' })
-        .toUpperCase();
-        
-      if (!MONTH_NAMES[currentPlan.month - 1].toUpperCase().includes(postMonthName)) return;
+      if (parseInt(m) !== currentPlan.month || parseInt(y) !== currentPlan.year) return;
 
       const dateStr = `${d}/${m}`;
       const newContent: DailyContent = {
@@ -637,8 +633,8 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
           <div className="flex flex-col gap-2 max-h-[300px] md:max-h-[180px] overflow-y-auto custom-scrollbar pr-1">
             {dayEvents.map((group, idx) => {
                const statusColor = getStatusColorClass(group.status);
-               const hasMeta = group.platforms.includes('meta');
-               const hasLinkedin = group.platforms.includes('linkedin');
+              const hasMeta = group.platforms.some(p => p.toLowerCase().includes('meta') || p.toLowerCase().includes('instagram') || p.toLowerCase().includes('facebook'));
+              const hasLinkedin = group.platforms.some(p => p.toLowerCase().includes('linkedin'));
                const isSelected = selectedPosts.has(group.primaryKey);
 
                return (
@@ -917,8 +913,8 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
              <div className="flex flex-col gap-4">
                 {groupedPosts.map((group, idx) => {
                    const statusColor = getStatusColorClass(group.status);
-                   const hasMeta = group.platforms.includes('meta');
-                   const hasLinkedin = group.platforms.includes('linkedin');
+                   const hasMeta = group.platforms.some(p => p.toLowerCase().includes('meta') || p.toLowerCase().includes('instagram') || p.toLowerCase().includes('facebook'));
+                   const hasLinkedin = group.platforms.some(p => p.toLowerCase().includes('linkedin'));
                    const isSelected = selectedPosts.has(group.primaryKey);
 
                    const targetDay = parseInt(group.content.day.split('/')[0]);

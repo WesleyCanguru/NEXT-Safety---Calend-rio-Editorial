@@ -62,6 +62,7 @@ export const AgencyTasksTab: React.FC = () => {
   const [tasks, setTasks] = useState<AgencyTask[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [debugError, setDebugError] = useState<string>('');
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [editingTask, setEditingTask] = useState<AgencyTask | null>(null);
   const [filterClient, setFilterClient] = useState<string>('all');
@@ -102,10 +103,11 @@ export const AgencyTasksTab: React.FC = () => {
         .order('priority', { ascending: false }) // Urgent first
         .order('due_date', { ascending: true, nullsFirst: false });
 
-      if (error) throw error;
+      if (error) { setDebugError(JSON.stringify(error)); throw error; }
       setTasks(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching tasks:', error);
+      setDebugError(error.message || String(error));
     } finally {
       setLoading(false);
     }

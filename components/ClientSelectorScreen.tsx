@@ -18,17 +18,28 @@ export const ClientSelectorScreen: React.FC<ClientSelectorScreenProps> = ({
 }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const [debugError, setDebugError] = useState<string>('');
   const { setActiveClient } = useAuth();
 
   useEffect(() => {
     const fetchClients = async () => {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-      if (!error && data) setClients(data as Client[]);
-      setLoading(false);
+      try {
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+        if (error) {
+          console.error("Error fetching clients:", error);
+          setDebugError(JSON.stringify(error));
+        }
+        if (data) setClients(data as Client[]);
+      } catch (e: any) {
+        console.error("Fatal error fetching clients:", e);
+        setDebugError(e.message || String(e));
+      } finally {
+        setLoading(false);
+      }
     };
     fetchClients();
   }, []);
@@ -62,6 +73,8 @@ export const ClientSelectorScreen: React.FC<ClientSelectorScreenProps> = ({
         <div className="w-full">
           {loading ? (
             <div className="text-center text-gray-400 py-12">Carregando clientes...</div>
+          ) : debugError ? (
+            <div className="text-center text-red-500 py-12">Erro fatal: {String(debugError)}</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
               {clients.map((client, index) => (

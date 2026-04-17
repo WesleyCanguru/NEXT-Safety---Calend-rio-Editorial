@@ -11,6 +11,12 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     persistSession: false,
     autoRefreshToken: false,
     detectSessionInUrl: false
+  },
+  global: {
+    fetch: (url, options) => {
+      const fetchUrl = typeof url === 'object' && url.toString ? url.toString() : (url as string);
+      return window.fetch(fetchUrl, options);
+    }
   }
 });
 
