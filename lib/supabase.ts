@@ -6,6 +6,48 @@ import { UserRole, Client } from '../types';
 const SUPABASE_URL = 'https://wtzphiyybitcucwkfpgv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_uLQGmz7lWazPN1Uqb4_4vQ_HggVpMz9';
 
+const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  let url = input as string;
+  let options = init || {};
+
+  if (typeof input === 'object' && 'url' in input) {
+    url = input.url;
+    options = {
+      method: input.method,
+      headers: input.headers,
+      body: input.body,
+      signal: input.signal,
+      ...options
+    };
+  } else if (input instanceof URL) {
+    url = input.toString();
+  }
+
+  // Flatten headers to a simple object to avoid iframe interceptor crashes
+  const plainHeaders: Record<string, string> = {};
+  if (options.headers) {
+    if (options.headers instanceof Headers) {
+       options.headers.forEach((value, key) => { plainHeaders[key] = value; });
+    } else if (Array.isArray(options.headers)) {
+       options.headers.forEach(([key, value]) => { plainHeaders[key] = value; });
+    } else {
+       Object.assign(plainHeaders, options.headers);
+    }
+  }
+
+  // Remove complex objects like signal which might break _aistudio-iframe.js
+  const safeInit: RequestInit = {
+    method: options.method || 'GET',
+    headers: plainHeaders,
+  };
+  
+  if (options.body) safeInit.body = options.body;
+
+  // Bypass whatever window.fetch override is applied by getting the original iframe fetch if possible, 
+  // or just using the reconstructed one.
+  return window.fetch(url, safeInit);
+};
+
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: false,
@@ -13,10 +55,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     detectSessionInUrl: false
   },
   global: {
-    fetch: (url, options) => {
-      const fetchUrl = typeof url === 'object' && url.toString ? url.toString() : (url as string);
-      return window.fetch(fetchUrl, options);
-    }
+    fetch: customFetch
   }
 });
 
