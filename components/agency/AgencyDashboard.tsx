@@ -12,11 +12,12 @@ import {
   Building2,
   DollarSign,
   Search,
-  ClipboardList
+  ClipboardList,
+  Home
 } from 'lucide-react';
+import { HomeTab } from './HomeTab';
 import { FinanceiroTab } from './FinanceiroTab';
 import { AgencyCRMTab } from './AgencyCRMTab';
-import { ClientesTab } from './ClientesTab';
 import { AgencyTasksTab } from './AgencyTasksTab';
 import { Logo } from '../Logo';
 
@@ -27,19 +28,19 @@ interface AgencyDashboardProps {
   onSelectClient: (client: any) => void;
 }
 
-type Tab = 'tasks' | 'financeiro' | 'prospeccao' | 'clientes';
+type Tab = 'home' | 'tasks' | 'financeiro' | 'prospeccao';
 
 export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSelectClient }) => {
   const { userRole } = useAuth();
-  const [activeTab, setActiveTab] = useState<Tab>('tasks');
+  const [activeTab, setActiveTab] = useState<Tab>('home');
 
   if (userRole !== 'admin') {
     return null;
   }
 
   const tabs = [
+    { id: 'home', label: 'Início', icon: Home },
     { id: 'tasks', label: 'Processos', icon: ClipboardList },
-    { id: 'clientes', label: 'Clientes', icon: Users },
     { id: 'financeiro', label: 'Financeiro', icon: DollarSign },
     { id: 'prospeccao', label: 'CRM', icon: Search },
   ];
@@ -104,6 +105,7 @@ export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSele
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
+              {activeTab === 'home' && <HomeTab onNavigateToClients={(client) => onSelectClient(client)} />}
               {activeTab === 'tasks' && <AgencyTasksTab />}
               {activeTab === 'financeiro' && <FinanceiroTab />}
               {activeTab === 'prospeccao' && (
@@ -111,7 +113,6 @@ export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSele
                   <AgencyCRMTab />
                 </div>
               )}
-              {activeTab === 'clientes' && <ClientesTab onSelectClient={onSelectClient} />}
             </motion.div>
           </AnimatePresence>
         </div>
