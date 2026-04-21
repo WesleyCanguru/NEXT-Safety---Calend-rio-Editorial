@@ -13,7 +13,9 @@ import {
   Building2,
   ListTodo,
   Plus,
-  Trash2
+  Trash2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { motion, AnimatePresence } from 'motion/react';
@@ -43,6 +45,18 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
   const [tempReporteiEnabled, setTempReporteiEnabled] = useState(false);
   const [tempDashboards, setTempDashboards] = useState<{ id: string; name: string; url: string }[]>([]);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [showFinancials, setShowFinancials] = useState(() => {
+    const stored = localStorage.getItem('canguru_show_financials');
+    return stored ? JSON.parse(stored) : true;
+  });
+
+  const toggleFinancials = () => {
+    setShowFinancials((prev: boolean) => {
+      const next = !prev;
+      localStorage.setItem('canguru_show_financials', JSON.stringify(next));
+      return next;
+    });
+  };
 
   const fetchData = async () => {
     try {
@@ -95,9 +109,6 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
         despesas: totalDespesas,
         saldo: totalReceitas - totalDespesas
       });
-
-      // Active Clients
-      setActiveClients((tempClients || []) as Client[]);
 
       // Urgent Tasks (Due <= 3 days OR priority = 'high')
       const pTasks = (tempTasks || []) as any[]; // casting since we have relational client
@@ -243,11 +254,20 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
     <div className="space-y-8 pb-10">
       
       {/* HEADER */}
-      <div>
-        <h2 className="text-2xl font-bold flex items-center gap-3">
-          Dashboard <span className="px-3 py-1 bg-brand-dark text-white rounded-full text-xs font-bold uppercase tracking-widest leading-none align-middle">Beta</span>
-        </h2>
-        <p className="text-gray-500 text-sm mt-1">Resumo da operação da agência</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-3">
+            Dashboard <span className="px-3 py-1 bg-brand-dark text-white rounded-full text-xs font-bold uppercase tracking-widest leading-none align-middle">Beta</span>
+          </h2>
+          <p className="text-gray-500 text-sm mt-1">Resumo da operação da agência</p>
+        </div>
+        <button
+          onClick={toggleFinancials}
+          className="p-3 bg-white rounded-2xl border border-black/[0.03] shadow-sm text-gray-400 hover:text-brand-dark transition-colors"
+          title={showFinancials ? 'Ocultar valores financeiros' : 'Mostrar valores financeiros'}
+        >
+          {showFinancials ? <EyeOff size={20} /> : <Eye size={20} />}
+        </button>
       </div>
 
       {/* BLOCO 1 - FINANCEIRO */}
@@ -259,7 +279,9 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Receitas do Mês</p>
-              <h3 className="text-xl font-bold text-brand-dark">{formatCurrency(financial.receitas)}</h3>
+              <h3 className="text-xl font-bold text-brand-dark">
+                {showFinancials ? formatCurrency(financial.receitas) : 'R$ ••••••••'}
+              </h3>
             </div>
           </div>
         </div>
@@ -271,7 +293,9 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Despesas do Mês</p>
-              <h3 className="text-xl font-bold text-brand-dark">{formatCurrency(financial.despesas)}</h3>
+              <h3 className="text-xl font-bold text-brand-dark">
+                {showFinancials ? formatCurrency(financial.despesas) : 'R$ ••••••••'}
+              </h3>
             </div>
           </div>
         </div>
@@ -283,8 +307,8 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Saldo do Mês</p>
-              <h3 className={`text-xl font-bold ${financial.saldo >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                {formatCurrency(financial.saldo)}
+              <h3 className={`text-xl font-bold ${!showFinancials ? 'text-brand-dark' : financial.saldo >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                {showFinancials ? formatCurrency(financial.saldo) : 'R$ ••••••••'}
               </h3>
             </div>
           </div>
@@ -298,7 +322,7 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         
         {/* BLOCO 3 - TAREFAS URGENTES */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-black/[0.03] shadow-sm flex flex-col gap-6 xl:col-span-1">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-black/[0.03] shadow-sm flex flex-col gap-6 xl:col-span-2">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold flex items-center gap-2">
               <ListTodo className="text-gray-400" size={20}/> Tarefas Urgentes
@@ -314,13 +338,13 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
               const isOverdue = task.due_date && dayjs(task.due_date).isBefore(dayjs(), 'day');
               return (
                 <div key={task.id} className="p-4 rounded-2xl border border-gray-100 flex items-center justify-between bg-gray-50/50">
-                  <div className="flex flex-col gap-1">
-                    <p className="text-sm font-bold truncate pr-2 max-w-[200px]">{task.title}</p>
+                  <div className="flex flex-col gap-1 min-w-0 pr-4">
+                    <p className="text-sm font-bold truncate">{task.title}</p>
                     {task.client?.name && (
                       <p className="text-[10px] text-gray-500 truncate">{task.client.name}</p>
                     )}
                   </div>
-                  <div className="flex flex-col items-end gap-1">
+                  <div className="flex flex-col items-end gap-1 shrink-0">
                     {task.due_date && (
                       <div className={`flex items-center gap-1 text-[10px] font-bold ${isOverdue ? 'text-red-500' : 'text-gray-500'}`}>
                         <Calendar size={12} />
@@ -344,14 +368,14 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
         </div>
 
         {/* BLOCO 4 - VISÃO DO CRM */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-black/[0.03] shadow-sm flex flex-col gap-6 xl:col-span-2">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-black/[0.03] shadow-sm flex flex-col gap-6 xl:col-span-1">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold flex items-center gap-2">
               <BarChart3 className="text-gray-400" size={20}/> Funis do CRM
             </h3>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {crmOverviews.map(crm => (
             <div key={crm.board.id} className="p-5 rounded-2xl border border-gray-100 flex flex-col gap-4">
               <div className="flex justify-between items-start">
@@ -505,7 +529,7 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
               </div>
             </div>
           ) : (
-            <div className={`grid grid-cols-1 ${reporteiDashboards.length > 1 ? 'xl:grid-cols-2' : ''} gap-6`}>
+            <div className="grid grid-cols-1 gap-8">
               {reporteiDashboards.map(dash => (
                 <div key={dash.id} className="flex flex-col gap-2">
                   {dash.name && (
@@ -517,10 +541,10 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
                   <iframe
                     src={dash.url}
                     width="100%"
-                    height="500"
+                    height="700"
                     frameBorder="0"
                     allowFullScreen
-                    className="w-full h-[500px] bg-gray-50 rounded-2xl border border-gray-100"
+                    className="w-full h-[700px] bg-gray-50 rounded-2xl border border-gray-100"
                   />
                 </div>
               ))}

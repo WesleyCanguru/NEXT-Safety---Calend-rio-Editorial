@@ -23,7 +23,7 @@ interface ClientesTabProps {
 }
 
 export const ClientesTab: React.FC<ClientesTabProps> = ({ onSelectClient }) => {
-  const { clients, quickLinks, stats, loading, addQuickLink, deleteQuickLink } = useClientesOverview();
+  const { clients, quickLinks, stats, loading, addQuickLink, deleteQuickLink, updateQuickLink, reorderQuickLinks } = useClientesOverview();
   const [selectedClientForLinks, setSelectedClientForLinks] = useState<any | null>(null);
 
   const formatTypeIcon = (type: string) => {
@@ -174,6 +174,8 @@ export const ClientesTab: React.FC<ClientesTabProps> = ({ onSelectClient }) => {
           onClose={() => setSelectedClientForLinks(null)}
           onAdd={addQuickLink}
           onDelete={deleteQuickLink}
+          onUpdate={updateQuickLink}
+          onReorder={reorderQuickLinks}
         />
       )}
     </div>

@@ -10,7 +10,10 @@ import {
   Instagram, 
   BarChart2, 
   Zap,
-  Link as LinkIcon
+  Link as LinkIcon,
+  GripVertical,
+  Edit2,
+  Check
 } from 'lucide-react';
 import { ClientQuickLink } from '../../types';
 
@@ -20,14 +23,18 @@ interface QuickLinksModalProps {
   onClose: () => void;
   onAdd: (link: Omit<ClientQuickLink, 'id' | 'created_at'>) => void;
   onDelete: (id: string) => void;
+  onUpdate: (id: string, updates: Partial<ClientQuickLink>) => void;
+  onReorder: (client_id: string, orderedIds: string[]) => void;
 }
 
-export const QuickLinksModal: React.FC<QuickLinksModalProps> = ({ client, links, onClose, onAdd, onDelete }) => {
+export const QuickLinksModal: React.FC<QuickLinksModalProps> = ({ client, links, onClose, onAdd, onDelete, onUpdate, onReorder }) => {
   const [newLink, setNewLink] = useState<Partial<ClientQuickLink>>({
     type: 'other',
     label: '',
     url: ''
   });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<ClientQuickLink>>({});
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +47,53 @@ export const QuickLinksModal: React.FC<QuickLinksModalProps> = ({ client, links,
       });
       setNewLink({ type: 'other', label: '', url: '' });
     }
+  };
+
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+
+  const handleDragStart = (id: string, e: React.DragEvent) => {
+    setDraggedId(id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (id: string, e: React.DragEvent) => {
+    e.preventDefault();
+    if (!draggedId || draggedId === id) return;
+
+    const items = [...links];
+    const draggedItem = items.find(item => item.id === draggedId);
+    const dropIndex = items.findIndex(item => item.id === id);
+
+    if (draggedItem) {
+      const remainingItems = items.filter(item => item.id !== draggedId);
+      remainingItems.splice(dropIndex, 0, draggedItem);
+      onReorder(client.id, remainingItems.map(item => item.id));
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedId(null);
+  };
+
+  const startEdit = (link: ClientQuickLink) => {
+    setEditingId(link.id);
+    setEditForm({ type: link.type, label: link.label, url: link.url });
+  };
+
+  const saveEdit = () => {
+    if (editingId && editForm.label && editForm.url) {
+      onUpdate(editingId, { 
+        type: editForm.type as any, 
+        label: editForm.label, 
+        url: editForm.url 
+      });
+      setEditingId(null);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
   };
 
   const formatTypeIcon = (type: string) => {
@@ -140,32 +194,90 @@ export const QuickLinksModal: React.FC<QuickLinksModalProps> = ({ client, links,
               {links.map((link) => (
                 <div 
                   key={link.id}
-                  className="flex items-center justify-between p-5 bg-white border border-gray-100 rounded-2xl group hover:border-brand-dark/20 transition-all"
+                  draggable
+                  onDragStart={(e) => handleDragStart(link.id, e)}
+                  onDragOver={(e) => handleDragOver(link.id, e)}
+                  onDragEnd={handleDragEnd}
+                  className={`flex items-center justify-between p-5 bg-white border ${draggedId === link.id ? 'opacity-50 border-brand-dark border-dashed' : 'border-gray-100'} rounded-2xl group hover:border-brand-dark/20 transition-all`}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center">
-                      {formatTypeIcon(link.type)}
+                  <div className="flex items-center gap-4 flex-grow">
+                    <div className="cursor-grab active:cursor-grabbing p-2 text-gray-300 hover:text-brand-dark transition-colors shrink-0">
+                      <GripVertical size={16} />
                     </div>
-                    <div>
-                      <p className="font-bold text-brand-dark text-sm">{link.label}</p>
-                      <p className="text-[10px] text-gray-400 truncate max-w-[200px]">{link.url}</p>
-                    </div>
+                    {editingId === link.id ? (
+                       <div className="flex-1 flex flex-col md:flex-row gap-2">
+                        <select 
+                          value={editForm.type}
+                          onChange={(e) => setEditForm({ ...editForm, type: e.target.value as any })}
+                          className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-brand-dark/5 outline-none font-medium text-xs w-full md:w-32 shrink-0"
+                        >
+                          <option value="google_ads">Google Ads</option>
+                          <option value="meta_ads">Meta Ads</option>
+                          <option value="reportei">Reportei</option>
+                          <option value="instagram">Instagram</option>
+                          <option value="other">Outro</option>
+                        </select>
+                        <input
+                          type="text"
+                          value={editForm.label}
+                          onChange={e => setEditForm({...editForm, label: e.target.value})}
+                          placeholder="Rótulo"
+                          className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-brand-dark/5 outline-none font-medium text-xs w-full"
+                        />
+                        <input
+                          type="url"
+                          value={editForm.url}
+                          onChange={e => setEditForm({...editForm, url: e.target.value})}
+                          placeholder="URL"
+                          className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-brand-dark/5 outline-none font-medium text-xs w-full md:w-64 shrink-0"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center shrink-0">
+                          {formatTypeIcon(link.type)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-brand-dark text-sm truncate">{link.label}</p>
+                          <p className="text-[10px] text-gray-400 truncate">{link.url}</p>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <a 
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                    >
-                      <ExternalLink size={18} />
-                    </a>
-                    <button 
-                      onClick={() => onDelete(link.id)}
-                      className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                  <div className="flex items-center gap-1 shrink-0 ml-4">
+                    {editingId === link.id ? (
+                      <>
+                        <button onClick={saveEdit} className="p-2 text-green-500 hover:bg-green-50 rounded-lg transition-colors">
+                          <Check size={18} />
+                        </button>
+                        <button onClick={cancelEdit} className="p-2 text-gray-400 hover:bg-gray-50 rounded-lg transition-colors">
+                          <X size={18} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button 
+                          onClick={() => startEdit(link)}
+                          className="p-2 text-gray-400 hover:text-brand-dark hover:bg-gray-50 rounded-lg transition-colors"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <a 
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <ExternalLink size={16} />
+                        </a>
+                        <button 
+                          onClick={() => onDelete(link.id)}
+                          className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

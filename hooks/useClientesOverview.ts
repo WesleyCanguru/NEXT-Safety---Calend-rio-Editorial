@@ -26,7 +26,9 @@ export function useClientesOverview() {
       // Fetch Quick Links
       const { data: linksData } = await supabase
         .from('client_quick_links')
-        .select('*');
+        .select('*')
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true });
 
       setQuickLinks((linksData || []) as ClientQuickLink[]);
 
@@ -157,6 +159,50 @@ export function useClientesOverview() {
     }
   };
 
+  const updateQuickLink = async (id: string, updates: Partial<ClientQuickLink>) => {
+    try {
+      const { data, error } = await supabase
+        .from('client_quick_links')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      setQuickLinks(prev => prev.map(l => (l.id === id ? data : l)));
+    } catch (error) {
+      console.error('Error updating quick link:', error);
+      throw error;
+    }
+  };
+
+  const reorderQuickLinks = async (client_id: string, orderedIds: string[]) => {
+    try {
+      // Optistic update
+      setQuickLinks(prev => {
+        const otherLinks = prev.filter(l => l.client_id !== client_id);
+        const thisClientLinks = prev.filter(l => l.client_id === client_id);
+        
+        const sortedLinks = [...thisClientLinks].sort((a, b) => {
+          return orderedIds.indexOf(a.id) - orderedIds.indexOf(b.id);
+        });
+
+        // Add sort_order field temporarily
+        sortedLinks.forEach((l, i) => l.sort_order = i);
+        return [...otherLinks, ...sortedLinks];
+      });
+
+      const promises = orderedIds.map((id, index) => 
+        supabase.from('client_quick_links').update({ sort_order: index }).eq('id', id)
+      );
+
+      await Promise.all(promises);
+    } catch (err) {
+      console.error('Error reordering links:', err);
+      fetchData(); // re-fetch to restore state if error
+    }
+  };
+
   return {
     clients,
     quickLinks,
@@ -164,6 +210,8 @@ export function useClientesOverview() {
     loading,
     addQuickLink,
     deleteQuickLink,
+    updateQuickLink,
+    reorderQuickLinks,
     refresh: fetchData
   };
 }
