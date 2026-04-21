@@ -538,14 +538,19 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
                       <h4 className="text-sm font-bold text-gray-700">{dash.name}</h4>
                     </div>
                   )}
-                  <iframe
-                    src={dash.url}
-                    width="100%"
-                    height="700"
-                    frameBorder="0"
-                    allowFullScreen
-                    className="w-full h-[700px] bg-gray-50 rounded-2xl border border-gray-100"
-                  />
+                  <div className="w-full h-[700px] overflow-hidden rounded-2xl border border-gray-100 bg-gray-50">
+                    <iframe
+                      src={dash.url}
+                      frameBorder="0"
+                      allowFullScreen
+                      style={{
+                        width: '111.11%',
+                        height: '777.77px',
+                        transform: 'scale(0.9)',
+                        transformOrigin: '0 0'
+                      }}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
