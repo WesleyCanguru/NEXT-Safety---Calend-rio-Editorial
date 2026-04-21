@@ -177,15 +177,15 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
   }, []);
 
   const handleAddDashboard = () => {
-    setTempDashboards([...tempDashboards, { id: crypto.randomUUID(), name: '', url: '' }]);
+    setTempDashboards(prev => [...prev, { id: Date.now().toString() + Math.random().toString(36).slice(2), name: '', url: '' }]);
   };
 
   const handleUpdateDashboard = (id: string, field: 'name' | 'url', value: string) => {
-    setTempDashboards(tempDashboards.map(d => d.id === id ? { ...d, [field]: value } : d));
+    setTempDashboards(prev => prev.map(d => d.id === id ? { ...d, [field]: value } : d));
   };
 
   const handleRemoveDashboard = (id: string) => {
-    setTempDashboards(tempDashboards.filter(d => d.id !== id));
+    setTempDashboards(prev => prev.filter(d => d.id !== id));
   };
 
   const handleSaveSettings = async () => {
@@ -197,17 +197,25 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
       ];
       
       for (const update of updates) {
-        await supabase.from('agency_settings').upsert({
+        const { error } = await supabase.from('agency_settings').upsert({
           key: update.key,
           value: update.value
         }, { onConflict: 'key' });
+        
+        if (error) {
+          console.error('Supabase Upsert Error:', error);
+          alert('Erro ao salvar configuração (' + update.key + '): ' + error.message);
+          setIsSavingSettings(false);
+          return;
+        }
       }
       
       setReporteiDashboards(tempDashboards);
       setReporteiEnabled(tempReporteiEnabled);
       setShowSettingsURL(false);
-    } catch(err) {
+    } catch(err: any) {
       console.error(err);
+      alert('Houve um erro inesperado: ' + err?.message);
     } finally {
       setIsSavingSettings(false);
     }
