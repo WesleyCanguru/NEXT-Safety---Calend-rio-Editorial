@@ -109,26 +109,6 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
     fetchMonthPosts();
   }, [fetchMonthPosts]);
 
-  if (isLockedForClient) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-10 bg-white rounded-[2.5rem] border border-black/[0.03]">
-        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-8">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        </div>
-        <h2 className="text-3xl font-bold text-brand-dark mb-4 tracking-tight">Conteúdo em Preparação</h2>
-        <p className="text-gray-500 mb-10 max-w-md leading-relaxed font-medium">
-          Nossa equipe está finalizando a estratégia e o planejamento editorial para este mês. Você será notificado assim que estiver liberado para aprovação.
-        </p>
-        <button 
-          onClick={onBack} 
-          className="px-10 py-5 bg-brand-dark text-white rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-brand-dark/20 hover:scale-105 active:scale-95 transition-all"
-        >
-          Voltar ao Dashboard
-        </button>
-      </div>
-    );
-  }
-
   // 3. Mesclar Posts Estáticos + Posts do Banco
   useEffect(() => {
     if (!currentPlan || monthIndex === -1) return;
@@ -560,10 +540,32 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
 
   // --- RENDERS ---
 
-  if (loadingEditorial) {
+  if (loadingEditorial || loadingPosts) {
     return (
       <div className="flex justify-center items-center py-20">
         <Loader2 size={32} className="animate-spin text-brand-green" />
+      </div>
+    );
+  }
+
+  const isAdmin = userRole === 'admin';
+
+  if (!isAdmin && !isReleased) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-10 bg-white rounded-[2.5rem] border border-black/[0.03]">
+        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-8">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h2 className="text-3xl font-bold text-brand-dark mb-4 tracking-tight">Conteúdo em Preparação</h2>
+        <p className="text-gray-500 mb-10 max-w-md leading-relaxed font-medium">
+          Nossa equipe está finalizando a estratégia e o planejamento editorial para este mês. Você será notificado assim que estiver liberado para aprovação.
+        </p>
+        <button 
+          onClick={onBack} 
+          className="px-10 py-5 bg-brand-dark text-white rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-brand-dark/20 hover:scale-105 active:scale-95 transition-all"
+        >
+          Voltar ao Dashboard
+        </button>
       </div>
     );
   }
