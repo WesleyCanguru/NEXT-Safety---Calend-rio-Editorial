@@ -188,10 +188,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
                       const monthName = MONTH_NAMES[plan.month - 1];
                       const isActive = selectedMonth === monthName;
                       
-                      const hasTheme = !!plan.theme && plan.theme.trim() !== '';
-                      const hasObjective = !!plan.objectives && plan.objectives.length > 0 && plan.objectives[0].trim() !== '';
-                      const isConfigured = hasTheme && hasObjective;
-                      const isLocked = userRole !== 'admin' && !isConfigured;
+                      const isLocked = userRole !== 'admin' && !plan.is_released;
 
                       return (
                         <button

@@ -10,6 +10,7 @@ export interface MonthlyPlan {
   objectives: string[];
   key_dates: string[];
   campaigns: string[];
+  is_released?: boolean;
 }
 
 export interface WeeklyScheduleItem {

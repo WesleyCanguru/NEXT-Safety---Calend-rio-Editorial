@@ -76,6 +76,9 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
   const monthIndex = MONTH_NAMES.findIndex(m => m.toLowerCase() === monthName.toLowerCase());
   const year = 2026;
 
+  const isReleased = currentPlan?.is_released;
+  const isLockedForClient = userRole !== 'admin' && !isReleased;
+
   // 1. Helper: Gerar chave única
   const getDateKey = (day: string, platform: string) => {
      const datePart = day.split(' ')[0].replace('/', '-');
@@ -105,6 +108,26 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
   useEffect(() => {
     fetchMonthPosts();
   }, [fetchMonthPosts]);
+
+  if (isLockedForClient) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-10 bg-white rounded-[2.5rem] border border-black/[0.03]">
+        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-8">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h2 className="text-3xl font-bold text-brand-dark mb-4 tracking-tight">Conteúdo em Preparação</h2>
+        <p className="text-gray-500 mb-10 max-w-md leading-relaxed font-medium">
+          Nossa equipe está finalizando a estratégia e o planejamento editorial para este mês. Você será notificado assim que estiver liberado para aprovação.
+        </p>
+        <button 
+          onClick={onBack} 
+          className="px-10 py-5 bg-brand-dark text-white rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-brand-dark/20 hover:scale-105 active:scale-95 transition-all"
+        >
+          Voltar ao Dashboard
+        </button>
+      </div>
+    );
+  }
 
   // 3. Mesclar Posts Estáticos + Posts do Banco
   useEffect(() => {
@@ -794,6 +817,31 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                 >
                     {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash size={14} />} 
                     <span className="hidden sm:inline">Excluir ({selectedPosts.size})</span>
+                </motion.button>
+            )}
+
+            {userRole === 'admin' && (
+                <motion.button 
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={async () => {
+                    if (!currentPlan) return;
+                    const nextState = !currentPlan.is_released;
+                    await updateMonthlyPlan(currentPlan.id, { is_released: nextState });
+                  }}
+                  className={`flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all border ${
+                    currentPlan?.is_released 
+                      ? 'bg-green-50 border-green-100 text-green-600 hover:bg-green-100 shadow-sm' 
+                      : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100'
+                  }`}
+                  title={currentPlan?.is_released ? 'Bloquear acesso do cliente' : 'Liberar acesso para o cliente'}
+                >
+                  {currentPlan?.is_released ? (
+                    <CheckCircle2 size={14} />
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  )}
+                  {currentPlan?.is_released ? 'Mês Liberado' : 'Mês Oculto'}
                 </motion.button>
             )}
 

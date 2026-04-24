@@ -285,11 +285,35 @@ export const AnnualOverview: React.FC<AnnualOverviewProps> = ({ onSelectMonth })
 
               return (
                 <div key={plan.id} className="relative h-full">
-                  {isAdmin && !isConfigured && (
-                    <div className="absolute -top-3 -right-3 z-20 bg-gray-800 text-white text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 pointer-events-none">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                      Oculto (Cliente)
-                    </div>
+                  {isAdmin && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const nextState = !plan.is_released;
+                        await supabase
+                          .from('client_monthly_plans')
+                          .update({ is_released: nextState })
+                          .eq('id', plan.id);
+                        window.location.reload(); // Refresh to update view
+                      }}
+                      className={`absolute -top-3 -right-3 z-30 p-2 rounded-full shadow-lg transition-all border flex items-center gap-2 group ${
+                        plan.is_released 
+                          ? 'bg-green-600 border-green-500 text-white hover:bg-green-700' 
+                          : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      {plan.is_released ? (
+                        <>
+                          <CheckCircle2 size={12} />
+                          <span className="text-[9px] font-bold uppercase tracking-widest overflow-hidden max-w-0 group-hover:max-w-[100px] transition-all">Liberado</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                          <span className="text-[9px] font-bold uppercase tracking-widest overflow-hidden max-w-0 group-hover:max-w-[100px] transition-all">Oculto</span>
+                        </>
+                      )}
+                    </button>
                   )}
                   <MonthCard 
                     data={{
@@ -298,9 +322,9 @@ export const AnnualOverview: React.FC<AnnualOverviewProps> = ({ onSelectMonth })
                       color: 'blue', 
                       function: ''
                     }} 
-                    onClick={() => onSelectMonth(monthName)}
+                    onClick={() => (!isLocked || isAdmin) && onSelectMonth(monthName)}
                     postCount={postCount}
-                    isLocked={isLocked}
+                    isLocked={!isAdmin && !plan.is_released}
                   />
                 </div>
               );
