@@ -310,7 +310,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                       suffixCounter++;
                   }
                   
-                  const newKey = `${d}-${m}-${y}-${platform}-${newSuffix}`;
+                  const newKey = `${d}-${m}-${y}-${platform}-${activeClient?.id}-${newSuffix}`;
 
                   const dbPost = dbPosts[oldKey];
                   

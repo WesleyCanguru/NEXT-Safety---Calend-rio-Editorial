@@ -417,8 +417,8 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
 
       // Loop through selected platforms and save independently
       for (const plat of selectedPlatforms) {
-          // Generate key logic
-          let targetKey = `${d}-${m}-${y}-${plat}`;
+          // Generate key logic - IMPORTANTE: Sempre incluir o activeClient.id para isolamento total
+          let targetKey = `${d}-${m}-${y}-${plat}-${activeClient?.id}`;
           
           // Se for NEW ou se a DATA MUDOU, adiciona timestamp pra evitar colisão e garantir unicidade
           // Isso resolve o problema de sobrescrever posts existentes no destino
@@ -571,8 +571,13 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
 
   const handleSendComment = async () => {
     if (!newComment.trim()) return;
+    
+    // Garantir que estamos enviando o comentário para a chave correta
+    // Se for um post novo ainda não salvo, usamos a data_key que será gerada
+    const currentPostKey = post?.date_key === 'temp' ? dateKey : post?.date_key || dateKey;
+
     const newCommentObj = { 
-        post_id: dateKey, 
+        post_id: currentPostKey, 
         author_role: userRole, 
         author_name: userRole === 'admin' ? 'Canguru' : userRole === 'approver' ? (activeClient?.responsible || 'Wesley') : 'Equipe', 
         content: newComment, 
