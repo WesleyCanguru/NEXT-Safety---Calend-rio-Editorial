@@ -79,8 +79,8 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
           .select('amount')
           .eq('month_year', currentMonthYear),
         supabase.from('agency_tasks')
-          .select('*, client:client_id(id, name, color, initials)')
-          .neq('status', 'completed')
+          .select('*, client:clients(id, name, color, initials)')
+          .neq('status', 'done')
           .order('due_date', { ascending: false }),
         supabase.from('agency_crms')
           .select('*')
@@ -110,10 +110,10 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
         saldo: totalReceitas - totalDespesas
       });
 
-      // Urgent Tasks (Due <= 3 days OR priority = 'high')
+      // Urgent Tasks (Due <= 3 days OR priority IN ['high', 'urgent'])
       const pTasks = (tempTasks || []) as any[]; // casting since we have relational client
       const filteredTasks = pTasks.filter(t => {
-        if (t.priority === 'high') return true;
+        if (t.priority === 'high' || t.priority === 'urgent') return true;
         if (!t.due_date) return false;
         return dayjs(t.due_date).isBefore(dayjs().add(3, 'day'), 'day') || dayjs(t.due_date).isSame(dayjs().add(3, 'day'), 'day');
       });
@@ -372,6 +372,9 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
                         <Calendar size={12} />
                         {dayjs(task.due_date).format('DD/MM/YY')}
                       </div>
+                    )}
+                    {task.priority === 'urgent' && (
+                      <span className="text-[9px] uppercase tracking-widest bg-red-600 text-white px-2 rounded font-bold">URGENTE</span>
                     )}
                     {task.priority === 'high' && (
                       <span className="text-[9px] uppercase tracking-widest bg-red-100 text-red-600 px-2 rounded font-bold">ALTA</span>
