@@ -215,6 +215,7 @@ export interface Client {
   reportei_url?: string | null;
   organic_reportei_url?: string | null;
   paid_reportei_url?: string | null;
+  drive_link?: string | null;
   onboarding_completed?: boolean;
   base_value?: number;
   due_day?: number;

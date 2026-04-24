@@ -30,7 +30,8 @@ import {
   PieChart,
   BarChart3,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  FolderOpen
 } from 'lucide-react';
 import { 
   DndContext, 
@@ -145,6 +146,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
     reportei_url: '',
     organic_reportei_url: '',
     paid_reportei_url: '',
+    drive_link: '',
     color: '#1e40af',
     initials: '',
     services: [] as string[],
@@ -186,6 +188,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
         instagram: form.instagram.trim() || null,
         organic_reportei_url: form.organic_reportei_url.trim() || null,
         paid_reportei_url: form.paid_reportei_url.trim() || null,
+        drive_link: form.drive_link.trim() || null,
         color: form.color,
         initials: form.initials.trim().toUpperCase().slice(0, 2),
         services: form.services,
@@ -337,6 +340,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
       linkedin: '',
       organic_reportei_url: '',
       paid_reportei_url: '',
+      drive_link: '',
       color: '#1e40af', 
       initials: '', 
       services: [],
@@ -371,6 +375,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
       linkedin: linkedinHandle,
       organic_reportei_url: client.organic_reportei_url || '',
       paid_reportei_url: client.paid_reportei_url || '',
+      drive_link: (client as any).drive_link || '',
       color: client.color,
       initials: client.initials,
       services: client.services || [],
@@ -588,6 +593,16 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
                   <Globe className="absolute left-3 top-3 text-gray-400" size={16} />
                   <input type="text" value={form.paid_reportei_url} onChange={e => setForm(f => ({...f, paid_reportei_url: e.target.value}))}
                     placeholder="https://app.reportei.com/report/..."
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">URL Google Drive (Documentos)</label>
+                <div className="relative">
+                  <FolderOpen className="absolute left-3 top-3 text-gray-400" size={16} />
+                  <input type="text" value={form.drive_link} onChange={e => setForm(f => ({...f, drive_link: e.target.value}))}
+                    placeholder="https://drive.google.com/drive/folders/..."
                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>

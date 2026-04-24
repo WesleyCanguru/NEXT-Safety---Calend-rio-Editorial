@@ -123,15 +123,31 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
 
   const isAdmin = userRole === 'admin';
 
-  const handleSetUrl = async (type: 'organic' | 'paid') => {
+  const handleSetUrl = async (type: 'organic' | 'paid' | 'drive') => {
     if (!isAdmin || !activeClient) return;
     
-    const currentUrl = type === 'organic' ? activeClient.organic_reportei_url : activeClient.paid_reportei_url;
-    const newUrl = window.prompt(`Digite a URL do Reportei para Tráfego ${type === 'organic' ? 'Orgânico' : 'Pago'}:`, currentUrl || '');
+    let currentUrl = '';
+    let label = '';
+    let field = '';
+
+    if (type === 'organic') {
+      currentUrl = activeClient.organic_reportei_url || '';
+      label = 'URL do Reportei para Tráfego Orgânico';
+      field = 'organic_reportei_url';
+    } else if (type === 'paid') {
+      currentUrl = activeClient.paid_reportei_url || '';
+      label = 'URL do Reportei para Tráfego Pago';
+      field = 'paid_reportei_url';
+    } else {
+      currentUrl = (activeClient as any).drive_link || '';
+      label = 'URL do Google Drive (Documentos)';
+      field = 'drive_link';
+    }
+
+    const newUrl = window.prompt(`Digite a ${label}:`, currentUrl);
     
     if (newUrl !== null) {
       try {
-        const field = type === 'organic' ? 'organic_reportei_url' : 'paid_reportei_url';
         const { error } = await supabase
           .from('clients')
           .update({ [field]: newUrl.trim() || null })
@@ -500,22 +516,54 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
 
         {/* Documentos */}
         {showDocuments && (
-          <motion.div 
-            variants={itemVariants}
-            onClick={onNavigateToDocuments}
-            className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col"
-          >
-            <div className="flex justify-between items-start mb-8">
-              <div className="w-16 h-16 bg-teal-50/50 rounded-[20px] flex items-center justify-center text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-all duration-500 shadow-sm">
-                <FolderOpen size={32} />
+          (activeClient as any)?.drive_link ? (
+            <motion.a 
+              href={(activeClient as any).drive_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              variants={itemVariants}
+              className="group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] hover:shadow-[0_15px_45px_rgba(0,0,0,0.05)] hover:border-brand-dark/10 transition-all duration-500 cursor-pointer flex flex-col relative"
+            >
+              {isAdmin && (
+                <button 
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSetUrl('drive'); }}
+                  className="absolute top-8 right-16 p-2 bg-gray-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+                >
+                  <Globe size={14} className="text-gray-400" />
+                </button>
+              )}
+              <div className="flex justify-between items-start mb-8">
+                <div className="w-16 h-16 bg-teal-50/50 rounded-[20px] flex items-center justify-center text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-all duration-500 shadow-sm">
+                  <FolderOpen size={32} />
+                </div>
+                <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
               </div>
-              <ArrowRight size={22} className="text-gray-200 group-hover:text-brand-dark transform group-hover:-rotate-45 transition-all duration-500" />
-            </div>
-            <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Documentos</h3>
-            <p className="text-gray-500 text-sm leading-relaxed font-medium">
-              Repositório de arquivos, contratos e relatórios mensais.
-            </p>
-          </motion.div>
+              <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Documentos</h3>
+              <p className="text-gray-500 text-sm leading-relaxed font-medium">
+                Repositório de arquivos, contratos e relatórios mensais.
+              </p>
+            </motion.a>
+          ) : (
+            <motion.div 
+              variants={itemVariants}
+              onClick={() => isAdmin && handleSetUrl('drive')}
+              className={`group bg-white rounded-[2.5rem] p-10 shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-black/[0.02] ${isAdmin ? 'cursor-pointer hover:border-brand-dark/10' : 'opacity-60 cursor-default'} transition-all duration-500 flex flex-col relative`}
+            >
+              <div className="flex justify-between items-start mb-8">
+                <div className="w-16 h-16 bg-teal-50/50 rounded-[20px] flex items-center justify-center text-teal-600 shadow-sm">
+                  <FolderOpen size={32} />
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Em breve</span>
+                  {isAdmin && <span className="text-[8px] text-brand-dark font-bold uppercase tracking-widest opacity-40 group-hover:opacity-100 transition-opacity">Configurar Link</span>}
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold text-brand-dark mb-3 tracking-tight">Documentos</h3>
+              <p className="text-gray-500 text-sm leading-relaxed font-medium">
+                Repositório de arquivos, contratos e relatórios mensais.
+              </p>
+            </motion.div>
+          )
         )}
 
         {/* Central de Tutoriais */}

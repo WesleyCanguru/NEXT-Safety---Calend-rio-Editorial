@@ -12,7 +12,6 @@ import { ClientOnboarding } from './components/ClientOnboarding';
 import { BriefingOnboarding } from './components/BriefingOnboarding';
 import { ClientHome } from './components/ClientHome';
 import { BriefingsView } from './components/BriefingsView';
-import { DocumentsView } from './components/DocumentsView';
 import { PaidTrafficView } from './components/PaidTrafficView';
 import WebsiteView from './components/WebsiteView';
 // import AdminView from './components/AdminView'; // Removed redundant view
@@ -30,7 +29,7 @@ import { AgencyDashboard } from './components/agency/AgencyDashboard';
 
 dayjs.locale('pt-br');
 
-type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'strategic-briefings' | 'documents' | 'paid-traffic' | 'website' | 'password-vault' | 'tutorials' | 'ai-photos' | 'agencyHome' | 'agencyDashboard';
+type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'strategic-briefings' | 'paid-traffic' | 'website' | 'password-vault' | 'tutorials' | 'ai-photos' | 'agencyHome' | 'agencyDashboard';
 
 interface MainAppProps {
   initialView?: ViewState;
@@ -277,8 +276,6 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
                 <WebsiteView onBack={() => setView('dashboard')} />
               ) : view === 'paid-traffic' ? (
                 <PaidTrafficView onBack={() => setView('dashboard')} />
-              ) : view === 'documents' ? (
-                <DocumentsView onBack={() => setView('dashboard')} />
               ) : view === 'briefings' ? (
                 <BriefingsView onBack={() => setView('dashboard')} />
               ) : view === 'tutorials' ? (
@@ -346,7 +343,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
                   }}
                   onNavigateToBriefings={() => setView('briefings')}
                   onNavigateToStrategicBriefings={() => setView('strategic-briefings')}
-                  onNavigateToDocuments={() => setView('documents')}
+                  onNavigateToDocuments={() => {}} // Redirection handled in ClientHome
                   onNavigateToPaidTraffic={() => setView('paid-traffic')}
                   onNavigateToWebsite={() => setView('website')}
                   onNavigateToPasswordVault={() => setView('password-vault')}
