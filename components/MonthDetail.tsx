@@ -233,14 +233,28 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                          group.platforms.push(other.content.platform);
                      }
                      // Se um dos posts não estiver publicado, o grupo todo não está "pronto" visualmente (prioriza status de atenção)
-                     const s1 = group.status;
-                     const s2 = otherDb?.status || 'draft';
+                     const s1 = group.status as PostStatus;
+                     const s2 = (otherDb?.status as PostStatus) || 'draft';
                      
-                     // Hierarquia de visualização de status: 
-                     // changes_requested > pending > draft > approved > published
-                     if (s2 === 'changes_requested') group.status = 'changes_requested';
-                     else if (s2 === 'pending_approval' && s1 !== 'changes_requested') group.status = 'pending_approval';
-                     else if (s2 === 'draft' && s1 !== 'changes_requested' && s1 !== 'pending_approval') group.status = 'draft';
+                     const STATUS_PRIORITY: Record<PostStatus, number> = {
+                         'theme_rejected': 1,
+                         'rejected': 1, // Same as theme_rejected
+                         'theme_pending': 2,
+                         'theme_approved_with_notes': 3,
+                         'changes_requested': 4,
+                         'pending_approval': 5,
+                         'draft': 6,
+                         'theme_approved': 7,
+                         'approved': 8,
+                         'scheduled': 9,
+                         'published': 10,
+                         'deleted': 11,
+                         'internal_review': 99
+                     };
+                     
+                     if ((STATUS_PRIORITY[s2] || 99) < (STATUS_PRIORITY[s1] || 99)) {
+                         group.status = s2;
+                     }
                      
                      usedIndices.add(j);
                  }
@@ -325,6 +339,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                       type: dbPost?.type || postGroup.type,
                       bullets: dbPost?.bullets || postGroup.bullets,
                       image_url: dbPost?.image_url || postGroup.content.initialImageUrl || null,
+                      video_thumbnail_url: dbPost?.video_thumbnail_url || null,
                       caption: dbPost?.caption || null,
                       scheduled_time: dbPost?.scheduled_time || postGroup.scheduled_time || null,
                       last_updated: new Date().toISOString()
@@ -346,6 +361,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                       type: dbPost?.type || postGroup.type,
                       bullets: dbPost?.bullets || postGroup.bullets,
                       image_url: dbPost?.image_url || postGroup.content.initialImageUrl || null,
+                      video_thumbnail_url: dbPost?.video_thumbnail_url || null,
                       caption: dbPost?.caption || null
                   };
 
@@ -581,6 +597,10 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
 
   const getStatusLabel = (s: PostStatus) => {
     switch(s) {
+      case 'theme_pending': return 'Tema P/ Aprovação';
+      case 'theme_approved': return 'Tema Aprovado';
+      case 'theme_approved_with_notes': return 'Tema com Ajustes';
+      case 'theme_rejected': return 'Tema Reprovado';
       case 'draft': return 'Em Produção';
       case 'pending_approval': return 'Esperando Aprovação';
       case 'changes_requested': return 'Ajustes';
@@ -595,6 +615,10 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
   const getStatusColorClass = (status: PostStatus) => {
     switch(status) {
       case 'draft': return 'bg-gray-100 border-gray-200 hover:bg-gray-200';
+      case 'theme_pending': return 'bg-gray-300 border-gray-400 hover:bg-gray-400';
+      case 'theme_approved': return 'bg-[#fce5ff] border-[#f4cbf7] hover:bg-[#fae0fd]';
+      case 'theme_approved_with_notes': return 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100';
+      case 'theme_rejected': return 'bg-rose-100 border-rose-200 hover:bg-rose-200';
       case 'pending_approval': return 'bg-orange-100 border-orange-200 hover:bg-orange-200';
       case 'changes_requested': return 'bg-yellow-100 border-yellow-200 hover:bg-yellow-200';
       case 'rejected': return 'bg-rose-100 border-rose-200 hover:bg-rose-200';

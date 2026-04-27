@@ -117,7 +117,11 @@ export type PostStatus =
   | 'scheduled'           // Roxo (Programado)
   | 'approved'            // Azul (Aprovado)
   | 'published'           // Verde (Publicado)
-  | 'deleted';            // Removido (Lógica para ocultar posts estáticos)
+  | 'deleted'             // Removido (Lógica para ocultar posts estáticos)
+  | 'theme_pending'
+  | 'theme_rejected'
+  | 'theme_approved_with_notes'
+  | 'theme_approved';
 
 export interface PostComment {
   id: string;
@@ -143,6 +147,13 @@ export interface PostData {
   theme?: string;
   type?: string;
   bullets?: string[];
+  video_thumbnail_url?: string | null;
+
+  // Novos campos de aprovação de Tema
+  theme_title?: string | null;
+  theme_description?: string | null;
+  theme_rejection_reason?: string | null;
+  theme_client_notes?: string | null;
 }
 
 export interface TrafficStrategyData {

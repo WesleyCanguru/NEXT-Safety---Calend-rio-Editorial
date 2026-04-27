@@ -175,6 +175,7 @@ export const PublicApprovalScreen: React.FC = () => {
               client_id: pData.client_id,
               status: status,
               image_url: stringifyImageUrl(pData.image_url) || stringifyImageUrl(cData.initialImageUrl),
+              video_thumbnail_url: pData.video_thumbnail_url,
               caption: pData.caption,
               theme: pData.theme || cData.theme,
               type: pData.type || cData.type,
@@ -187,12 +188,13 @@ export const PublicApprovalScreen: React.FC = () => {
      if (!primaryPost || !primaryContent) return;
      setSubmitting(true);
      try {
+        const approvedStatus = isThemeMode ? 'theme_approved' : 'approved';
         // 1. Aprovar Principal
-        await savePostStatus(primaryPost, primaryContent, 'approved');
+        await savePostStatus(primaryPost, primaryContent, approvedStatus);
 
         // 2. Aprovar Contraparte (se existir)
         if (counterpartPost && counterpartContent) {
-            await savePostStatus(counterpartPost, counterpartContent, 'approved');
+            await savePostStatus(counterpartPost, counterpartContent, approvedStatus);
         }
 
         // 3. Comentário no Principal (para registro)
@@ -200,7 +202,7 @@ export const PublicApprovalScreen: React.FC = () => {
            post_id: primaryPost.date_key,
            author_role: 'approver',
            author_name: name,
-           content: `✅ APROVOU a publicação${counterpartPost ? ' (e a versão vinculada)' : ''}.`,
+           content: isThemeMode ? `✅ APROVOU o tema${counterpartPost ? ' (e a versão vinculada)' : ''}.` : `✅ APROVOU a publicação${counterpartPost ? ' (e a versão vinculada)' : ''}.`,
            visible_to_admin: true
         };
         const { data: insertedComment } = await supabase.from('comments').insert(newCommentObj).select().single();
@@ -209,10 +211,10 @@ export const PublicApprovalScreen: React.FC = () => {
         }
 
         // Atualizar estado local
-        setPrimaryPost(prev => prev ? ({...prev, status: 'approved'}) : null);
-        if (counterpartPost) setCounterpartPost(prev => prev ? ({...prev, status: 'approved'}) : null);
+        setPrimaryPost(prev => prev ? ({...prev, status: approvedStatus}) : null);
+        if (counterpartPost) setCounterpartPost(prev => prev ? ({...prev, status: approvedStatus}) : null);
         
-        setSuccessMessage('Publicação aprovada com sucesso!');
+        setSuccessMessage(isThemeMode ? 'Tema aprovado com sucesso!' : 'Publicação aprovada com sucesso!');
         setPendingAction(null);
      } catch (err) {
         alert('Erro ao aprovar.');
@@ -225,12 +227,34 @@ export const PublicApprovalScreen: React.FC = () => {
      if (!primaryPost || !comment.trim()) return;
      setSubmitting(true);
      try {
+        const rejectedStatus = isThemeMode ? 'theme_rejected' : 'rejected';
+        const extraFields = isThemeMode ? { theme_rejection_reason: comment } : {};
+        
+        // Helper inline para lidar com extraFields
+        const saveRejectedStatus = async (pData: PostData, cData: DailyContent) => {
+            await supabase
+                 .from('posts')
+                 .upsert({
+                    date_key: pData.date_key,
+                    client_id: pData.client_id,
+                    status: rejectedStatus,
+                    ...extraFields,
+                    image_url: stringifyImageUrl(pData.image_url) || stringifyImageUrl(cData.initialImageUrl),
+                    video_thumbnail_url: pData.video_thumbnail_url,
+                    caption: pData.caption,
+                    theme: pData.theme || cData.theme,
+                    type: pData.type || cData.type,
+                    bullets: pData.bullets || cData.bullets,
+                    last_updated: new Date().toISOString()
+                 }, { onConflict: 'date_key' });
+        };
+
         // 1. Marcar rejected Principal
-        await savePostStatus(primaryPost, primaryContent!, 'rejected');
+        await saveRejectedStatus(primaryPost, primaryContent!);
 
         // 2. Marcar rejected Contraparte (se existir)
         if (counterpartPost && counterpartContent) {
-            await savePostStatus(counterpartPost, counterpartContent, 'rejected');
+            await saveRejectedStatus(counterpartPost, counterpartContent);
         }
 
         // 3. Comentário
@@ -238,7 +262,7 @@ export const PublicApprovalScreen: React.FC = () => {
            post_id: primaryPost.date_key,
            author_role: 'approver',
            author_name: userName,
-           content: `❌ REPROVOU a publicação. Justificativa: ${comment}`,
+           content: isThemeMode ? `❌ REPROVOU o tema. Justificativa: ${comment}` : `❌ REPROVOU a publicação. Justificativa: ${comment}`,
            visible_to_admin: true
         };
         
@@ -247,10 +271,10 @@ export const PublicApprovalScreen: React.FC = () => {
             setComments(prev => [...prev, insertedComment as PostComment]);
         }
 
-        setPrimaryPost(prev => prev ? ({...prev, status: 'rejected'}) : null);
-        if (counterpartPost) setCounterpartPost(prev => prev ? ({...prev, status: 'rejected'}) : null);
+        setPrimaryPost(prev => prev ? ({...prev, status: rejectedStatus, ...extraFields}) : null);
+        if (counterpartPost) setCounterpartPost(prev => prev ? ({...prev, status: rejectedStatus, ...extraFields}) : null);
 
-        setSuccessMessage('Publicação reprovada com sucesso!');
+        setSuccessMessage(isThemeMode ? 'Tema reprovado com sucesso!' : 'Publicação reprovada com sucesso!');
         setShowCommentBox(false);
         setComment('');
         setPendingAction(null);
@@ -266,12 +290,34 @@ export const PublicApprovalScreen: React.FC = () => {
      if (!primaryPost || !comment.trim()) return;
      setSubmitting(true);
      try {
+        const changesStatus = isThemeMode ? 'theme_approved_with_notes' : 'changes_requested';
+        const extraFields = isThemeMode ? { theme_client_notes: comment } : {};
+
+        // Helper inline para lidar com extraFields
+        const saveChangesStatus = async (pData: PostData, cData: DailyContent) => {
+            await supabase
+                 .from('posts')
+                 .upsert({
+                    date_key: pData.date_key,
+                    client_id: pData.client_id,
+                    status: changesStatus,
+                    ...extraFields,
+                    image_url: stringifyImageUrl(pData.image_url) || stringifyImageUrl(cData.initialImageUrl),
+                    video_thumbnail_url: pData.video_thumbnail_url,
+                    caption: pData.caption,
+                    theme: pData.theme || cData.theme,
+                    type: pData.type || cData.type,
+                    bullets: pData.bullets || cData.bullets,
+                    last_updated: new Date().toISOString()
+                 }, { onConflict: 'date_key' });
+        };
+
         // 1. Marcar changes_requested Principal
-        await savePostStatus(primaryPost, primaryContent!, 'changes_requested');
+        await saveChangesStatus(primaryPost, primaryContent!);
 
         // 2. Marcar changes_requested Contraparte (se existir)
         if (counterpartPost && counterpartContent) {
-            await savePostStatus(counterpartPost, counterpartContent, 'changes_requested');
+            await saveChangesStatus(counterpartPost, counterpartContent);
         }
 
         // 3. Comentário
@@ -279,7 +325,7 @@ export const PublicApprovalScreen: React.FC = () => {
            post_id: primaryPost.date_key,
            author_role: 'approver',
            author_name: userName,
-           content: comment,
+           content: isThemeMode ? `⚠️ APROVOU O TEMA com observação: ${comment}` : comment,
            visible_to_admin: true
         };
         
@@ -288,10 +334,10 @@ export const PublicApprovalScreen: React.FC = () => {
             setComments(prev => [...prev, insertedComment as PostComment]);
         }
 
-        setPrimaryPost(prev => prev ? ({...prev, status: 'changes_requested'}) : null);
-        if (counterpartPost) setCounterpartPost(prev => prev ? ({...prev, status: 'changes_requested'}) : null);
+        setPrimaryPost(prev => prev ? ({...prev, status: changesStatus, ...extraFields}) : null);
+        if (counterpartPost) setCounterpartPost(prev => prev ? ({...prev, status: changesStatus, ...extraFields}) : null);
 
-        setSuccessMessage('Solicitação de ajuste enviada!');
+        setSuccessMessage(isThemeMode ? 'Tema aprovado com observação!' : 'Solicitação de ajuste enviada!');
         setShowCommentBox(false);
         setComment('');
         setPendingAction(null);
@@ -341,9 +387,15 @@ export const PublicApprovalScreen: React.FC = () => {
 
   const displayImage = safePost.image_url || safeContent.initialImageUrl || null;
   const displayCaption = safePost.caption || '';
+  
+  const isThemeMode = ['theme_pending', 'theme_approved_with_notes', 'theme_approved', 'theme_rejected'].includes(safePost.status);
 
   const getStatusLabel = (s?: string) => {
     const map: Record<string, string> = {
+        'theme_pending': 'Tema para Aprovação',
+        'theme_approved': 'Tema Aprovado',
+        'theme_approved_with_notes': 'Tema Aprovado (Obs)',
+        'theme_rejected': 'Tema Reprovado',
         'draft': 'Em Produção',
         'pending_approval': 'Esperando Aprovação',
         'changes_requested': 'Ajustes Solicitados',
@@ -436,35 +488,55 @@ export const PublicApprovalScreen: React.FC = () => {
                    )}
 
                    <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-200 mb-4 transition-all duration-300 relative group">
-                      <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 text-white text-xs px-2 py-1 rounded pointer-events-none">
-                         Clique para ampliar
-                      </div>
-                      {activeTab === 'linkedin' ? (
-                         <LinkedInView 
-                           dayContent={effectiveContent} 
-                           caption={displayCaption} 
-                           imageUrl={displayImage} 
-                           isVideo={!!isVideo} 
-                           onImageClick={handleImageClick}
-                           client={client}
-                         />
+                      {isThemeMode ? (
+                          <div className="bg-brand-dark rounded-xl p-8 border shadow-lg text-center h-full flex flex-col justify-center">
+                              <div className="w-16 h-16 bg-white/10 flex items-center justify-center rounded-2xl mx-auto mb-6 border border-white/20">
+                                  <AlertTriangle className="text-[#5DCAA5] w-8 h-8" />
+                              </div>
+                              <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-gray-400 mb-2">Proposta de Tema</h3>
+                              <h4 className="font-serif text-2xl text-white mb-6 leading-tight">{safePost.theme || 'Sem tema definido'}</h4>
+                              <div className="bg-white/5 p-5 rounded-2xl text-left border border-white/10 shadow-inner">
+                                  <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">{safePost.bullets?.join('\n') || 'Nenhuma descrição fornecida.'}</p>
+                              </div>
+                          </div>
                       ) : (
-                         <InstagramView 
-                           dayContent={effectiveContent} 
-                           caption={displayCaption} 
-                           imageUrl={displayImage} 
-                           isVideo={!!isVideo} 
-                           onImageClick={handleImageClick}
-                           client={client}
-                         />
+                          <>
+                              <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 text-white text-xs px-2 py-1 rounded pointer-events-none">
+                                 Clique para ampliar
+                              </div>
+                              {activeTab === 'linkedin' ? (
+                                 <LinkedInView 
+                                   dayContent={effectiveContent} 
+                                   caption={displayCaption} 
+                                   imageUrl={displayImage} 
+                                   isVideo={!!isVideo} 
+                                   videoThumbnailUrl={safePost.video_thumbnail_url}
+                                   onImageClick={handleImageClick}
+                                   client={client}
+                                 />
+                              ) : (
+                                 <InstagramView 
+                                   dayContent={effectiveContent} 
+                                   caption={displayCaption} 
+                                   imageUrl={displayImage} 
+                                   isVideo={!!isVideo} 
+                                   videoThumbnailUrl={safePost.video_thumbnail_url}
+                                   onImageClick={handleImageClick}
+                                   client={client}
+                                 />
+                              )}
+                          </>
                       )}
                    </div>
                    
                    <div className="text-center">
                       <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border 
-                         ${safePost.status === 'approved' ? 'bg-green-100 text-green-700 border-green-200' : 
-                           safePost.status === 'changes_requested' ? 'bg-orange-100 text-orange-700 border-orange-200' : 
-                           safePost.status === 'rejected' ? 'bg-red-100 text-red-700 border-red-200' : 
+                         ${safePost.status === 'theme_approved' ? 'bg-[#fce5ff] text-[#9333ea] border-[#f4cbf7]' : 
+                           safePost.status === 'theme_pending' ? 'bg-gray-300 text-gray-800 border-gray-400' : 
+                           safePost.status === 'approved' ? 'bg-green-100 text-green-700 border-green-200' : 
+                           ['theme_approved_with_notes', 'changes_requested'].includes(safePost.status) ? 'bg-orange-100 text-orange-700 border-orange-200' : 
+                           ['rejected', 'theme_rejected'].includes(safePost.status) ? 'bg-red-100 text-red-700 border-red-200' : 
+                           safePost.status === 'pending_approval' ? 'bg-amber-100 text-amber-700 border-amber-200' :
                            'bg-gray-100 text-gray-600 border-gray-200'
                          }`}>
                          Status: {getStatusLabel(safePost.status)}
@@ -494,26 +566,53 @@ export const PublicApprovalScreen: React.FC = () => {
 
                       {!showCommentBox && !showNamePrompt && (
                          <div className="flex flex-col gap-3">
-                            <button 
-                              onClick={() => handleActionClick('approve')}
-                              className="w-full py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-sm transition-all flex items-center justify-center gap-2"
-                            >
-                               <CheckCircle2 size={20} /> Aprovar Publicação
-                            </button>
-                            <div className="flex gap-3">
-                                <button 
-                                  onClick={() => handleActionClick('request_changes')}
-                                  className="flex-1 py-4 bg-white hover:bg-orange-50 text-orange-600 border border-orange-200 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
-                                >
-                                   <AlertTriangle size={20} /> Ajuste
-                                </button>
-                                <button 
-                                  onClick={() => handleActionClick('reject')}
-                                  className="flex-1 py-4 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
-                                >
-                                   <XCircle size={20} /> Reprovar
-                                </button>
-                            </div>
+                            {isThemeMode ? (
+                                <>
+                                    <button 
+                                      onClick={() => handleActionClick('approve')}
+                                      className="w-full py-4 bg-[#5DCAA5] hover:bg-[#4BA88A] text-brand-dark rounded-xl font-bold shadow-sm transition-all flex items-center justify-center gap-2"
+                                    >
+                                       <CheckCircle2 size={20} /> Aprovar Tema
+                                    </button>
+                                    <div className="flex gap-3">
+                                        <button 
+                                          onClick={() => handleActionClick('request_changes')}
+                                          className="flex-1 py-4 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+                                        >
+                                           <AlertTriangle size={20} /> Observação
+                                        </button>
+                                        <button 
+                                          onClick={() => handleActionClick('reject')}
+                                          className="flex-1 py-4 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+                                        >
+                                           <XCircle size={20} /> Reprovar Tema
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <button 
+                                      onClick={() => handleActionClick('approve')}
+                                      className="w-full py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-sm transition-all flex items-center justify-center gap-2"
+                                    >
+                                       <CheckCircle2 size={20} /> Aprovar Publicação
+                                    </button>
+                                    <div className="flex gap-3">
+                                        <button 
+                                          onClick={() => handleActionClick('request_changes')}
+                                          className="flex-1 py-4 bg-white hover:bg-orange-50 text-orange-600 border border-orange-200 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+                                        >
+                                           <AlertTriangle size={20} /> Ajuste
+                                        </button>
+                                        <button 
+                                          onClick={() => handleActionClick('reject')}
+                                          className="flex-1 py-4 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+                                        >
+                                           <XCircle size={20} /> Reprovar
+                                        </button>
+                                    </div>
+                                </>
+                            )}
                          </div>
                       )}
 

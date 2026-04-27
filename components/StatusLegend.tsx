@@ -1,42 +1,65 @@
 
 import React from 'react';
-import { Info, Sparkles } from 'lucide-react';
+import { Info, Target, LayoutTemplate } from 'lucide-react';
 import { motion } from 'motion/react';
+import { STATUS_CONFIG } from '../constants';
+import { PostStatus } from '../types';
 
 export const StatusLegend: React.FC = () => {
-  const statuses = [
-    { label: 'Em Produção', color: 'bg-gray-100 border-gray-200 text-gray-600' },
-    { label: 'Esperando Aprovação', color: 'bg-orange-100 border-orange-200 text-orange-700' },
-    { label: 'Ajustes Solicitados', color: 'bg-yellow-100 border-yellow-200 text-yellow-700' },
-    { label: 'Reprovado', color: 'bg-rose-100 border-rose-200 text-rose-700' },
-    { label: 'Aprovado', color: 'bg-blue-100 border-blue-200 text-blue-700' },
-    { label: 'Programado', color: 'bg-purple-100 border-purple-200 text-purple-700' },
-    { label: 'Publicado', color: 'bg-green-100 border-green-200 text-green-700' },
+  const contentStatuses: PostStatus[] = [
+    'draft', 'pending_approval', 'changes_requested', 'rejected', 'approved', 'scheduled', 'published'
   ];
+  
+  const themeStatuses: PostStatus[] = [
+    'theme_pending', 'theme_approved_with_notes', 'theme_approved', 'theme_rejected'
+  ];
+
+  const renderBadge = (s: PostStatus) => {
+    const config = STATUS_CONFIG[s];
+    if (!config) return null;
+    return (
+      <motion.div 
+        key={s} 
+        whileHover={{ scale: 1.05 }}
+        className="flex items-center gap-3 px-4 py-2 rounded-xl border text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm"
+        style={{ backgroundColor: config.bg, color: config.color, borderColor: config.dot + '40' }}
+      >
+        <div className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: config.dot }}></div>
+        {config.label}
+      </motion.div>
+    );
+  };
 
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white/80 backdrop-blur-md border border-black/[0.03] rounded-3xl p-6 mb-10 shadow-[0_10px_30px_rgba(0,0,0,0.02)]"
+      className="bg-white/80 backdrop-blur-md border border-black/[0.03] rounded-3xl p-6 mb-10 shadow-[0_10px_30px_rgba(0,0,0,0.02)] flex flex-col gap-6"
     >
-      <div className="flex items-center gap-3 mb-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em]">
-        <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center border border-black/[0.02]">
-          <Info size={12} />
+      <div>
+        <div className="flex items-center gap-3 mb-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em]">
+          <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center border border-black/[0.02]">
+            <LayoutTemplate size={12} />
+          </div>
+          Status de Tema
         </div>
-        Legenda de Status
+        <div className="flex flex-wrap gap-3">
+          {themeStatuses.map(renderBadge)}
+        </div>
       </div>
-      <div className="flex flex-wrap gap-3">
-        {statuses.map((s, idx) => (
-          <motion.div 
-            key={idx} 
-            whileHover={{ scale: 1.05 }}
-            className={`flex items-center gap-3 px-4 py-2 rounded-xl border text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm ${s.color}`}
-          >
-            <div className="w-2 h-2 rounded-full bg-current opacity-40 shadow-[0_0_8px_currentColor]"></div>
-            {s.label}
-          </motion.div>
-        ))}
+
+      <div className="h-px bg-gray-100 w-full"></div>
+
+      <div>
+        <div className="flex items-center gap-3 mb-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em]">
+          <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center border border-black/[0.02]">
+            <Target size={12} />
+          </div>
+          Status de Conteúdo
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {contentStatuses.map(renderBadge)}
+        </div>
       </div>
     </motion.div>
   );

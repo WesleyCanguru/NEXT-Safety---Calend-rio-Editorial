@@ -8,6 +8,7 @@ interface PlatformViewProps {
   caption: string;
   imageUrl: string | string[] | null;
   isVideo: boolean | null;
+  videoThumbnailUrl?: string | null;
   isUploading?: boolean;
   onImageClick?: (url: string) => void;
   client?: Client | null;
@@ -16,11 +17,12 @@ interface PlatformViewProps {
 export const MediaRenderer: React.FC<{ 
   imageUrl: string | string[] | null; 
   isVideo: boolean | null; 
+  videoThumbnailUrl?: string | null;
   isUploading?: boolean; 
   aspectRatioClass: string;
   helpText?: string;
   onImageClick?: (url: string) => void;
-}> = ({ imageUrl, isVideo, isUploading, aspectRatioClass, helpText, onImageClick }) => {
+}> = ({ imageUrl, isVideo, videoThumbnailUrl, isUploading, aspectRatioClass, helpText, onImageClick }) => {
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const [touchStart, setTouchStart] = React.useState<number | null>(null);
   const [touchEnd, setTouchEnd] = React.useState<number | null>(null);
@@ -74,6 +76,7 @@ export const MediaRenderer: React.FC<{
           className="w-full h-full object-cover" 
           controls 
           playsInline
+          poster={videoThumbnailUrl || undefined}
         />
       </div>
     );
@@ -160,7 +163,7 @@ export const MediaRenderer: React.FC<{
   );
 };
 
-export const InstagramView: React.FC<PlatformViewProps> = ({ dayContent, caption, imageUrl, isVideo, isUploading, onImageClick, client }) => {
+export const InstagramView: React.FC<PlatformViewProps> = ({ dayContent, caption, imageUrl, isVideo, videoThumbnailUrl, isUploading, onImageClick, client }) => {
   const isVerticalVideo = dayContent.type.toLowerCase().includes('vídeo') || dayContent.type.toLowerCase().includes('reel');
   const aspectRatioClass = isVerticalVideo ? 'aspect-[9/16]' : 'aspect-[4/5]';
   const handle = client?.instagram || 'canguru_digital';
@@ -183,7 +186,14 @@ export const InstagramView: React.FC<PlatformViewProps> = ({ dayContent, caption
 
       {/* Media */}
       <div className="w-full">
-        <MediaRenderer imageUrl={imageUrl} isVideo={isVideo} isUploading={isUploading} aspectRatioClass={aspectRatioClass} onImageClick={onImageClick} />
+        <MediaRenderer 
+          imageUrl={imageUrl} 
+          isVideo={isVideo} 
+          videoThumbnailUrl={videoThumbnailUrl}
+          isUploading={isUploading} 
+          aspectRatioClass={aspectRatioClass} 
+          onImageClick={onImageClick} 
+        />
       </div>
 
       {/* Actions */}
@@ -211,7 +221,7 @@ export const InstagramView: React.FC<PlatformViewProps> = ({ dayContent, caption
   );
 };
 
-export const LinkedInView: React.FC<PlatformViewProps> = ({ dayContent, caption, imageUrl, isVideo, isUploading, onImageClick, client }) => {
+export const LinkedInView: React.FC<PlatformViewProps> = ({ dayContent, caption, imageUrl, isVideo, videoThumbnailUrl, isUploading, onImageClick, client }) => {
   const isVerticalVideo = dayContent.type.toLowerCase().includes('vídeo') || dayContent.type.toLowerCase().includes('reel');
   
   // Logic: 
@@ -256,6 +266,7 @@ export const LinkedInView: React.FC<PlatformViewProps> = ({ dayContent, caption,
         <MediaRenderer 
           imageUrl={imageUrl} 
           isVideo={isVideo} 
+          videoThumbnailUrl={videoThumbnailUrl}
           isUploading={isUploading} 
           aspectRatioClass={aspectRatioClass} 
           helpText="1920x1080 (Wide) ou 1080x1920 (Vertical)"

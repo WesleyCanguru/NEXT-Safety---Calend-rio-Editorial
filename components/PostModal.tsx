@@ -34,14 +34,12 @@ const POST_TYPES = [
   "Repost"
 ];
 
-const STATUS_OPTIONS: { value: PostStatus; label: string }[] = [
-    { value: 'draft', label: 'Em Produção' },
-    { value: 'pending_approval', label: 'Esperando Aprovação' },
-    { value: 'changes_requested', label: 'Ajustes Solicitados' },
-    { value: 'approved', label: 'Aprovado' },
-    { value: 'scheduled', label: 'Programado' },
-    { value: 'published', label: 'Publicado' }
-];
+import { STATUS_CONFIG } from '../constants';
+
+const STATUS_OPTIONS: { value: PostStatus; label: string }[] = Object.keys(STATUS_CONFIG).map(k => ({
+    value: k as PostStatus,
+    label: STATUS_CONFIG[k as PostStatus].label
+}));
 
 export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, groupKeys, onClose, onUpdate, isNew = false, defaultDate = '' }) => {
   const { userRole, activeClient } = useAuth();
@@ -59,10 +57,14 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   
   // Interaction States
   const [showRequestChangesInput, setShowRequestChangesInput] = useState(false);
+  const [showThemeNotesInput, setShowThemeNotesInput] = useState(false);
+  const [showThemeRejectInput, setShowThemeRejectInput] = useState(false);
+  const [themeNoteText, setThemeNoteText] = useState('');
   const [mobileTab, setMobileTab] = useState<'preview' | 'edit'>('preview');
   
   // Multi-Platform & Caption Logic
@@ -75,6 +77,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
   
   // Content States (Shared)
   const [imageUrl, setImageUrl] = useState<string | string[]>(dayContent.initialImageUrl || '');
+  const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const hasContent = (Array.isArray(imageUrl) ? imageUrl.length > 0 : !!imageUrl) || !!captionMeta || !!captionLinkedin;
@@ -91,6 +94,9 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
   const [editedTheme, setEditedTheme] = useState(dayContent.theme);
   const [editedType, setEditedType] = useState(dayContent.type);
   const [editedBullets, setEditedBullets] = useState(dayContent.bullets ? dayContent.bullets.join('\n') : '');
+  
+  // Theme Approval Checkbox
+  const [requireThemeApproval, setRequireThemeApproval] = useState(false);
   
   // Date State
   const [postDate, setPostDate] = useState(''); // YYYY-MM-DD
@@ -213,6 +219,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
          setPost(primaryData as PostData);
          setManualStatus(primaryData.status);
          setPostTime(primaryData.scheduled_time || '');
+         setVideoThumbnailUrl(primaryData.video_thumbnail_url || null);
          
          const parsedUrl = parseImageUrl(primaryData.image_url || dayContent.initialImageUrl || '');
          setImageUrl(parsedUrl || '');
@@ -221,6 +228,8 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
          setEditedType(primaryData.type || dayContent.type);
          setEditedBullets(primaryData.bullets ? primaryData.bullets.join('\n') : (dayContent.bullets ? dayContent.bullets.join('\n') : ''));
          
+         setRequireThemeApproval(['theme_pending', 'theme_approved_with_notes', 'theme_approved', 'theme_rejected'].includes(primaryData.status));
+
          setOriginalKeys(foundKeys); // Armazena chaves originais
          setSelectedPlatforms(platformsFound);
          setCaptionMeta(metaCap);
@@ -244,10 +253,6 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
             .in('post_id', keysToFetch)
             .order('created_at', { ascending: true });
          if (commentsData) setComments(commentsData as PostComment[]);
-         
-         if (userRole === 'admin' && (!primaryData.caption && !primaryData.image_url)) {
-             setIsEditing(true);
-         }
       }
       setLoading(false);
     };
@@ -358,7 +363,6 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
       setLoading(true);
       const [y, m, d] = postDate.split('-');
       
-      // Determine base status
       let statusToSave: PostStatus = manualStatus;
       if (userRole !== 'admin' || !isEditing) {
           statusToSave = post?.status || 'draft';
@@ -370,6 +374,11 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
       }
       if (userRole === 'admin' && isEditing) {
           statusToSave = manualStatus;
+      }
+      
+      // Theme approval takes precedence if enabled and not already processed
+      if (requireThemeApproval && !['theme_approved', 'theme_approved_with_notes', 'theme_rejected'].includes(statusToSave)) {
+          statusToSave = 'theme_pending';
       }
 
       // --- CHECAGEM DE MUDANÇA DE DATA (MOVER POST) ---
@@ -454,6 +463,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
             date_key: targetKey,
             client_id: activeClient?.id,
             image_url: stringifyImageUrl(imageUrl),
+            video_thumbnail_url: videoThumbnailUrl,
             caption: finalCaption,
             status: statusToSave,
             theme: editedTheme,
@@ -495,10 +505,11 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
       if (onUpdate) onUpdate();
       
       // Close or Exit Edit
-      if (isNew || (dateKey !== 'new' && postDate !== dateKey.split('-').slice(0,3).reverse().join('-'))) {
-          onClose(); // Se mudou data ou é novo, fecha
+      // Only close if date changed. If it was isNew, we now have a date, it stays open in View Mode.
+      if (!isNew && dateKey !== 'new' && postDate !== dateKey.split('-').slice(0,3).reverse().join('-')) {
+          onClose(); // Se mudou data, fecha
       } else {
-          setIsEditing(false);
+          setIsEditing(false); // Apenas sai da aba de edição
       }
 
     } catch (error) {
@@ -543,7 +554,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
       setConfirmDeleteCommentId(null);
   };
   
-  const changeStatus = async (newStatus: PostStatus) => {
+  const changeStatus = async (newStatus: PostStatus, extraFields: Partial<PostData> = {}) => {
       const keysToUpdate = originalKeys.length > 0 ? originalKeys : [dateKey];
       for (const k of keysToUpdate) {
           const plat = k.includes('linkedin') ? 'linkedin' : 'meta';
@@ -556,16 +567,18 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
               date_key: k,
               client_id: activeClient?.id,
               image_url: stringifyImageUrl(imageUrl) || dayContent.initialImageUrl,
+              video_thumbnail_url: videoThumbnailUrl,
               caption: finalCaption,
               status: newStatus,
               theme: editedTheme || dayContent.theme,
               type: editedType || dayContent.type,
               bullets: editedBullets ? editedBullets.split('\n').filter(l => l.trim() !== '') : dayContent.bullets,
               scheduled_time: postTime || null,
-              last_updated: new Date().toISOString()
+              last_updated: new Date().toISOString(),
+              ...extraFields
           }, { onConflict: 'date_key' });
       }
-      setPost(prev => ({ ...prev!, status: newStatus }));
+      setPost(prev => ({ ...prev!, status: newStatus, ...extraFields }));
       if (onUpdate) onUpdate();
   };
 
@@ -589,12 +602,35 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
         setNewComment('');
         if (userRole === 'approver') {
              await changeStatus('changes_requested');
+             onClose();
         }
     }
   };
 
   const handleApprove = async () => {
       await changeStatus('approved');
+      onClose();
+  };
+
+  const handleApproveTheme = async () => {
+      await changeStatus('theme_approved');
+      onClose();
+  };
+
+  const handleApproveThemeWithNotes = async () => {
+      if (!themeNoteText.trim()) return alert("A observação é obrigatória.");
+      await changeStatus('theme_approved_with_notes', { theme_client_notes: themeNoteText });
+      setShowThemeNotesInput(false);
+      setThemeNoteText('');
+      onClose();
+  };
+
+  const handleRejectTheme = async () => {
+      if (!themeNoteText.trim()) return alert("O motivo da reprovação é obrigatório.");
+      await changeStatus('theme_rejected', { theme_rejection_reason: themeNoteText });
+      setShowThemeRejectInput(false);
+      setThemeNoteText('');
+      onClose();
   };
 
   const handleReject = async () => {
@@ -605,7 +641,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
       }
       
       const newCommentObj = { 
-          post_id: dateKey, 
+          post_id: post?.date_key === 'temp' ? dateKey : post?.date_key || dateKey, 
           author_role: userRole, 
           author_name: userRole === 'admin' ? 'Canguru' : userRole === 'approver' ? (activeClient?.responsible || 'Wesley') : 'Equipe', 
           content: `❌ REPROVOU a publicação. Justificativa: ${justification}`, 
@@ -615,6 +651,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
       if (!error && data) {
           setComments(prev => [...prev, data as PostComment]);
           await changeStatus('rejected');
+          onClose();
       } else {
           alert('Erro ao registrar reprovação.');
       }
@@ -633,6 +670,10 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
 
   const getStatusLabel = (s: string) => {
     const map: Record<string, string> = {
+        'theme_pending': 'Tema para Aprovação',
+        'theme_approved': 'Tema Aprovado',
+        'theme_approved_with_notes': 'Tema Aprovado (Obs)',
+        'theme_rejected': 'Tema Reprovado',
         'draft': 'Em Produção',
         'pending_approval': 'Esperando Aprovação',
         'changes_requested': 'Ajustes Solicitados',
@@ -686,12 +727,15 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
                       {!isNew && (
                         <div className="pointer-events-auto flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[9px] sm:text-[10px] font-bold border uppercase bg-white/10 backdrop-blur-md border-white/10 shadow-xl text-white tracking-widest">
                           <div className={`w-2 h-2 rounded-full animate-pulse ${
+                            post?.status === 'theme_approved' ? 'bg-[#e891eb]' :
+                            post?.status === 'theme_pending' ? 'bg-gray-500' :
                             post?.status === 'approved' ? 'bg-green-400' : 
                             post?.status === 'published' ? 'bg-blue-400' : 
-                            post?.status === 'changes_requested' ? 'bg-orange-400' : 
-                            post?.status === 'rejected' ? 'bg-red-400' : 'bg-yellow-400'
+                            ['changes_requested', 'theme_approved_with_notes'].includes(post?.status || '') ? 'bg-orange-400' : 
+                            ['rejected', 'theme_rejected'].includes(post?.status || '') ? 'bg-red-400' : 
+                            'bg-yellow-400'
                           }`} />
-                          {getStatusLabel(post?.status || 'draft')}
+                          <span className="truncate">{getStatusLabel(post?.status || 'draft')}</span>
                         </div>
                       )}
                   </div>
@@ -717,10 +761,35 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
 
              <div className="flex-grow p-4 sm:p-16 flex items-center justify-center">
                <div className="w-full max-w-lg transition-all duration-500 transform hover:scale-[1.01]">
-                  {previewPlatform === 'linkedin' ? (
-                    <LinkedInView dayContent={effectiveDayContent} caption={previewCaption} imageUrl={imageUrl} isVideo={!!isVideo} isUploading={isUploading} client={activeClient} />
+                  {['theme_pending', 'theme_rejected', 'theme_approved_with_notes', 'theme_approved'].includes(post?.status || manualStatus) ? (
+                      <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 shadow-2xl text-center">
+                          <div className="w-16 h-16 bg-brand-dark/20 flex items-center justify-center rounded-2xl mx-auto mb-6 border border-brand-dark/30 shadow-inner">
+                              <FileText className="text-brand-dark w-8 h-8" />
+                          </div>
+                          <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-gray-400 mb-2">Proposta de Tema</h3>
+                          <h4 className="font-serif text-2xl text-white mb-6 leading-tight">{editedTheme || post?.theme || 'Sem tema definido'}</h4>
+                          <div className="bg-black/20 p-5 rounded-2xl text-left border border-white/5 shadow-inner mb-4">
+                              <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">{editedBullets || post?.bullets?.join('\n') || 'Nenhuma descrição detalhada fornecida.'}</p>
+                          </div>
+                          
+                          {['theme_rejected'].includes(post?.status || manualStatus) && post?.theme_rejection_reason && (
+                              <div className="bg-rose-500/20 text-rose-100 p-4 rounded-xl text-left border border-rose-500/30">
+                                  <span className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-rose-300">Motivo da Reprovação</span>
+                                  <p className="text-sm whitespace-pre-wrap">{post.theme_rejection_reason}</p>
+                              </div>
+                          )}
+                          
+                          {['theme_approved_with_notes'].includes(post?.status || manualStatus) && post?.theme_client_notes && (
+                              <div className="bg-amber-500/20 text-amber-100 p-4 rounded-xl text-left border border-amber-500/30">
+                                  <span className="block text-[10px] font-bold uppercase tracking-widest mb-1 text-amber-300">Observação</span>
+                                  <p className="text-sm whitespace-pre-wrap">{post.theme_client_notes}</p>
+                              </div>
+                          )}
+                      </div>
+                  ) : previewPlatform === 'linkedin' ? (
+                    <LinkedInView dayContent={effectiveDayContent} caption={previewCaption} imageUrl={imageUrl} isVideo={!!isVideo} videoThumbnailUrl={videoThumbnailUrl} isUploading={isUploading} client={activeClient} />
                   ) : (
-                    <InstagramView dayContent={effectiveDayContent} caption={previewCaption} imageUrl={imageUrl} isVideo={!!isVideo} isUploading={isUploading} client={activeClient} />
+                    <InstagramView dayContent={effectiveDayContent} caption={previewCaption} imageUrl={imageUrl} isVideo={!!isVideo} videoThumbnailUrl={videoThumbnailUrl} isUploading={isUploading} client={activeClient} />
                   )}
                </div>
              </div>
@@ -769,18 +838,66 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
               
               {/* Approver Actions */}
               {userRole === 'approver' && !isNew && (
-                  <div className="flex gap-2">
-                      {!showRequestChangesInput ? (
-                        <>
-                        <button onClick={handleApprove} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-3.5 bg-brand-dark hover:bg-black text-white rounded-xl font-bold text-[10px] sm:text-[11px] uppercase tracking-widest shadow-xl shadow-brand-dark/10 transition-all active:scale-95"><CheckCircle2 size={16} /> Aprovar</button>
-                        <button onClick={() => setShowRequestChangesInput(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-3.5 bg-white hover:bg-orange-50 text-orange-600 border border-orange-100 rounded-xl font-bold text-[10px] sm:text-[11px] uppercase tracking-widest transition-all active:scale-95"><AlertTriangle size={16} /> Ajuste</button>
-                        <button onClick={handleReject} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-3.5 bg-white hover:bg-red-50 text-red-600 border border-red-100 rounded-xl font-bold text-[10px] sm:text-[11px] uppercase tracking-widest transition-all active:scale-95"><XCircle size={16} /> Reprovar</button>
-                        </>
+                  <div className="flex flex-col gap-2">
+                      {post?.status === 'theme_pending' ? (
+                          <>
+                              {!showThemeNotesInput && !showThemeRejectInput && (
+                                  <div className="flex gap-2">
+                                      <button onClick={handleApproveTheme} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-3.5 bg-[#5DCAA5] hover:bg-[#4BA88A] text-brand-dark rounded-xl font-bold text-[10px] sm:text-[11px] uppercase tracking-widest shadow-xl transition-all active:scale-95"><CheckCircle2 size={16} /> Aprovar Tema</button>
+                                      <button onClick={() => setShowThemeNotesInput(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-3.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-xl font-bold text-[10px] sm:text-[11px] uppercase tracking-widest transition-all active:scale-95"><AlertTriangle size={16} /> Observação</button>
+                                      <button onClick={() => setShowThemeRejectInput(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-3.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-xl font-bold text-[10px] sm:text-[11px] uppercase tracking-widest transition-all active:scale-95"><XCircle size={16} /> Reprovar</button>
+                                  </div>
+                              )}
+                              
+                              {showThemeNotesInput && (
+                                  <div className="flex flex-col gap-2 w-full bg-amber-50 p-4 rounded-xl border border-amber-200">
+                                      <div className="flex justify-between items-center mb-2">
+                                          <span className="text-[11px] font-bold text-amber-800 uppercase tracking-widest">Sua observação</span>
+                                          <button onClick={() => setShowThemeNotesInput(false)} className="text-[10px] underline tracking-normal text-amber-800"><X size={14} /></button>
+                                      </div>
+                                      <textarea 
+                                          value={themeNoteText} 
+                                          onChange={e => setThemeNoteText(e.target.value)} 
+                                          className="w-full text-sm p-3 rounded-lg border border-amber-200 bg-white" 
+                                          placeholder="Ex: Gostei da ideia, mas adicione mais foco no produto X..."
+                                          rows={2}
+                                      />
+                                      <button onClick={handleApproveThemeWithNotes} className="w-full mt-2 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-[11px] uppercase tracking-widest">Aprovar com Observação</button>
+                                  </div>
+                              )}
+                              
+                              {showThemeRejectInput && (
+                                  <div className="flex flex-col gap-2 w-full bg-rose-50 p-4 rounded-xl border border-rose-200">
+                                      <div className="flex justify-between items-center mb-2">
+                                          <span className="text-[11px] font-bold text-rose-800 uppercase tracking-widest">Motivo da reprovação</span>
+                                          <button onClick={() => setShowThemeRejectInput(false)} className="text-[10px] underline tracking-normal text-rose-800"><X size={14} /></button>
+                                      </div>
+                                      <textarea 
+                                          value={themeNoteText} 
+                                          onChange={e => setThemeNoteText(e.target.value)} 
+                                          className="w-full text-sm p-3 rounded-lg border border-rose-200 bg-white" 
+                                          placeholder="Ex: Esse tema não faz sentido para o nosso momento atual..."
+                                          rows={2}
+                                      />
+                                      <button onClick={handleRejectTheme} className="w-full mt-2 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-[11px] uppercase tracking-widest">Reprovar Tema</button>
+                                  </div>
+                              )}
+                          </>
                       ) : (
-                        <div className="flex items-center justify-between w-full bg-orange-50 text-orange-800 px-4 py-3 rounded-xl border border-orange-100 text-[11px] font-bold uppercase tracking-widest">
-                            <span>Escreva o ajuste abaixo</span>
-                            <button onClick={() => setShowRequestChangesInput(false)} className="text-[10px] underline tracking-normal">Cancelar</button>
-                        </div>
+                          <div className="flex gap-2">
+                              {!showRequestChangesInput ? (
+                                <>
+                                <button onClick={handleApprove} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-3.5 bg-brand-dark hover:bg-black text-white rounded-xl font-bold text-[10px] sm:text-[11px] uppercase tracking-widest shadow-xl shadow-brand-dark/10 transition-all active:scale-95"><CheckCircle2 size={16} /> Aprovar</button>
+                                <button onClick={() => setShowRequestChangesInput(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-3.5 bg-white hover:bg-orange-50 text-orange-600 border border-orange-100 rounded-xl font-bold text-[10px] sm:text-[11px] uppercase tracking-widest transition-all active:scale-95"><AlertTriangle size={16} /> Ajuste</button>
+                                <button onClick={handleReject} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-3.5 bg-white hover:bg-red-50 text-red-600 border border-red-100 rounded-xl font-bold text-[10px] sm:text-[11px] uppercase tracking-widest transition-all active:scale-95"><XCircle size={16} /> Reprovar</button>
+                                </>
+                              ) : (
+                                <div className="flex items-center justify-between w-full bg-orange-50 text-orange-800 px-4 py-3 rounded-xl border border-orange-100 text-[11px] font-bold uppercase tracking-widest">
+                                    <span>Escreva o ajuste abaixo</span>
+                                    <button onClick={() => setShowRequestChangesInput(false)} className="text-[10px] underline tracking-normal">Cancelar</button>
+                                </div>
+                              )}
+                          </div>
                       )}
                   </div>
               )}
@@ -866,14 +983,59 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
                             </div>
                           </div>
                           <div>
-                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Bullets / Direcionamento</label>
+                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Descrição da publicação</label>
                             <textarea value={editedBullets} onChange={(e) => setEditedBullets(e.target.value)} rows={4} className="w-full text-xs p-3 border border-black/[0.08] rounded-xl focus:ring-2 focus:ring-brand-dark/10 focus:border-brand-dark outline-none resize-none leading-relaxed transition-all" />
+                          </div>
+                          
+                          {/* Theme Approval Integration */}
+                          <div className={`${requireThemeApproval || ['theme_pending', 'theme_approved_with_notes', 'theme_approved', 'theme_rejected'].includes(manualStatus) ? 'bg-[#E1F5EE]/50 border-[#E1F5EE]' : 'bg-gray-50 border-gray-100'} p-4 rounded-xl border transition-all mt-4`}>
+                              <label className="flex items-center gap-3 cursor-pointer">
+                                  <input 
+                                      type="checkbox" 
+                                      className="w-4 h-4 rounded text-[#1D9E75] focus:ring-[#1D9E75] border-gray-300" 
+                                      checked={requireThemeApproval}
+                                      onChange={(e) => setRequireThemeApproval(e.target.checked)}
+                                  />
+                                  <span className="text-xs font-bold text-gray-700 uppercase tracking-widest">Enviar tema para aprovação do cliente</span>
+                              </label>
+                              {requireThemeApproval && ['draft', 'theme_pending'].includes(manualStatus) && (
+                                  <p className="text-[10px] text-gray-500 mt-2 ml-7 leading-relaxed">
+                                      Ao salvar, este conteúdo ficará travado em <b>"Tema em Aprovação"</b>. O cliente verá apenas o <i>Tema Central</i> e a <i>Descrição</i> para decidir se a ideia pode seguir em frente.
+                                  </p>
+                              )}
+                              
+                              {['theme_rejected'].includes(manualStatus) && post?.theme_rejection_reason && (
+                                  <div className="bg-rose-50 text-rose-800 p-3 rounded-lg border border-rose-200 mt-3 ml-7">
+                                      <span className="block text-[9px] font-bold uppercase tracking-widest mb-1">Motivo da Reprovação</span>
+                                      <p className="text-xs">{post.theme_rejection_reason}</p>
+                                  </div>
+                              )}
+                              
+                              {['theme_approved_with_notes'].includes(manualStatus) && post?.theme_client_notes && (
+                                  <div className="bg-amber-50 text-amber-800 p-3 rounded-lg border border-amber-200 mt-3 ml-7">
+                                      <span className="block text-[9px] font-bold uppercase tracking-widest mb-1">Observação do Cliente</span>
+                                      <p className="text-xs">{post.theme_client_notes}</p>
+                                  </div>
+                              )}
+                              
+                              {manualStatus === 'theme_approved' || manualStatus === 'theme_approved_with_notes' ? (
+                                  <button 
+                                      onClick={async (e) => {
+                                          e.preventDefault();
+                                          await changeStatus('draft'); 
+                                          setRequireThemeApproval(false);
+                                      }} 
+                                      className="w-full mt-4 py-2.5 bg-brand-dark hover:bg-black text-white rounded-lg font-bold text-[10px] uppercase tracking-widest transition-all"
+                                  >
+                                      Tema aprovado. Colocar em Produção
+                                  </button>
+                              ) : null}
                           </div>
                        </div>
                     </div>
 
                     {/* 4. Criativo & Legendas */}
-                    <div className="bg-white p-5 rounded-2xl border border-black/[0.05] shadow-sm mb-8">
+                    <div className={`bg-white p-5 rounded-2xl border border-black/[0.05] shadow-sm mb-8 ${requireThemeApproval && ['theme_pending', 'draft', 'theme_rejected'].includes(manualStatus) ? 'opacity-50 pointer-events-none' : ''}`}>
                         <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><ImageIcon size={14} className="text-brand-dark" /> Criativo & Legenda</h3>
                         
                         {/* Image Upload */}
@@ -904,6 +1066,69 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
                                 <span className="text-[8px] text-gray-400 font-medium mt-1 block">Arraste ou clique para selecionar</span>
                               </div>
                         </label>
+
+                        {/* Video Thumbnail Upload (Only if Video) */}
+                        {isVideo && (
+                          <div className="mb-6 p-4 bg-black/5 rounded-2xl border border-black/5">
+                             <div className="flex items-center justify-between mb-3">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                   <ImageIcon size={14} /> Capa do Vídeo (Thumbnail)
+                                </label>
+                                {videoThumbnailUrl && (
+                                   <button 
+                                      onClick={() => setVideoThumbnailUrl(null)} 
+                                      className="text-[9px] text-red-500 font-bold uppercase tracking-widest hover:underline"
+                                   >
+                                      Remover
+                                   </button>
+                                )}
+                             </div>
+                             
+                             <div className="flex items-center gap-4">
+                                <div className="w-20 h-20 bg-black/10 rounded-xl overflow-hidden flex-shrink-0 border border-black/10">
+                                   {videoThumbnailUrl ? (
+                                      <img src={videoThumbnailUrl} className="w-full h-full object-cover" alt="Thumbnail" />
+                                   ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                         <ImageIcon size={24} className="opacity-30" />
+                                      </div>
+                                   )}
+                                </div>
+                                <div className="flex-grow">
+                                   <label className={`block w-full py-3 px-4 rounded-xl border border-dashed text-center cursor-pointer transition-all ${isUploadingThumbnail ? 'opacity-50 pointer-events-none' : 'border-black/20 hover:bg-black/5'}`}>
+                                      <input 
+                                         type="file" 
+                                         accept="image/*" 
+                                         className="hidden" 
+                                         onChange={async (e) => {
+                                            if (e.target.files?.[0]) {
+                                               try {
+                                                  setIsUploadingThumbnail(true);
+                                                  const file = e.target.files[0];
+                                                  const fileExt = file.name.split('.').pop();
+                                                  const fileName = `thumb-${Date.now()}.${fileExt}`;
+                                                  const { error } = await supabase.storage.from('post-uploads').upload(fileName, file);
+                                                  if (error) throw error;
+                                                  const { data } = supabase.storage.from('post-uploads').getPublicUrl(fileName);
+                                                  setVideoThumbnailUrl(data.publicUrl);
+                                               } catch (err) {
+                                                  console.error(err);
+                                                  alert("Erro ao enviar capa.");
+                                               } finally {
+                                                  setIsUploadingThumbnail(false);
+                                               }
+                                            }
+                                         }}
+                                      />
+                                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">
+                                         {isUploadingThumbnail ? 'Enviando...' : 'Carregar Capa'}
+                                      </span>
+                                   </label>
+                                   <p className="text-[9px] text-gray-400 mt-2 font-medium">Recomendado: 1080x1920 (Reels) ou 1080x1350 (Feed)</p>
+                                </div>
+                             </div>
+                          </div>
+                        )}
 
                         {/* Caption Switcher */}
                         <div className="flex items-center justify-between mb-4 border-b border-black/[0.03] pb-3">

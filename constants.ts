@@ -1,6 +1,25 @@
 
 
-import { AdSetData, PlatformStrategy, WeeklyScheduleRow, MonthlyDetailedPlan } from './types';
+import { AdSetData, PlatformStrategy, WeeklyScheduleRow, MonthlyDetailedPlan, PostStatus } from './types';
+
+export const STATUS_CONFIG: Record<PostStatus, { label: string, bg: string, color: string, dot: string }> = {
+  // Status de conteúdo (mapeados do PostStatus existente)
+  draft:                { label: 'Em produção',         bg: '#F3F3F3', color: '#555555', dot: '#888888' },
+  pending_approval:     { label: 'Esperando aprovação', bg: '#FEF0E6', color: '#B45309', dot: '#F59E0B' },
+  changes_requested:    { label: 'Ajustes solicitados', bg: '#FEFCE8', color: '#854F0B', dot: '#EAB308' },
+  rejected:             { label: 'Reprovado',           bg: '#FBEAF0', color: '#72243E', dot: '#D4537E' },
+  internal_review:      { label: 'Revisão Interna',     bg: '#F3F3F3', color: '#555555', dot: '#888888' }, // Deprecated fallback
+  approved:             { label: 'Aprovado',            bg: '#E6F1FB', color: '#0C447C', dot: '#378ADD' },
+  scheduled:            { label: 'Programado',          bg: '#EEEDFE', color: '#3C3489', dot: '#7F77DD' },
+  published:            { label: 'Publicado',           bg: '#EAF3DE', color: '#27500A', dot: '#639922' },
+  deleted:              { label: 'Removido',            bg: '#F3F3F3', color: '#555555', dot: '#888888' },
+
+  // Status de tema
+  theme_pending:             { label: 'Tema em aprovação',   bg: '#D1D5DB', color: '#374151', dot: '#6B7280' },
+  theme_rejected:            { label: 'Tema reprovado',      bg: '#FBEAF0', color: '#72243E', dot: '#D4537E' },
+  theme_approved_with_notes: { label: 'Tema aprovado*',      bg: '#FAEEDA', color: '#633806', dot: '#BA7517' },
+  theme_approved:            { label: 'Tema aprovado',       bg: '#fce5ff', color: '#9333ea', dot: '#d8b4fe' },
+};
 
 export const BRAZILIAN_STATES = [
   'Acre', 'Alagoas', 'Amapá', 'Amazonas', 'Bahia', 'Ceará', 'Distrito Federal', 
