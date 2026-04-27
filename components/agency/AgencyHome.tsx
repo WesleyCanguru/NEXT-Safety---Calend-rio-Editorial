@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Building2, Users, ArrowRight, Shield } from 'lucide-react';
 import { Logo } from '../Logo';
+import { useAgency } from '../../contexts/AgencyContext';
 
 interface AgencyHomeProps {
   onManageAgency: () => void;
@@ -10,6 +11,7 @@ interface AgencyHomeProps {
 }
 
 export const AgencyHome: React.FC<AgencyHomeProps> = ({ onManageAgency, onAccessClients }) => {
+  const { agency } = useAgency();
   return (
     <div className="min-h-screen bg-[#FDFDFD] flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Background decoration */}
@@ -26,7 +28,7 @@ export const AgencyHome: React.FC<AgencyHomeProps> = ({ onManageAgency, onAccess
         <div className="text-center mb-16">
           <Logo size="large" />
           <p className="text-gray-400 text-[10px] uppercase tracking-[0.4em] font-bold mt-6">
-            Canguru Digital • Gestão & Estratégia
+            {agency?.name || 'Canguru Digital'} • Gestão & Estratégia
           </p>
           <h1 className="text-4xl font-bold text-brand-dark mt-8 tracking-tight">Bem-vindo de volta, Wesley!</h1>
           <p className="text-gray-500 mt-4">O que você deseja fazer hoje?</p>

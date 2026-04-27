@@ -58,7 +58,11 @@ const WEEK_DAYS = [
   { id: 6, label: 'Sáb' },
 ];
 
+import { useAgency } from '../../contexts/AgencyContext';
+
 export const AgencyTasksTab: React.FC = () => {
+  const { agency } = useAgency();
+  const agencyNameStr = agency?.name || 'Agência';
   const [tasks, setTasks] = useState<AgencyTask[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -348,7 +352,7 @@ export const AgencyTasksTab: React.FC = () => {
                     onChange={e => setNewTask({ ...newTask, client_id: e.target.value || null })}
                     className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all appearance-none"
                   >
-                    <option value="">Canguru Digital (Interno)</option>
+                    <option value="">{agencyNameStr} (Interno)</option>
                     {clients.map(client => (
                       <option key={client.id} value={client.id}>{client.name}</option>
                     ))}
@@ -470,7 +474,7 @@ export const AgencyTasksTab: React.FC = () => {
                     onChange={e => setEditingTask({ ...editingTask, client_id: e.target.value || null })}
                     className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all appearance-none"
                   >
-                    <option value="">Canguru Digital (Interno)</option>
+                    <option value="">{agencyNameStr} (Interno)</option>
                     {clients.map(client => (
                       <option key={client.id} value={client.id}>{client.name}</option>
                     ))}
@@ -579,7 +583,7 @@ export const AgencyTasksTab: React.FC = () => {
           className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-medium text-brand-dark focus:ring-2 focus:ring-brand-dark/10 outline-none"
         >
           <option value="all">Todos</option>
-          <option value="internal">Canguru Digital (Interno)</option>
+          <option value="internal">{agencyNameStr} (Interno)</option>
           {clients.map(c => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
@@ -600,7 +604,7 @@ export const AgencyTasksTab: React.FC = () => {
                 <SortableContext items={urgentTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
                   <div className="grid gap-3">
                     {urgentTasks.map(task => (
-                      <SortableTaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} />
+                      <SortableTaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} agencyNameStr={agencyNameStr} />
                     ))}
                   </div>
                 </SortableContext>
@@ -619,7 +623,7 @@ export const AgencyTasksTab: React.FC = () => {
                 <div className="grid gap-3">
                   {recurringTasks.length > 0 ? (
                     recurringTasks.map(task => (
-                      <SortableTaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} />
+                      <SortableTaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} agencyNameStr={agencyNameStr} />
                     ))
                   ) : (
                     <EmptyState message="Nenhum processo recorrente pendente." />
@@ -640,7 +644,7 @@ export const AgencyTasksTab: React.FC = () => {
                 <div className="grid gap-3">
                   {otherTasks.length > 0 ? (
                     otherTasks.map(task => (
-                      <SortableTaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} />
+                      <SortableTaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} agencyNameStr={agencyNameStr} />
                     ))
                   ) : (
                     <EmptyState message="Nenhuma outra tarefa pendente." />
@@ -663,7 +667,7 @@ export const AgencyTasksTab: React.FC = () => {
                 <div className="grid gap-3 opacity-60">
                   {completedTasks.length > 0 ? (
                     completedTasks.map(task => (
-                      <SortableTaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} />
+                      <SortableTaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} agencyNameStr={agencyNameStr} />
                     ))
                   ) : (
                     <EmptyState message="Nenhuma tarefa concluída ainda." />
@@ -683,6 +687,7 @@ interface TaskCardProps {
   onToggle: (task: AgencyTask) => void;
   onDelete: (id: string) => void;
   onEdit: (task: AgencyTask) => void;
+  agencyNameStr: string;
   dragListeners?: any;
   dragAttributes?: any;
 }
@@ -712,7 +717,7 @@ const SortableTaskCard: React.FC<TaskCardProps> = (props) => {
   );
 };
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, onEdit, dragListeners, dragAttributes }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, onEdit, agencyNameStr, dragListeners, dragAttributes }) => {
   const isDone = task.status === 'done';
   const dueDateInfo = getDueDateLabel(task.due_date);
 
@@ -791,7 +796,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, onEdit, d
             </span>
           ) : (
             <span className="px-2 py-0.5 rounded-full bg-brand-dark text-white text-[8px] font-black uppercase tracking-tighter">
-              Canguru Digital
+              {agencyNameStr}
             </span>
           )}
           {recurrenceLabel && (

@@ -2,6 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserRole, Client } from '../types';
+import { useAgency } from '../contexts/AgencyContext';
 
 const SUPABASE_URL = 'https://wtzphiyybitcucwkfpgv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_uLQGmz7lWazPN1Uqb4_4vQ_HggVpMz9';
@@ -23,7 +24,6 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     url = input.toString();
   }
 
-  // Flatten headers to a simple object to avoid iframe interceptor crashes
   const plainHeaders: Record<string, string> = {};
   if (options.headers) {
     if (options.headers instanceof Headers) {
@@ -35,7 +35,6 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     }
   }
 
-  // Remove complex objects like signal which might break _aistudio-iframe.js
   const safeInit: RequestInit = {
     method: options.method || 'GET',
     headers: plainHeaders,
@@ -43,12 +42,10 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
   
   if (options.body) safeInit.body = options.body;
 
-  // Bypass whatever window.fetch override is applied by getting the original iframe fetch if possible, 
-  // or just using the reconstructed one.
   return window.fetch(url, safeInit);
 };
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+export const supabaseBase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: false,
     autoRefreshToken: false,
@@ -58,6 +55,49 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     fetch: customFetch
   }
 });
+
+const TABLES_WITH_AGENCY_ID = [
+  'clients', 'client_users', 'agency_tasks', 'agency_billing', 
+  'agency_expenses', 'agency_crms', 'agency_leads', 'agency_settings', 
+  'posts', 'leads'
+];
+
+export const supabase = {
+  ...supabaseBase,
+  from: (table: string) => {
+    const qb = (supabaseBase as any).from(table);
+    
+    if (!TABLES_WITH_AGENCY_ID.includes(table)) {
+      return qb;
+    }
+
+    const agencyIdStr = typeof window !== 'undefined' ? localStorage.getItem('current_agency_slug_id') : null;
+    const agencyId = agencyIdStr ? parseInt(agencyIdStr, 10) : null;
+
+    if (!agencyId) {
+      return qb;
+    }
+
+    return new Proxy(qb, {
+        get: (target: any, prop: string) => {
+            if (prop === 'select' || prop === 'update' || prop === 'delete') {
+                return (...args: any[]) => {
+                    const res = target[prop](...args);
+                    return res.eq('agency_id', agencyId);
+                };
+            }
+            if (prop === 'insert' || prop === 'upsert') {
+                return (data: any, ...args: any[]) => {
+                    const inject = (item: any) => ({ ...item, agency_id: agencyId });
+                    const mod = Array.isArray(data) ? data.map(inject) : inject(data);
+                    return target[prop](mod, ...args);
+                };
+            }
+            return target[prop];
+        }
+    });
+  }
+} as any;
 
 export const hashPassword = async (password: string): Promise<string> => {
   const msgBuffer = new TextEncoder().encode(password);
@@ -69,8 +109,9 @@ export const hashPassword = async (password: string): Promise<string> => {
 interface AuthContextType {
   userRole: UserRole | null;
   activeClient: Client | null;
+  userData: any | null; // For agency_user or client_user data
   login: (role: UserRole) => void;
-  loginByPassword: (password: string) => Promise<{ success: boolean; error?: string }>;
+  loginByPassword: (password: string, emailOrUsername?: string, isAgencyLogin?: boolean) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   setActiveClient: (client: Client | null) => void;
   refreshActiveClient: () => Promise<void>;
@@ -80,6 +121,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   userRole: null,
   activeClient: null,
+  userData: null,
   login: () => {},
   loginByPassword: async () => ({ success: false }),
   logout: () => {},
@@ -89,6 +131,8 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { agency } = useAgency();
+  
   const [userRole, setUserRole] = useState<UserRole | null>(() =>
     localStorage.getItem('next_app_role') as UserRole | null
   );
@@ -96,87 +140,103 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const stored = localStorage.getItem('next_app_client');
     return stored ? JSON.parse(stored) : null;
   });
+  const [userData, setUserData] = useState<any | null>(() => {
+    const stored = localStorage.getItem('next_app_user_data');
+    return stored ? JSON.parse(stored) : null;
+  });
 
   const login = (role: UserRole) => {
     setUserRole(role);
     localStorage.setItem('next_app_role', role);
-    if (role !== 'admin') {
-      const nextSafety: Client = {
-        id: '75b00b27-61ee-4b23-8721-70748ccb0789',
-        name: 'NEXT Safety',
-        segment: 'EPI / Segurança do Trabalho',
-        responsible: 'Wesley',
-        email: null,
-        instagram: null,
-        linkedin: null,
-        color: '#1e40af',
-        initials: 'NS',
-        logo_url: null,
-        is_active: true,
-        services: ['Social Media', 'Tráfego Pago'],
-        social_networks: [] as string[],
-        traffic_platforms: [] as string[],
-        reportei_url: null,
-      };
-      setActiveClientState(nextSafety);
-      localStorage.setItem('next_app_client', JSON.stringify(nextSafety));
-    }
   };
 
-  const loginByPassword = async (password: string): Promise<{ success: boolean; error?: string }> => {
-    const cleanPass = password.trim();
-
-    // 1. Verificar senhas da agência (Hardcoded)
-    if (cleanPass === 'Amor1106*') {
-      login('admin');
-      return { success: true };
-    } else if (cleanPass === 'Vivi2026') {
-      login('approver');
-      return { success: true };
-    } else if (cleanPass === 'Next2026') {
-      login('approver');
-      return { success: true };
+  const loginByPassword = async (password: string, emailOrUsername?: string, isAgencyLogin?: boolean): Promise<{ success: boolean; error?: string }> => {
+    if (!agency) {
+      return { success: false, error: 'Sistema não encontrado.' };
     }
 
-    // 2. Verificar senhas de clientes no banco de dados
+    const cleanPass = password.trim();
     const hashedPassword = await hashPassword(cleanPass);
     
-    const { data, error } = await supabase
-      .from('client_users')
-      .select('id, client_id, role, password_hash')
-      .eq('password_hash', hashedPassword)
-      .eq('is_active', true)
-      .limit(1)
-      .maybeSingle();
+    if (isAgencyLogin) {
+      // 1. Agency User Login
+      if (!emailOrUsername) {
+        return { success: false, error: 'Email inválido.' };
+      }
 
-    if (error || !data) {
-      return { success: false, error: 'Chave de acesso inválida.' };
+      const { data, error } = await supabase
+        .from('agency_users')
+        .select('*')
+        .eq('agency_id', agency.id)
+        .eq('email', emailOrUsername.trim().toLowerCase())
+        .eq('password_hash', hashedPassword)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error || !data) {
+        return { success: false, error: 'Email ou senha inválidos.' };
+      }
+
+      const role = data.role as UserRole;
+      const userPayload = { type: 'agency_user', id: data.id, name: data.name, agency_id: agency.id, role };
+      
+      setUserData(userPayload);
+      setUserRole(role);
+      localStorage.setItem('next_app_user_data', JSON.stringify(userPayload));
+      localStorage.setItem('next_app_role', role);
+
+      // Agency users start without activeClient, they select it later in ClientSelectorScreen
+      setActiveClientState(null);
+      localStorage.removeItem('next_app_client');
+
+      return { success: true };
+      
+    } else {
+      // 2. Client User Login
+      if (!emailOrUsername) {
+        return { success: false, error: 'Chave de acesso ou usuário inválido.' };
+      }
+
+      const { data, error } = await supabase
+        .from('client_users')
+        .select('*, clients(*)')
+        .eq('agency_id', agency.id)
+        .eq('username', emailOrUsername.trim().toLowerCase())
+        .eq('password_hash', hashedPassword)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error || !data) {
+        return { success: false, error: 'Usuário ou senha inválidos.' };
+      }
+
+      const clientResult = data.clients as unknown as Client;
+      if (!clientResult) {
+        return { success: false, error: 'Cliente não encontrado.' };
+      }
+
+      const role = data.role as UserRole;
+      const userPayload = { type: 'client_user', id: data.id, name: data.name, agency_id: agency.id, client_id: data.client_id };
+      
+      setUserData(userPayload);
+      setUserRole(role);
+      setActiveClientState(clientResult);
+      
+      localStorage.setItem('next_app_user_data', JSON.stringify(userPayload));
+      localStorage.setItem('next_app_role', role);
+      localStorage.setItem('next_app_client', JSON.stringify(clientResult));
+
+      return { success: true };
     }
-
-    const { data: clientResult, error: clientError } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('id', data.client_id)
-      .single();
-
-    if (clientError || !clientResult) {
-      return { success: false, error: 'Cliente não encontrado.' };
-    }
-
-    const role = data.role as UserRole;
-    setUserRole(role);
-    setActiveClientState(clientResult as Client);
-    localStorage.setItem('next_app_role', role);
-    localStorage.setItem('next_app_client', JSON.stringify(clientResult));
-
-    return { success: true };
   };
 
   const logout = () => {
     setUserRole(null);
     setActiveClientState(null);
+    setUserData(null);
     localStorage.removeItem('next_app_role');
     localStorage.removeItem('next_app_client');
+    localStorage.removeItem('next_app_user_data');
   };
 
   const setActiveClient = (client: Client | null) => {
@@ -189,10 +249,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const refreshActiveClient = async () => {
-    if (!activeClient?.id) return;
+    if (!activeClient?.id || !agency) return;
     const { data, error } = await supabase
       .from('clients')
       .select('*')
+      .eq('agency_id', agency.id)
       .eq('id', activeClient.id)
       .single();
     if (!error && data) {
@@ -203,7 +264,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return React.createElement(
     AuthContext.Provider,
-    { value: { userRole, activeClient, login, loginByPassword, logout, setActiveClient, refreshActiveClient, isAuthenticated: !!userRole } },
+    { value: { userRole, activeClient, userData, login, loginByPassword, logout, setActiveClient, refreshActiveClient, isAuthenticated: !!userRole } },
     children
   );
 };

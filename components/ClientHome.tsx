@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, supabase } from '../lib/supabase';
+import { useAgency } from '../contexts/AgencyContext';
 import {
   Calendar,
   TrendingUp,
@@ -54,6 +55,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
   onRefreshClient,
 }) => {
   const { activeClient, userRole } = useAuth();
+  const { agency } = useAgency();
   const [briefingMissing, setBriefingMissing] = useState(false);
   const [smartLoading, setSmartLoading] = useState(true);
   const [leadConfig, setLeadConfig] = useState<ClientLeadConfig | null>(null);
@@ -247,7 +249,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
         </div>
         
         <p className="text-base md:text-lg text-gray-500 max-w-xl mx-auto leading-relaxed font-medium">
-          O lugar onde a Canguru Digital guarda tudo da sua marca. 
+          O lugar onde a {agency?.name || 'Agência'} guarda tudo da sua marca. 
           Acompanhe a linha editorial, monitore métricas e visualize o crescimento da {clientName}.
         </p>
       </motion.div>
