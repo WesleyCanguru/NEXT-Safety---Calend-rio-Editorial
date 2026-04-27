@@ -1134,53 +1134,75 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-brand-dark text-white px-8 py-4 rounded-3xl shadow-2xl border border-white/10 flex items-center gap-8 backdrop-blur-xl"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0A0A0A]/95 text-white px-6 py-4 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 flex flex-col md:flex-row items-center gap-6 backdrop-blur-2xl max-w-[95vw] md:max-w-none"
           >
-            <div className="flex items-center gap-3 pr-8 border-r border-white/10">
-              <div className="w-8 h-8 rounded-full bg-brand-green/20 text-brand-green flex items-center justify-center font-bold text-sm">
+            {/* Counter Section */}
+            <div className="flex items-center gap-4 pr-6 md:border-r border-white/10">
+              <div className="w-10 h-10 rounded-full bg-brand-green text-brand-dark flex items-center justify-center font-black text-sm shadow-lg shadow-brand-green/20">
                 {selectedPosts.size}
               </div>
-              <span className="text-[11px] font-bold uppercase tracking-widest text-white/60">Selecionados</span>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Selecionados</span>
+                <span className="text-[9px] font-medium text-white/40 uppercase tracking-widest">Publicações do mês</span>
+              </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 whitespace-nowrap">Mudar Status para:</span>
-              <div className="flex flex-wrap gap-2">
+            {/* Actions Section */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={10} className="text-brand-green" />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50">Mudar Status em Massa</span>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Send for Approval - Main Action */}
+                <button
+                  onClick={() => handleBulkStatusChange('pending_approval')}
+                  disabled={isBulkUpdating}
+                  className="group flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-green text-brand-dark hover:bg-white transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-brand-green/10"
+                >
+                  <FileCheck size={14} className="group-hover:scale-110 transition-transform" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Enviar p/ Aprovação</span>
+                </button>
+
+                <div className="h-4 w-px bg-white/10 mx-1 hidden md:block" />
+
                 {[
-                  { id: 'draft', label: 'Produção' },
-                  { id: 'theme_pending', label: 'Tema' },
-                  { id: 'pending_approval', label: 'Aprovação' },
-                  { id: 'approved', label: 'Aprovado' },
-                  { id: 'scheduled', label: 'Agendado' },
-                  { id: 'published', label: 'Publicado' }
+                  { id: 'draft', label: 'Produção', icon: <Edit2 size={12} /> },
+                  { id: 'theme_pending', label: 'Tema', icon: <Target size={12} /> },
+                  { id: 'approved', label: 'Aprovar', icon: <Check size={12} /> },
+                  { id: 'scheduled', label: 'Agendar', icon: <CalendarIcon size={12} /> },
+                  { id: 'published', label: 'Publicar', icon: <CheckCircle2 size={12} /> }
                 ].map((s) => (
                   <button
                     key={s.id}
                     onClick={() => handleBulkStatusChange(s.id as PostStatus)}
                     disabled={isBulkUpdating}
-                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-[9px] font-bold uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-[9px] font-bold uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
                   >
+                    <span className="text-white/40">{s.icon}</span>
                     {s.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="flex items-center gap-4 pl-8 border-l border-white/10">
+            {/* Utilities Section */}
+            <div className="flex items-center gap-3 pl-6 md:border-l border-white/10">
               <button 
                 onClick={handleBulkDelete}
                 disabled={isDeleting || isBulkUpdating}
-                className="p-3 bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all"
+                className="w-11 h-11 flex items-center justify-center bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl transition-all shadow-lg active:scale-90"
                 title="Excluir Selecionados"
               >
-                <Trash size={16} />
+                <Trash size={18} />
               </button>
               <button 
                 onClick={() => setSelectedPosts(new Set())}
-                className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all"
+                className="w-11 h-11 flex items-center justify-center bg-white/5 hover:bg-white/20 text-white/60 hover:text-white rounded-2xl transition-all active:scale-90"
                 title="Desmarcar Todos"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
           </motion.div>
