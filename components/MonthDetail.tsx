@@ -71,6 +71,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
   // Selection State
   const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
 
   const currentPlan = monthlyPlans.find(p => MONTH_NAMES[p.month - 1].toLowerCase() === monthName.toLowerCase());
   const monthIndex = MONTH_NAMES.findIndex(m => m.toLowerCase() === monthName.toLowerCase());
@@ -528,6 +529,64 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
           }
         }
         setIsDeleting(false);
+      }
+    });
+  };
+
+  const handleBulkStatusChange = async (newStatus: PostStatus) => {
+    if (selectedPosts.size === 0) return;
+    
+    setConfirmAction({
+      isOpen: true,
+      title: 'Alterar Status',
+      message: `Deseja mudar o status de ${selectedPosts.size} publicações para "${getStatusLabel(newStatus)}"?`,
+      confirmText: 'Confirmar',
+      confirmButtonColor: 'brand',
+      onConfirm: async () => {
+        setConfirmAction(prev => ({ ...prev, isOpen: false }));
+        setIsBulkUpdating(true);
+        
+        try {
+          const payloads: any[] = [];
+          groupedPosts.forEach(group => {
+            if (selectedPosts.has(group.primaryKey)) {
+              group.keys.forEach(key => {
+                const dbPost = dbPosts[key];
+                const payload: any = {
+                  date_key: key,
+                  client_id: activeClient?.id,
+                  status: newStatus,
+                  last_updated: new Date().toISOString()
+                };
+
+                if (!dbPost) {
+                  payload.theme = group.theme;
+                  payload.type = group.type;
+                  payload.bullets = group.bullets;
+                  payload.image_url = group.content.initialImageUrl || null;
+                }
+
+                payloads.push(payload);
+              });
+            }
+          });
+
+          if (payloads.length > 0) {
+            const { error } = await supabase
+              .from('posts')
+              .upsert(payloads, { onConflict: 'date_key' });
+              
+            if (error) throw error;
+            
+            setSelectedPosts(new Set());
+            await fetchMonthPosts();
+          }
+        } catch (error) {
+          console.error("Erro ao atualizar status em massa:", error);
+          alert("Erro ao atualizar status das publicações.");
+        } finally {
+          setIsBulkUpdating(false);
+        }
       }
     });
   };
@@ -1067,6 +1126,66 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
         confirmText={confirmAction.confirmText}
         confirmButtonColor={confirmAction.confirmButtonColor}
       />
+
+      {/* Floating Bulk Actions Bar */}
+      <AnimatePresence>
+        {userRole === 'admin' && selectedPosts.size > 0 && (
+          <motion.div 
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-brand-dark text-white px-8 py-4 rounded-3xl shadow-2xl border border-white/10 flex items-center gap-8 backdrop-blur-xl"
+          >
+            <div className="flex items-center gap-3 pr-8 border-r border-white/10">
+              <div className="w-8 h-8 rounded-full bg-brand-green/20 text-brand-green flex items-center justify-center font-bold text-sm">
+                {selectedPosts.size}
+              </div>
+              <span className="text-[11px] font-bold uppercase tracking-widest text-white/60">Selecionados</span>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 whitespace-nowrap">Mudar Status para:</span>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'draft', label: 'Produção' },
+                  { id: 'theme_pending', label: 'Tema' },
+                  { id: 'pending_approval', label: 'Aprovação' },
+                  { id: 'approved', label: 'Aprovado' },
+                  { id: 'scheduled', label: 'Agendado' },
+                  { id: 'published', label: 'Publicado' }
+                ].map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => handleBulkStatusChange(s.id as PostStatus)}
+                    disabled={isBulkUpdating}
+                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-[9px] font-bold uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 pl-8 border-l border-white/10">
+              <button 
+                onClick={handleBulkDelete}
+                disabled={isDeleting || isBulkUpdating}
+                className="p-3 bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all"
+                title="Excluir Selecionados"
+              >
+                <Trash size={16} />
+              </button>
+              <button 
+                onClick={() => setSelectedPosts(new Set())}
+                className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all"
+                title="Desmarcar Todos"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
