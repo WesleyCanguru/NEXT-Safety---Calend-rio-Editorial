@@ -78,21 +78,24 @@ export const ContractFormScreen: React.FC<ContractFormScreenProps> = ({ formToke
     try {
       const { data, error } = await supabase
         .from('contract_forms')
-        .select(`
-          *,
-          agencies:agency_id (
-            name,
-            logo_url
-          )
-        `)
+        .select('*')
         .eq('form_token', formToken)
         .single();
 
       if (error) throw error;
       
       setContractData(data as any);
-      if (data?.agencies) {
-          setAgencyData(data.agencies);
+
+      if (data?.agency_id) {
+        const { data: agencyData } = await supabase
+          .from('agencies')
+          .select('*')
+          .eq('id', data.agency_id)
+          .single();
+          
+        if (agencyData) {
+          setAgencyData(agencyData);
+        }
       }
     } catch (err: any) {
       console.error('Error fetching contract:', err);
