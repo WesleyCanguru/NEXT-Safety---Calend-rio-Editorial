@@ -42,10 +42,10 @@ export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSele
 
   const tabs = [
     { id: 'home', label: 'Início', icon: Home },
-    { id: 'contratos', label: 'Contratos', icon: FileText },
-    { id: 'tasks', label: 'Processos', icon: ClipboardList },
-    { id: 'financeiro', label: 'Financeiro', icon: DollarSign },
+    { id: 'tasks', label: 'To Do List', icon: ClipboardList },
     { id: 'prospeccao', label: 'CRM', icon: Search },
+    { id: 'financeiro', label: 'Financeiro', icon: DollarSign },
+    { id: 'contratos', label: 'Contratos', icon: FileText },
   ];
 
   return (

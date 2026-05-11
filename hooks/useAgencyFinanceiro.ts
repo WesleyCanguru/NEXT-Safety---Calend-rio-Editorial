@@ -16,11 +16,11 @@ export function useAgencyFinanceiro(monthYear: string) {
       // Fetch Clients to ensure we have all clients even if no billing record exists yet
       const { data: clientsData } = await supabase
         .from('clients')
-        .select('*')
+        .select('*, contract:contract_forms(contract_start_date)')
         .eq('is_active', true)
         .order('name');
 
-      const clients = (clientsData || []) as Client[];
+      const clients = (clientsData || []) as any[];
 
       // Fetch Billings for the month
       const { data: billingsData } = await supabase
@@ -33,7 +33,22 @@ export function useAgencyFinanceiro(monthYear: string) {
       // If a client doesn't have a billing record for this month, we should ideally create one or show it as pending
       // For now, let's just merge them in memory for the UI
       const existingClientIds = new Set(currentBillings.filter(b => !b.is_sporadic).map(b => b.client_id));
-      const missingClients = clients.filter(c => !existingClientIds.has(c.id));
+      
+      const missingClients = clients.filter(c => {
+        if (existingClientIds.has(c.id)) return false;
+        
+        // Determine the start date of the client
+        // Prefer contract_start_date if available (it is an array because of 1:M relationship, we take the first)
+        let startDate = c.created_at;
+        if (c.contract && c.contract.length > 0 && c.contract[0].contract_start_date) {
+            startDate = c.contract[0].contract_start_date;
+        }
+
+        if (!startDate) return true;
+
+        const clientStartMonth = dayjs(startDate).format('YYYY-MM');
+        return clientStartMonth <= monthYear;
+      });
 
       const placeholderBillings: AgencyBilling[] = missingClients.map(c => ({
         id: `temp-${c.id}`,
@@ -108,7 +123,7 @@ export function useAgencyFinanceiro(monthYear: string) {
     fetchData();
   }, [monthYear]);
 
-  const updateBilling = async (billing: Partial<AgencyBilling>) => {
+  const updateBilling = async (billing: Partial<AgencyBilling> & { update_global_contract?: boolean }) => {
     try {
       const existing = billings.find(b => {
         if (billing.id && b.id === billing.id) return true;
@@ -165,7 +180,7 @@ export function useAgencyFinanceiro(monthYear: string) {
       }
 
       // Update client base_value and due_day so it carries over to next months
-      if (dbData.client_id && !dbData.is_sporadic) {
+      if (dbData.client_id && !dbData.is_sporadic && billing.update_global_contract !== false) {
         await supabase
           .from('clients')
           .update({

@@ -694,6 +694,20 @@ export const FinanceiroTab: React.FC = () => {
                     className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-sm font-medium"
                   />
                 </div>
+                
+                {!editingBilling.is_sporadic && (
+                  <div className="space-y-2 col-span-2">
+                    <label className="flex items-center gap-2 cursor-pointer mt-1 text-xs text-gray-600 font-medium select-none bg-gray-50 px-4 py-3 rounded-xl border border-gray-100">
+                      <input 
+                        type="checkbox" 
+                        checked={editingBilling.update_global_contract !== false}
+                        onChange={(e) => setEditingBilling({ ...editingBilling, update_global_contract: e.target.checked })}
+                        className="w-4 h-4 text-brand-dark rounded border-gray-300 focus:ring-brand-dark"
+                      />
+                      Atualizar valor do contrato para todos os meses seguintes
+                    </label>
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
