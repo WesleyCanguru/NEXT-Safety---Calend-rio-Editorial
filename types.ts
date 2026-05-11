@@ -402,6 +402,18 @@ export interface AgencyLead {
   updated_at: string;
 }
 
+// --- NOVOS TIPOS PARA ONBOARDING DA AGÊNCIA ---
+export interface ClientBriefing {
+  id: string;
+  client_id: string;
+  agency_id: number;
+  service_type: string;
+  answers: Record<string, any>;
+  completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+}
+
 // --- NOVOS TIPOS PARA TAREFAS DA AGÊNCIA ---
 
 export type AgencyTaskPriority = 'urgent' | 'high' | 'normal' | 'low';

@@ -85,7 +85,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
       </div>
 
       {/* Header Fixo */}
-      {view !== 'agencyDashboard' && (
+      {view !== 'agencyDashboard' && view !== 'strategic-briefings' && (
         <header className="bg-white/70 backdrop-blur-xl border-b border-black/[0.02] sticky top-0 z-50 shadow-[0_1px_10px_rgba(0,0,0,0.02)]">
           {/* Linha Superior: Logo e Botões de Navegação */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
