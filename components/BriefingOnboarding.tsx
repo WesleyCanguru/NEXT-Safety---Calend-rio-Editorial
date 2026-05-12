@@ -7,89 +7,89 @@ export const BRIEFING_QUESTIONS: Record<string, { title: string, questions: any[
   'persona': {
     title: 'Persona',
     questions: [
-      { key: 'nome_ficticio', label: 'Nome fictício da Persona', type: 'text' },
-      { key: 'idade', label: 'Idade', type: 'text' },
-      { key: 'dia_tipico', label: 'Como é o dia típico dessa pessoa?', type: 'textarea' },
-      { key: 'como_chegou', label: 'Como ela chegou até o seu produto/serviço?', type: 'textarea' },
-      { key: 'frase_resumo', label: 'Uma frase que resume o problema/necessidade dela', type: 'text' },
-      { key: 'impede_comprar', label: 'O que a impede de comprar? (objeções)', type: 'array' }
+      { key: 'nome_ficticio', label: 'Nome fictício da Persona', type: 'text', help: 'Dê um nome para facilitar a visualização (Ex: João Empreendedor)' },
+      { key: 'idade', label: 'Idade', type: 'text', help: 'Ex: 35 anos' },
+      { key: 'dia_tipico', label: 'Como é o dia típico dessa pessoa?', type: 'textarea', help: 'Desde que acorda até dormir. O que ela lê? Com quem fala? Onde trabalha?' },
+      { key: 'como_chegou', label: 'Como ela chegou até o seu produto/serviço?', type: 'textarea', help: 'Qual caminho ela percorreu até decidir que precisava da sua solução?' },
+      { key: 'frase_resumo', label: 'Uma frase que resume o problema/necessidade dela', type: 'text', help: 'Ex: "Preciso de mais tempo livre para focar na estratégia da minha empresa."' },
+      { key: 'impede_comprar', label: 'O que a impede de comprar? (objeções)', type: 'array', help: 'Ex: Falta de dinheiro, tempo, desconfiança, não entende o produto...' }
     ]
   },
   'posicionamento': {
     title: 'Posicionamento',
     questions: [
-      { key: 'uma_palavra', label: 'Sua marca em uma palavra', type: 'text' },
-      { key: 'descricao_empresa', label: 'Descrição da empresa (Pitch 30s)', type: 'textarea' },
-      { key: 'transformacao_concreta', label: 'A transformação concreta que o seu produto gera', type: 'textarea' },
-      { key: 'diferenciais', label: 'Quais os principais diferenciais?', type: 'textarea' },
-      { key: 'concorrentes', label: 'Principais concorrentes', type: 'textarea' },
-      { key: 'erro_concorrente', label: 'Qual o maior erro dos seus concorrentes?', type: 'textarea' },
-      { key: 'pessoa_famosa', label: 'Se a sua marca fosse uma pessoa famosa, quem seria?', type: 'text' },
-      { key: 'objetivo_redes', label: 'Objetivo principal nas redes sociais', type: 'textarea' },
-      { key: 'percebido_1_ano', label: 'Como deseja ser percebido daqui a 1 ano?', type: 'textarea' },
-      { key: 'presenca_anterior', label: 'O que funcionou ou não funcionou na sua presença anterior?', type: 'textarea' }
+      { key: 'uma_palavra', label: 'Sua marca em uma palavra', type: 'text', help: 'Ex: Inovação, Confiança, Velocidade, Elegância...' },
+      { key: 'descricao_empresa', label: 'Descrição da empresa (Pitch 30s)', type: 'textarea', help: 'Como você explicaria sua empresa para alguém em 30 segundos?' },
+      { key: 'transformacao_concreta', label: 'A transformação concreta que o seu produto gera', type: 'textarea', help: 'Ex: Aumentamos o faturamento em 30%, Reduzimos o tempo de entrega pela metade...' },
+      { key: 'diferenciais', label: 'Quais os principais diferenciais?', type: 'textarea', help: 'O que só você faz? Por que escolher você e não o concorrente?' },
+      { key: 'concorrentes', label: 'Principais concorrentes', type: 'textarea', help: 'Liste nomes e/ou links dos principais concorrentes diretos.' },
+      { key: 'erro_concorrente', label: 'Qual o maior erro dos seus concorrentes?', type: 'textarea', help: 'Onde eles falham que você pode aproveitar como oportunidade?' },
+      { key: 'pessoa_famosa', label: 'Se a sua marca fosse uma pessoa famosa, quem seria?', type: 'text', help: 'Isso nos ajuda a entender a personalidade e os arquétipos da marca.' },
+      { key: 'objetivo_redes', label: 'Objetivo principal nas redes sociais', type: 'textarea', help: 'Ex: Vender mais, educar o mercado, construir autoridade, atrair parceiros?' },
+      { key: 'percebido_1_ano', label: 'Como deseja ser percebido daqui a 1 ano?', type: 'textarea', help: 'Qual a imagem e reputação que você quer construir para o seu negócio no futuro?' },
+      { key: 'presenca_anterior', label: 'O que funcionou ou não funcionou na sua presença anterior?', type: 'textarea', help: 'Ex: Fizemos posts diários mas não gerou vendas, fizemos anúncios de vídeo e deram muito certo...' }
     ]
   },
   'publico_alvo': {
     title: 'Público-Alvo',
     questions: [
-      { key: 'genero', label: 'Gênero(s)', type: 'text' },
-      { key: 'faixa_etaria', label: 'Faixa Etária', type: 'text' },
-      { key: 'renda_mensal', label: 'Renda Mensal', type: 'text' },
-      { key: 'localizacao', label: 'Localização (Região/Cidades)', type: 'text' },
-      { key: 'rede_social', label: 'Redes Sociais mais utilizadas', type: 'array' },
-      { key: 'escolaridade', label: 'Escolaridade', type: 'text' },
-      { key: 'conteudos', label: 'Que conteúdos eles consomem?', type: 'textarea' },
-      { key: 'como_abordado', label: 'Como gostam de ser abordados?', type: 'textarea' },
-      { key: 'sonhos_ambicoes', label: 'Sonhos e Ambições', type: 'textarea' }
+      { key: 'genero', label: 'Gênero(s)', type: 'text', help: 'Ex: Masculino, Feminino, Ambos etc.' },
+      { key: 'faixa_etaria', label: 'Faixa Etária', type: 'text', help: 'Ex: 25 a 45 anos, adolescentes de 14 a 18 anos...' },
+      { key: 'renda_mensal', label: 'Renda Mensal', type: 'text', help: 'Qual o poder aquisitivo estimado? (Ex: R$ 5.000+, Classe B/C)' },
+      { key: 'localizacao', label: 'Localização (Região/Cidades)', type: 'text', help: 'Ex: Atuação local num bairro, focada em um estado específico, ou atendimento a nível nacional?' },
+      { key: 'rede_social', label: 'Redes Sociais mais utilizadas', type: 'array', help: 'Ex: Instagram, LinkedIn, TikTok, Facebook, Pinterest...' },
+      { key: 'escolaridade', label: 'Escolaridade', type: 'text', help: 'Ex: Ensino médio, Nível Superior, Pós-graduados, etc.' },
+      { key: 'conteudos', label: 'Que conteúdos eles consomem?', type: 'textarea', help: 'Quais assuntos eles mais leem ou assistem nas horas vagas ou de trabalho? (Ex: Notícias de negócios, vídeos de humor, tutoriais de maquiagem...)' },
+      { key: 'como_abordado', label: 'Como gostam de ser abordados?', type: 'textarea', help: 'Preferem uma abordagem formal? Gostam de informalidade e conversa rápida por WhatsApp? Precisam de e-mails bem detalhados?' },
+      { key: 'sonhos_ambicoes', label: 'Sonhos e Ambições', type: 'textarea', help: 'O que eles mais querem conquistar na vida pessoal ou profissional com a ajuda da sua solução?' }
     ]
   },
   'tom_voz': {
     title: 'Tom de Voz',
     questions: [
-      { key: 'adjetivos', label: 'Adjetivos que descrevem a marca', type: 'array' },
-      { key: 'dimensoes', label: 'Dimensões da Marca', type: 'object', objectKeys: ['Linguagem', 'Seriedade', 'Formalidade'] },
-      { key: 'emocao_principal', label: 'Emoção Principal ao falar com o público', type: 'text' },
-      { key: 'pilar_principal', label: 'Pilar principal da comunicação', type: 'text' },
-      { key: 'uso_emojis', label: 'Como é o uso de Emojis?', type: 'text' },
-      { key: 'utiliza_humor', label: 'Utiliza Humor?', type: 'text' },
-      { key: 'diferencial_tom', label: 'Diferencial do Tom', type: 'textarea' },
-      { key: 'marcas_admiradas', label: 'Marcas Admiradas pelo tom de voz', type: 'textarea' },
-      { key: 'girias_expressoes', label: 'Gírias ou expressões usadas', type: 'textarea' },
-      { key: 'palavras_proibidas', label: 'Palavras proibidas', type: 'textarea' }
+      { key: 'adjetivos', label: 'Adjetivos que descrevem a marca', type: 'array', help: 'Ex: Moderno, Elegante, Acessível, Direto, Acolhedor...' },
+      { key: 'dimensoes', label: 'Dimensões da Marca', type: 'object', objectKeys: ['Linguagem', 'Seriedade', 'Formalidade'], help: 'Defina a intensidade. Ex: Linguagem (Técnica ou Simples), Seriedade (Muito Séria ou Descontraída), Formalidade (Formal ou Informal)' },
+      { key: 'emocao_principal', label: 'Emoção Principal ao falar com o público', type: 'text', help: 'Ex: Empatia, Motivação, Segurança, Urgência, Alegria...' },
+      { key: 'pilar_principal', label: 'Pilar principal da comunicação', type: 'text', help: 'Qual a mensagem central e mais importante que a sua marca sempre deve transmitir nos conteúdos?' },
+      { key: 'uso_emojis', label: 'Como é o uso de Emojis?', type: 'text', help: 'Ex: Não usamos, exageramos nos emojis divertidos, usamos apenas emojis neutros (✅, 📊, 🚀)...' },
+      { key: 'utiliza_humor', label: 'Utiliza Humor?', type: 'text', help: 'Ex: Sim (memes, piadas leves), Não (somos estritamente profissionais)...' },
+      { key: 'diferencial_tom', label: 'Diferencial do Tom', type: 'textarea', help: 'O que faz sua forma de falar ou escrever ser totalmente única e diferente das outras marcas?' },
+      { key: 'marcas_admiradas', label: 'Marcas Admiradas pelo tom de voz', type: 'textarea', help: 'Cite outras empresas (mesmo de outros setores) que comunicam de um jeito que você adora e quer usar como referência.' },
+      { key: 'girias_expressoes', label: 'Gírias ou expressões usadas', type: 'textarea', help: 'Existem palavras específicas ou bordões que sua marca fala constantemente?' },
+      { key: 'palavras_proibidas', label: 'Palavras proibidas', type: 'textarea', help: 'Quais palavras NUNCA devemos falar na nossa comunicação? (Ex: Problema, Barato, Crise...)' }
     ]
   },
   'site': {
     title: 'Website',
     questions: [
-      { key: 'tem_website', label: 'Já tem website?', type: 'text' },
-      { key: 'paginas_essenciais', label: 'Páginas essenciais', type: 'array' },
-      { key: 'objetivo_site', label: 'Objetivo do Site', type: 'array' },
-      { key: 'formas_contato', label: 'Formas de Contato', type: 'array' },
-      { key: 'estilo_design', label: 'Estilo de Design preferido', type: 'text' },
-      { key: 'sites_admira', label: 'Sites que admira (Referências)', type: 'textarea' },
-      { key: 'imagens_midias', label: 'Imagens e Mídias (Possui material?)', type: 'textarea' },
-      { key: 'sobre_conteudo', label: 'Sobre o conteúdo (Textos)', type: 'textarea' },
-      { key: 'dominio_hospedagem', label: 'Domínio e Hospedagem', type: 'text' },
-      { key: 'integracoes', label: 'Integrações', type: 'object', objectKeys: ['CRM', 'Analytics', 'E-commerce', 'Agendamento', 'Pixels'] },
-      { key: 'funciona_melhorar', label: 'O que funciona e o que deve melhorar no site atual?', type: 'textarea' }
+      { key: 'tem_website', label: 'Já tem website?', type: 'text', help: 'Se sim, coloque a URL atual. Se não, informe se será criado um site do zero.' },
+      { key: 'paginas_essenciais', label: 'Páginas essenciais', type: 'array', help: 'Ex: Home, Sobre a empresa, Nossos Serviços, Contato, Blog...' },
+      { key: 'objetivo_site', label: 'Objetivo do Site', type: 'array', help: 'Ex: Geração de leads, venda online (e-commerce), vitrine profissional (institucional), etc.' },
+      { key: 'formas_contato', label: 'Formas de Contato', type: 'array', help: 'Ex: Botão de WhatsApp, Formulário de Orçamento, Telefone Fixo, E-mail...' },
+      { key: 'estilo_design', label: 'Estilo de Design preferido', type: 'text', help: 'Ex: Clean e Minimalista, Colorido e Divertido, Corporativo e Tecnológico, Elegante e Premium...' },
+      { key: 'sites_admira', label: 'Sites que admira (Referências)', type: 'textarea', help: 'Cole os links de sites e Landing Pages que possuem visuais ou funcionalidades que você gostaria de ter como referência.' },
+      { key: 'imagens_midias', label: 'Imagens e Mídias (Possui material?)', type: 'textarea', help: 'Você já possui fotos da equipe, vídeos da empresa ou será necessário usar bancos de imagens/produzir esse novo material fotográfico?' },
+      { key: 'sobre_conteudo', label: 'Sobre o conteúdo (Textos)', type: 'textarea', help: 'Os textos das páginas já existem num documento ou iremos criar tudo do zero com Copywriting baseado neste briefing?' },
+      { key: 'dominio_hospedagem', label: 'Domínio e Hospedagem', type: 'text', help: 'O domínio ("suaempresa.com.br") já está registrado? Em qual provedor? O site já tem hospedagem?' },
+      { key: 'integracoes', label: 'Integrações', type: 'object', objectKeys: ['CRM', 'Analytics', 'E-commerce', 'Agendamento', 'Pixels'], help: 'Existem plataformas que devem estar conectadas ao site? Ex: RD Station, Pipedrive, Calendly, Meta Pixel, Google Tag Manager...' },
+      { key: 'funciona_melhorar', label: 'O que funciona e o que deve melhorar no site atual?', type: 'textarea', help: 'Caso já possua um site, explique os principais pontos de insatisfação que motivam a reformulação e o que pode ser mantido.' }
     ]
   },
   'trafego_pago': {
     title: 'Tráfego Pago',
     questions: [
-      { key: 'genero', label: 'Gênero', type: 'text' },
-      { key: 'faixa_etaria', label: 'Faixa Etária', type: 'text' },
-      { key: 'renda_mensal', label: 'Renda Mensal', type: 'text' },
-      { key: 'localizacao', label: 'Localização/Região', type: 'text' },
-      { key: 'profissao_cargo', label: 'Profissão / Cargo', type: 'text' },
-      { key: 'onde_passa_tempo', label: 'Onde passa o tempo online?', type: 'array' },
-      { key: 'ticket_medio', label: 'Ticket Médio', type: 'text' },
-      { key: 'ciclo_vendas', label: 'Ciclo de Vendas', type: 'text' },
-      { key: 'maior_problema', label: 'Maior Problema do Cliente', type: 'textarea' },
-      { key: 'motivou_buscar', label: 'O que o motivou a buscar você?', type: 'array' },
-      { key: 'meta_principal', label: 'Meta principal das campanhas', type: 'textarea' },
-      { key: 'gatilho_agir', label: 'Gatilho para agir', type: 'array' }
+      { key: 'genero', label: 'Gênero', type: 'text', help: 'Para quem os anúncios devem ser segmentados? Predominante Mulheres, Homens, Mães, ou Ambos?' },
+      { key: 'faixa_etaria', label: 'Faixa Etária', type: 'text', help: 'Ex: 25-34 anos, +45 anos...' },
+      { key: 'renda_mensal', label: 'Renda Mensal', type: 'text', help: 'Importante para refinar campanhas. Qual é, aproximadamente, o poder aquisitivo de quem compra a oferta anunciada?' },
+      { key: 'localizacao', label: 'Localização/Região', type: 'text', help: 'Onde rodaremos os anúncios? Ex: Apenas na cidade X com raio de 20km, Todo o estado de SP, Nível Nacional...' },
+      { key: 'profissao_cargo', label: 'Profissão / Cargo', type: 'text', help: 'Ex: Vamos atingir Médicos. Ou vamos focar em Diretores de empresas.' },
+      { key: 'onde_passa_tempo', label: 'Onde passa o tempo online?', type: 'array', help: 'Ex: Assistindo YouTube, no TikTok a noite, lendo blogs e pesquisando no Google durante o trabalho...' },
+      { key: 'ticket_medio', label: 'Ticket Médio', type: 'text', help: 'Qual é o valor financeiro do produto/serviço que vamos anunciar?' },
+      { key: 'ciclo_vendas', label: 'Ciclo de Vendas', type: 'text', help: 'A venda acontece no mesmo dia ou demora 3 meses de negociação para fechar negócio depois da captação do lead?' },
+      { key: 'maior_problema', label: 'Maior Problema do Cliente', type: 'textarea', help: 'Qual é a maior urgência ou "dor de cabeça" constante do cliente e que é resolvida pelo seu serviço?' },
+      { key: 'motivou_buscar', label: 'O que o motivou a buscar você?', type: 'array', help: 'O que faz a pessoa pesquisar a sua solução? Ex: Um problema de saúde recente (urgência), desejo de viajar (oportunidade/sonho)...' },
+      { key: 'meta_principal', label: 'Meta principal das campanhas', type: 'textarea', help: 'O que definirá o projeto como um Sucesso Absoluto? Ex: Queremos captar R$10.000 de vendas online ou obter 80 leads qualificados por semana.' },
+      { key: 'gatilho_agir', label: 'Gatilho para agir', type: 'array', help: 'Qual é o gatilho, oferta ou isca que fará o usuário clicar no seu anúncio agora mesmo? Ex: Bônus VIP, Desconto na 1ª Consulta, Escassez (Últimas Vagas), Autoridade...' }
     ]
   }
 };
