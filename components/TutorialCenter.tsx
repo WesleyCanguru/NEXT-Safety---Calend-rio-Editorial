@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTutorialCenter, Tutorial } from '../hooks/useTutorialCenter';
-import { CheckCircle, Circle, ChevronDown, ChevronUp, Plus, X, BookOpen } from 'lucide-react';
+import { CheckCircle, Circle, ChevronDown, ChevronUp, Plus, X, BookOpen, Link } from 'lucide-react';
 
 interface TutorialCenterProps {
   clientId: string;
@@ -26,6 +26,20 @@ export const TutorialCenter: React.FC<TutorialCenterProps> = ({ clientId, userRo
   } = useTutorialCenter(clientId, userRole);
 
   const [expandedTutorials, setExpandedTutorials] = useState<Record<string, boolean>>({});
+
+  React.useEffect(() => {
+    const deepLinkId = localStorage.getItem('deep_link_tutorial_id');
+    if (deepLinkId) {
+      setExpandedTutorials(prev => ({ ...prev, [deepLinkId]: true }));
+      localStorage.removeItem('deep_link_tutorial_id');
+      
+      // Scroll to it after a short delay
+      setTimeout(() => {
+        const el = document.getElementById(`tutorial-${deepLinkId}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 500);
+    }
+  }, []);
 
   const isAdmin = userRole === 'admin';
 
@@ -87,7 +101,7 @@ export const TutorialCenter: React.FC<TutorialCenterProps> = ({ clientId, userRo
               const isExpanded = expandedTutorials[tutorial_slug];
               
               return (
-                <div key={tutorial_slug} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div key={tutorial_slug} id={`tutorial-${tutorial_slug}`} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                   <div className="p-5 flex items-center gap-4">
                     <div className="text-2xl">
                       {PLATFORM_ICONS[tutorial.platform] || '📚'}
@@ -114,6 +128,24 @@ export const TutorialCenter: React.FC<TutorialCenterProps> = ({ clientId, userRo
                           className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                         >
                           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        </button>
+                      )}
+
+                      {isAdmin && (
+                        <button 
+                          onClick={() => {
+                            const chave = window.prompt('Para gerar o link direto, preciso da senha (chave) deste cliente:');
+                            if (chave) {
+                              const baseUrl = `${window.location.protocol}//${window.location.host}`;
+                              const directLink = `${baseUrl}/?chave=${chave}&destino=tutorial&id=${tutorial_slug}`;
+                              navigator.clipboard.writeText(directLink);
+                              alert('Link direto copiado para a área de transferência!');
+                            }
+                          }}
+                          className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Copiar Link Direto"
+                        >
+                          <Link size={18} />
                         </button>
                       )}
 

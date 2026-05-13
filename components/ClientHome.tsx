@@ -14,12 +14,15 @@ import {
   Sparkles,
   BookOpen,
   Camera,
-  ArrowLeft
+  ArrowLeft,
+  Link
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import dayjs from 'dayjs';
+import { useClientOnboarding } from '../hooks/useClientOnboarding';
 import { LeadTrackerView } from './LeadTrackerView';
-import { ClientLeadConfig } from '../types';
+import { ClientLeadConfig, Client } from '../types';
+import { AgencyLogo } from './AgencyLogo';
 
 interface ClientHomeProps {
   onNavigateToOnboarding: () => void;
@@ -59,6 +62,17 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
   const [leadConfig, setLeadConfig] = useState<ClientLeadConfig | null>(null);
   const [monthLeadsCount, setMonthLeadsCount] = useState<number>(0);
   const [activeView, setActiveView] = useState<'dashboard' | 'leads'>('dashboard');
+
+  const { isCompleted: isOnboardingCompleted } = useClientOnboarding(activeClient?.id);
+
+  // Handle deep link to CRM
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const destino = params.get('destino') || params.get('active_view');
+    if (destino === 'crm' && activeClient?.is_lead_tracking_enabled) {
+      setActiveView('leads');
+    }
+  }, [activeClient]);
 
   const clientName = activeClient?.name || 'Cliente';
 
@@ -234,24 +248,25 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="max-w-4xl w-full text-center mb-8 space-y-4"
+        className="max-w-4xl w-full text-center mb-8 space-y-6 flex flex-col items-center"
       >
-        <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white border border-black/[0.02] shadow-[0_2px_10px_rgba(0,0,0,0.02)] mb-2">
-          <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)] animate-pulse"></span>
-          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-400">Ambiente Seguro • {clientName}</span>
+        <div className="relative group mb-2">
+          <div className="absolute -inset-4 bg-blue-50/50 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+          <AgencyLogo className="h-20 relative mix-blend-multiply" />
         </div>
-        
-        <div className="space-y-3">
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tighter text-brand-dark leading-[1.2] md:leading-[0.9]">
-            Bolsa <br />
-            <span className="serif italic font-normal text-gray-300 inline-block mt-2 md:mt-0">Estratégia & Gestão</span>
+
+        <div className="space-y-4">
+          <h1 className="text-brand-dark font-bold text-5xl md:text-7xl tracking-tighter serif italic leading-none">
+            Bolsa
           </h1>
-          <div className="w-10 h-1 bg-brand-dark mx-auto opacity-5 rounded-full"></div>
+          <div className="w-12 h-0.5 bg-brand-dark mx-auto opacity-10"></div>
+          <p className="text-[10px] md:text-[12px] uppercase tracking-[0.4em] font-bold text-gray-400">
+            by Canguru Digital
+          </p>
         </div>
         
-        <p className="text-base md:text-lg text-gray-500 max-w-xl mx-auto leading-relaxed font-medium">
-          O lugar onde a Canguru Digital guarda tudo da sua marca. 
-          Acompanhe a linha editorial, monitore métricas e visualize o crescimento da {clientName}.
+        <p className="text-[15px] md:text-lg text-gray-500 max-w-xl mx-auto leading-relaxed font-medium mt-4">
+          "Cada cliente bem cuidado é mais um passo no que estamos construindo."
         </p>
       </motion.div>
 
@@ -381,32 +396,60 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
                   <h4 className="font-bold text-brand-dark">Acompanhamento de Leads</h4>
                   <p className="text-xs text-gray-400 mt-1">Gestão e conversão de leads</p>
                 </div>
+                {isAdmin && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const chave = window.prompt('Para gerar o link direto do CRM, preciso da senha (chave) deste cliente:');
+                      if (chave) {
+                        const baseUrl = `${window.location.protocol}//${window.location.host}`;
+                        const directLink = `${baseUrl}/?chave=${chave}&destino=crm`;
+                        navigator.clipboard.writeText(directLink);
+                        alert('Link direto do CRM copiado!');
+                      }
+                    }}
+                    className="mt-4 w-full py-2 bg-gray-50 text-gray-500 hover:text-brand-dark hover:bg-gray-100 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+                  >
+                    <Link size={14} />
+                    Copiar Link Direto
+                  </button>
+                )}
               </motion.div>
             )}
           </div>
         </motion.div>
       )}
 
-      {/* Seção Admin: Onboarding Interno */}
-      {userRole === 'admin' && (
+      {/* Seção Admin / Checklist de Onboarding */}
+      {isAdmin && !isOnboardingCompleted && (
         <motion.div 
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-6xl w-full mb-8"
+          className="max-w-6xl w-full mb-8 px-4"
         >
           <motion.div 
             whileHover={{ y: -4, shadow: '0 20px 40px rgba(0,0,0,0.04)' }}
             onClick={onNavigateToOnboarding} 
-            className="flex items-center gap-5 p-6 bg-white border border-brand-dark/10 rounded-[32px] cursor-pointer transition-all shadow-sm"
+            className="flex items-center gap-5 p-6 bg-white border border-brand-dark/10 rounded-[32px] cursor-pointer transition-all shadow-sm group"
           >
-            <div className="w-12 h-12 bg-brand-dark/5 rounded-2xl flex items-center justify-center text-brand-dark">
+            <div className="w-12 h-12 bg-brand-dark/5 rounded-2xl flex items-center justify-center text-brand-dark group-hover:bg-brand-dark group-hover:text-white transition-all">
               <ClipboardList size={24} />
             </div>
-            <div className="flex-1">
-              <p className="text-[10px] font-bold text-brand-dark uppercase tracking-widest mb-1">Área Interna da Agência</p>
-              <p className="text-base font-bold text-gray-900">Checklist de Onboarding do Cliente</p>
+            <div className="flex-1 text-left">
+              <p className="text-[10px] font-bold text-brand-dark uppercase tracking-widest mb-1">
+                {isAdmin ? 'Área Interna da Agência' : 'Seja bem-vindo(a)'}
+              </p>
+              <h3 className="text-lg font-bold text-gray-900 leading-tight">
+                {isAdmin ? 'Checklist de Onboarding do Cliente' : 'Finalize o seu Onboarding'}
+              </h3>
+              {!isAdmin && <p className="text-xs text-gray-500 mt-1">Conclua as etapas iniciais para liberar todo o potencial da sua estratégia.</p>}
             </div>
-            <ArrowRight size={20} className="text-brand-dark/40" />
+            <div className="flex items-center gap-3">
+              {isAdmin && isOnboardingCompleted && (
+                <span className="px-3 py-1 bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-widest rounded-full">Concluído</span>
+              )}
+              <ArrowRight size={20} className="text-brand-dark/40" />
+            </div>
           </motion.div>
         </motion.div>
       )}

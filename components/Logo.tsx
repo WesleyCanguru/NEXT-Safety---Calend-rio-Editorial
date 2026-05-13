@@ -15,7 +15,7 @@ export const Logo: React.FC<LogoProps> = ({ size = 'large', className = '', show
         animate={{ opacity: 1, scale: 1 }}
         className="flex flex-col items-center"
       >
-        <span className={`font-serif italic text-brand-dark tracking-tighter ${size === 'large' ? 'text-6xl' : 'text-3xl'}`}>
+        <span className={`font-serif italic tracking-tighter ${size === 'large' ? 'text-6xl' : 'text-3xl'} ${className.includes('text-') ? '' : 'text-brand-dark'}`}>
           Bolsa
         </span>
         {showAgency && (

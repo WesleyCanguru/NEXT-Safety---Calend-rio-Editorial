@@ -15,12 +15,15 @@ import {
   Plus,
   Trash2,
   Eye,
-  EyeOff
+  EyeOff,
+  Briefcase
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { motion, AnimatePresence } from 'motion/react';
 import { Client, AgencyTask, AgencyCRM, AgencyLead } from '../../types';
-import { ClientesTab } from './ClientesTab';
+import { ActiveClientsSummary } from './ActiveClientsSummary';
+import { Logo } from '../Logo';
+import { AgencyLogo } from '../AgencyLogo';
 
 interface FinancialData {
   receitas: number;
@@ -276,20 +279,45 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
     <div className="space-y-8 pb-10">
       
       {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-3">
-            Dashboard <span className="px-3 py-1 bg-brand-dark text-white rounded-full text-xs font-bold uppercase tracking-widest leading-none align-middle">Beta</span>
-          </h2>
-          <p className="text-gray-500 text-sm mt-1">Resumo da operação da agência</p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20 pt-10 px-2">
+        <div className="space-y-8">
+          <div className="flex flex-col md:flex-row items-center md:items-end gap-8">
+            <AgencyLogo className="h-24 mix-blend-multiply" />
+            <div className="text-center md:text-left space-y-1">
+              <h1 className="text-brand-dark font-bold text-5xl tracking-tighter font-serif italic">
+                Bolsa
+              </h1>
+              <div className="h-0.5 bg-brand-dark w-10 opacity-20 md:mr-auto mx-auto translate-y-1"></div>
+              <p className="text-gray-400 text-[9px] uppercase tracking-[0.35em] font-bold !mt-4">
+                Canguru Digital • Gestão & Estratégia
+              </p>
+            </div>
+          </div>
+          <div className="max-w-2xl">
+            <p className="text-xl text-gray-500 font-medium leading-relaxed italic opacity-80 border-l-2 border-brand-dark/10 pl-6 py-1">
+              "Cada cliente bem cuidado é mais um passo no que estamos construindo."
+            </p>
+          </div>
         </div>
-        <button
-          onClick={toggleFinancials}
-          className="p-3 bg-white rounded-2xl border border-black/[0.03] shadow-sm text-gray-400 hover:text-brand-dark transition-colors"
-          title={showFinancials ? 'Ocultar valores financeiros' : 'Mostrar valores financeiros'}
-        >
-          {showFinancials ? <EyeOff size={20} /> : <Eye size={20} />}
-        </button>
+        
+        <div className="flex items-center gap-4">
+          <button
+            onClick={toggleFinancials}
+            className="flex items-center gap-3 px-6 py-4 bg-white rounded-2xl border border-black/[0.03] shadow-sm text-gray-400 hover:text-brand-dark transition-all font-bold uppercase text-[10px] tracking-widest group"
+          >
+            {showFinancials ? (
+              <>
+                <EyeOff size={18} className="group-hover:scale-110 transition-transform" />
+                <span>Ocultar Finanças</span>
+              </>
+            ) : (
+              <>
+                <Eye size={18} className="group-hover:scale-110 transition-transform" />
+                <span>Mostrar Finanças</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* BLOCO 1 - FINANCEIRO */}
@@ -337,10 +365,10 @@ export const HomeTab: React.FC<{ onNavigateToClients: (client: Client) => void }
         </div>
       </div>
 
-      {/* BLOCO 2 - CLIENTES ATIVOS (agora usa o componente completo) */}
-      <ClientesTab onSelectClient={onNavigateToClients} />
+      {/* BLOCO 2 - CLIENTES ATIVOS (Resumo) */}
+      <ActiveClientsSummary onSelectClient={onNavigateToClients} />
 
-      {/* BLOCO 3 e 4 - TAREFAS URGENTES e VISÃO DO CRM */}
+      {/* BLOCO 3 - Visão Geral das Tarefas e CRM */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         
         {/* BLOCO 3 - TAREFAS URGENTES */}

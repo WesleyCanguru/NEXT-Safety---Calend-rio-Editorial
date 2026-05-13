@@ -202,6 +202,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Auto-login from URL (?chave=XXX&destino=YYY)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const chave = params.get('chave');
+    const destinoRaw = params.get('destino') || params.get('active_view');
+    
+    if (chave) {
+      const performAutoLogin = async () => {
+        const result = await loginByPassword(chave);
+        if (result.success) {
+          // Remover os parâmetros da URL sem recarregar a página radicalmente
+          // mas permitindo que o App.tsx detecte o destino
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('chave');
+          // Manter o destino para o App.tsx processar
+          window.history.replaceState({}, '', newUrl.toString());
+        }
+      };
+      performAutoLogin();
+    }
+  }, []);
+
   return React.createElement(
     AuthContext.Provider,
     { value: { userRole, activeClient, login, loginByPassword, logout, setActiveClient, refreshActiveClient, isAuthenticated: !!userRole } },

@@ -109,7 +109,7 @@ export const useClientOnboarding = (clientId?: string) => {
   useEffect(() => {
     const fetchOnboarding = async () => {
       const targetId = clientId || activeClient?.id;
-      if (!targetId || userRole !== 'admin') {
+      if (!targetId) {
         setOnboarding(null);
         setLoading(false);
         return;
