@@ -190,16 +190,26 @@ export const AgencyContractsTab: React.FC = () => {
   };
 
   const handleGenerateLink = async (clientId: string) => {
-    const token = Array.from(crypto.getRandomValues(new Uint8Array(20))).map(b => b.toString(16).padStart(2, '0')).join('');
-    const { data, error } = await supabase.from('contract_forms').insert({
-      client_id: clientId,
-      agency_id: 1, // Default tracking or dynamic
-      form_token: token,
-      status: 'pending'
-    }).select().single();
-    
-    if (!error && data) {
-      setClients(prev => prev.map(c => c.id === clientId ? { ...c, contract: data } : c));
+    try {
+      const token = Array.from(crypto.getRandomValues(new Uint8Array(20))).map(b => b.toString(16).padStart(2, '0')).join('');
+      const { data, error } = await supabase.from('contract_forms').insert({
+        client_id: clientId,
+        agency_id: 1, // Default tracking or dynamic
+        form_token: token,
+        status: 'pending'
+      }).select().single();
+      
+      if (error) {
+        console.error('Error generating link:', error);
+        throw new Error(`Erro ao gerar link: ${error.message}`);
+      }
+      
+      if (data) {
+        setClients(prev => prev.map(c => c.id === clientId ? { ...c, contract: data } : c));
+        alert('Link gerado com sucesso!');
+      }
+    } catch (error: any) {
+      alert(error.message || 'Erro ao gerar link');
     }
   };
 
@@ -247,7 +257,10 @@ export const AgencyContractsTab: React.FC = () => {
         .from('client-documents')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload Error:', uploadError);
+        throw new Error(`Erro no upload: ${uploadError.message}`);
+      }
 
       const { data: urlData } = supabase.storage
         .from('client-documents')
@@ -264,15 +277,25 @@ export const AgencyContractsTab: React.FC = () => {
       };
 
       if (selectedClient.contract) {
-        await supabase
+        const { error: updateError } = await supabase
           .from('contract_forms')
           .update(payload)
           .eq('id', selectedClient.contract.id);
+        
+        if (updateError) {
+          console.error('Update Error:', updateError);
+          throw new Error(`Erro ao atualizar banco: ${updateError.message}`);
+        }
       } else {
         const token = Array.from(crypto.getRandomValues(new Uint8Array(20))).map(b => b.toString(16).padStart(2, '0')).join('');
-        await supabase
+        const { error: insertError } = await supabase
           .from('contract_forms')
           .insert([{ ...payload, form_token: token }]);
+          
+        if (insertError) {
+          console.error('Insert Error:', insertError);
+          throw new Error(`Erro ao inserir no banco: ${insertError.message}`);
+        }
       }
       
       await fetchData();
@@ -280,9 +303,10 @@ export const AgencyContractsTab: React.FC = () => {
       setFile(null);
       setContractValue('');
       setStartDate('');
-    } catch (error) {
+      alert('Contrato salvo com sucesso!');
+    } catch (error: any) {
       console.error(error);
-      alert('Erro ao fazer upload do contrato');
+      alert(error.message || 'Erro ao fazer upload do contrato');
     } finally {
       setSaving(false);
     }
