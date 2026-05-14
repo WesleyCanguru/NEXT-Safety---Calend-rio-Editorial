@@ -210,7 +210,15 @@ export const FinanceiroTab: React.FC = () => {
 
   return (
     <div className="space-y-10">
-      {/* Header with Month Selector */}
+      {/* Main Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-brand-dark">Financeiro</h2>
+          <p className="text-sm text-gray-500 mt-1">Gerencie fluxos, receitas e despesas da agência.</p>
+        </div>
+      </div>
+
+      {/* Auxiliary Header with Month Selector */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-1 bg-white p-1 rounded-[2rem] border border-black/[0.03] shadow-sm">
           <button onClick={handlePrevMonth} className="p-2 hover:bg-gray-50 rounded-2xl transition-all text-gray-400 hover:text-brand-dark">
@@ -227,17 +235,17 @@ export const FinanceiroTab: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
           <button 
             onClick={() => setShowSporadicModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-white text-brand-dark border border-black/[0.05] rounded-[2rem] font-bold text-[10px] uppercase tracking-widest hover:bg-gray-50 transition-all shadow-sm"
+            className="flex justify-center items-center gap-2 px-6 py-3 bg-white text-brand-dark border border-black/[0.05] rounded-[2rem] font-bold text-[10px] uppercase tracking-widest hover:bg-gray-50 transition-all shadow-sm"
           >
             <Plus size={16} />
             Faturamento Esporádico
           </button>
           <button 
             onClick={() => setShowExpenseModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-[2rem] font-bold text-[10px] uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg shadow-brand-dark/10"
+            className="flex justify-center items-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-[2rem] font-bold text-[10px] uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg shadow-brand-dark/10"
           >
             <Plus size={16} />
             Nova Despesa
@@ -277,10 +285,93 @@ export const FinanceiroTab: React.FC = () => {
 
       {/* Billings Table */}
       <div className="bg-white rounded-3xl border border-black/[0.03] shadow-[0_2px_15px_rgba(0,0,0,0.01)] overflow-hidden">
-        <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center">
+        <div className="px-6 sm:px-8 py-5 sm:py-6 border-b border-gray-50 flex justify-between items-center">
           <h2 className="text-lg font-bold text-brand-dark">Faturamento por Cliente</h2>
         </div>
-        <div className="overflow-x-auto">
+        
+        {/* Mobile View */}
+        <div className="block md:hidden p-4 space-y-4">
+          {sortedBillings.map((billing) => (
+            <div key={billing.id} className="bg-gray-50/50 rounded-2xl p-4 border border-gray-100 flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  {billing.is_sporadic ? (
+                    <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-[10px] bg-gray-400">ES</div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-[10px]" style={{ backgroundColor: billing.client?.color }}>
+                      {billing.client?.initials}
+                    </div>
+                  )}
+                  <div>
+                    <span className="font-bold text-sm text-brand-dark block">{billing.is_sporadic ? billing.sporadic_name : billing.client?.name}</span>
+                    {billing.is_sporadic && <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Esporádico</span>}
+                  </div>
+                </div>
+                <div>{getStatusBadge(billing)}</div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 text-sm bg-white p-3 rounded-xl border border-gray-100">
+                <div>
+                  <p className="text-[9px] uppercase tracking-widest font-bold text-gray-400 mb-0.5">Base</p>
+                  <p className="font-medium text-brand-dark">{formatCurrency(billing.base_value)}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] uppercase tracking-widest font-bold text-gray-400 mb-0.5">Extra</p>
+                  <p className="font-medium text-brand-dark">{formatCurrency(billing.extra_value)}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] uppercase tracking-widest font-bold text-gray-400 mb-0.5">Total</p>
+                  <p className="font-bold text-brand-dark">{formatCurrency(billing.base_value + billing.extra_value)}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] uppercase tracking-widest font-bold text-gray-400 mb-0.5">Venc.</p>
+                  <p className="font-medium text-gray-600">Dia {billing.due_day}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <button 
+                  onClick={() => setEditingBilling(billing)}
+                  className="flex-1 p-2.5 text-blue-600 bg-blue-50/50 hover:bg-blue-100 rounded-xl transition-all flex items-center justify-center gap-2 text-xs font-bold"
+                >
+                  <Edit2 size={14} /> Editar
+                </button>
+                {billing.status !== 'paid' ? (
+                  <button 
+                    onClick={() => updateBilling({ 
+                      id: billing.id, 
+                      client_id: billing.client_id, 
+                      month_year: billing.month_year, 
+                      status: 'paid', 
+                      paid_at: new Date().toISOString() 
+                    })}
+                    className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-700 transition-all text-center"
+                  >
+                    Marcar Pago
+                  </button>
+                ) : (
+                  <div className="flex-1 py-2.5 bg-gray-100 text-gray-400 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-gray-200 text-center">
+                    Recebido
+                  </div>
+                )}
+                {billing.is_sporadic && (
+                  <button 
+                    onClick={() => setDeletingSporadicBilling(billing)}
+                    className="p-2.5 text-rose-600 bg-rose-50/50 hover:bg-rose-100 rounded-xl transition-all"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+          {sortedBillings.length === 0 && (
+            <p className="text-center text-gray-400 text-sm py-4">Nenhum faturamento para este mês.</p>
+          )}
+        </div>
+
+        {/* Desktop View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-gray-50/30">
@@ -375,14 +466,75 @@ export const FinanceiroTab: React.FC = () => {
 
       {/* Expenses Section */}
       <div className="bg-white rounded-3xl border border-black/[0.03] shadow-[0_2px_15px_rgba(0,0,0,0.01)] overflow-hidden">
-        <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center">
+        <div className="px-6 sm:px-8 py-5 sm:py-6 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
           <h2 className="text-lg font-bold text-brand-dark">Despesas da Agência</h2>
-          <div className="flex items-center gap-2 text-rose-600 font-bold">
+          <div className="flex items-center gap-2 text-rose-600 font-bold bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-100/50">
             <span className="text-[10px] uppercase tracking-widest">Total:</span>
-            <span className="text-lg">{formatCurrency(stats.totalExpenses)}</span>
+            <span className="text-lg sm:text-base">{formatCurrency(stats.totalExpenses)}</span>
           </div>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Mobile View */}
+        <div className="block md:hidden p-4 space-y-4">
+          {sortedExpenses.map((expense) => (
+            <div key={expense.id} className="bg-gray-50/50 rounded-2xl p-4 border border-gray-100 flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <span className="font-bold text-sm text-brand-dark block">{expense.description}</span>
+                  {expense.notes && <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-2">{expense.notes}</p>}
+                </div>
+                <div className="text-right whitespace-nowrap">
+                  <span className="font-bold text-base text-brand-dark block">{formatCurrency(expense.amount)}</span>
+                  {getExpenseStatusBadge(expense)}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 text-xs mb-1">
+                <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest ${expense.category === 'fixed' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
+                  {expense.category === 'fixed' ? 'Fixa' : 'Variável'}
+                </span>
+                {expense.expense_type && (
+                  <span className="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest bg-gray-200 text-gray-600">
+                    {expense.expense_type === 'tools' ? 'Ferramentas' : expense.expense_type === 'freelancers' ? 'Freelancers' : 'Custos Extras'}
+                  </span>
+                )}
+                <span className="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest bg-gray-100 text-gray-500">
+                  Venc: {expense.category === 'fixed' ? (expense.due_date ? `${dayjs(expense.due_date).date()}` : '-') : '-'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2 border-t border-gray-100/50">
+                {!expense.paid ? (
+                  <button 
+                    onClick={() => handleMarkExpensePaid(expense)}
+                    className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-700 transition-all text-center"
+                  >
+                    Marcar Pago
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => updateExpense(expense.id, { paid: false, paid_at: null })}
+                    className="flex-1 py-2.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-gray-200 text-center"
+                  >
+                    Estornar
+                  </button>
+                )}
+                <button 
+                  onClick={() => deleteExpense(expense.id)}
+                  className="p-2.5 text-rose-600 bg-rose-50/50 hover:bg-rose-100 rounded-xl transition-all"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
+          {expenses.length === 0 && (
+            <p className="text-center text-gray-400 text-sm py-4">Nenhuma despesa para este mês.</p>
+          )}
+        </div>
+
+        {/* Desktop View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-gray-50/30">

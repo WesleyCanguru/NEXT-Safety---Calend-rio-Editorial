@@ -14,10 +14,12 @@ import {
   ExternalLink,
   MessageSquare,
   TrendingUp,
-  BarChart2
+  BarChart2,
+  Monitor
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import dayjs from 'dayjs';
+import { QuickLinksEditorModal, ClientQuickLink } from './QuickLinksEditorModal';
 
 interface ActiveClientsSummaryProps {
   onSelectClient: (client: Client) => void;
@@ -35,34 +37,54 @@ interface ClientStats {
 export const ActiveClientsSummary: React.FC<ActiveClientsSummaryProps> = ({ onSelectClient }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [clientStats, setClientStats] = useState<Record<string, ClientStats>>({});
+  const [quickLinks, setQuickLinks] = useState<Record<string, ClientQuickLink[]>>({});
   const [loading, setLoading] = useState(true);
+  const [editingQuickLinksClient, setEditingQuickLinksClient] = useState<Client | null>(null);
 
   useEffect(() => {
-    const fetchAllData = async () => {
-      setLoading(true);
-      
-      // 1. Fetch Active Clients
-      const { data: clientsData } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-      
-      if (!clientsData) {
-        setLoading(false);
-        return;
-      }
+    fetchAllData();
+  }, []);
 
-      setClients(clientsData as Client[]);
+  const fetchAllData = async () => {
+    setLoading(true);
+    
+    // 1. Fetch Active Clients
+    const { data: clientsData } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+    
+    if (!clientsData) {
+      setLoading(false);
+      return;
+    }
 
-      // 2. Fetch Posts for all active clients to calculate stats
-      // We'll calculate stats in-memory for simplicity given the small data size
-      const { data: postsData } = await supabase
-        .from('posts')
-        .select('*')
-        .in('client_id', clientsData.map(c => c.id));
+    setClients(clientsData as Client[]);
 
-      const stats: Record<string, ClientStats> = {};
+    // 2. Fetch Posts for all active clients to calculate stats
+    const { data: postsData } = await supabase
+      .from('posts')
+      .select('*')
+      .in('client_id', clientsData.map(c => c.id));
+
+    // 3. Fetch Quick Links
+    const { data: linksData } = await supabase
+      .from('client_quick_links')
+      .select('*')
+      .in('client_id', clientsData.map(c => c.id))
+      .order('sort_order');
+
+    const linksMap: Record<string, ClientQuickLink[]> = {};
+    if (linksData) {
+      linksData.forEach(link => {
+        if (!linksMap[link.client_id]) linksMap[link.client_id] = [];
+        linksMap[link.client_id].push(link as ClientQuickLink);
+      });
+    }
+    setQuickLinks(linksMap);
+
+    const stats: Record<string, ClientStats> = {};
       const today = dayjs().format('DD-MM-YYYY');
       const currentMonth = dayjs().format('MM-YYYY');
 
@@ -74,7 +96,7 @@ export const ActiveClientsSummary: React.FC<ActiveClientsSummaryProps> = ({ onSe
 
         // Statistics
         const todayPosts = validPosts.filter(p => p.date_key.startsWith(today) && (p.status === 'published' || p.status === 'scheduled' || p.status === 'approved'));
-        const monthPosts = validPosts.filter(p => p.date_key.includes(`-${currentMonth}-`));
+        const monthPosts = validPosts.filter(p => p.date_key.endsWith(currentMonth));
         const inRevision = validPosts.filter(p => p.status === 'changes_requested');
         const inApproval = validPosts.filter(p => p.status === 'pending_approval');
         const drafts = validPosts.filter(p => p.status === 'draft');
@@ -109,10 +131,7 @@ export const ActiveClientsSummary: React.FC<ActiveClientsSummaryProps> = ({ onSe
 
       setClientStats(stats);
       setLoading(false);
-    };
-
-    fetchAllData();
-  }, []);
+  };
 
   if (loading) {
     return (
@@ -138,31 +157,35 @@ export const ActiveClientsSummary: React.FC<ActiveClientsSummaryProps> = ({ onSe
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 pb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-12">
         {clients.length === 0 ? (
-          <div className="col-span-full py-20 bg-white rounded-[3rem] border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400">
+          <div className="col-span-full py-20 bg-white rounded-3xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400">
             <Building2 size={48} className="mb-4 opacity-20" />
             <p className="text-lg font-medium">Nenhum cliente em operação.</p>
           </div>
         ) : (
           clients.map((client) => {
             const stats = clientStats[client.id] || { today: 0, monthTotal: 0, inRevision: 0, inApproval: 0, drafts: 0, nextDate: null };
+            const links = quickLinks[client.id] || [];
             
             return (
               <motion.div
                 key={client.id}
-                whileHover={{ y: -6 }}
+                whileHover={{ y: -4 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                className="group bg-white p-8 rounded-[3.5rem] border border-black/[0.03] shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col relative overflow-hidden"
+                className="group bg-white p-5 rounded-3xl border border-black/[0.03] shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col relative overflow-hidden"
               >
                 {/* Decoration */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50/50 rounded-bl-[4rem] -z-0 opacity-50 transition-all group-hover:scale-110" />
+                <div 
+                  onClick={() => onSelectClient(client)}
+                  className="absolute inset-0 z-0 cursor-pointer"
+                />
 
                 {/* Header */}
-                <div className="flex items-center justify-between mb-10 relative z-10">
-                  <div className="flex items-center gap-5">
+                <div className="flex items-center justify-between mb-5 relative z-10 pointer-events-none">
+                  <div className="flex items-center gap-3">
                     <div 
-                      className="w-16 h-16 rounded-[2rem] flex items-center justify-center text-white font-bold text-2xl shadow-sm overflow-hidden"
+                      className="w-10 h-10 rounded-[10px] flex items-center justify-center text-white font-bold text-lg shadow-sm overflow-hidden flex-shrink-0"
                       style={{ backgroundColor: client.color }}
                     >
                       {client.logo_url ? (
@@ -172,139 +195,111 @@ export const ActiveClientsSummary: React.FC<ActiveClientsSummaryProps> = ({ onSe
                       )}
                     </div>
                     <div>
-                      <h4 className="text-xl font-bold text-brand-dark flex items-center gap-2">
+                      <h4 className="text-base font-bold text-gray-900 flex items-center gap-2">
                         {client.name}
-                        <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
                       </h4>
-                      <p className="text-[10px] text-gray-400 uppercase tracking-[0.25em] font-bold mt-1.5">{client.segment || 'Segmento'}</p>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-0.5 max-w-[150px] truncate">{client.segment || 'Segmento'}</p>
                     </div>
                   </div>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingQuickLinksClient(client);
+                    }}
+                    className="p-2 bg-gray-50 text-gray-400 hover:text-brand-dark hover:bg-gray-100 rounded-xl transition-all pointer-events-auto cursor-pointer border border-transparent shadow-sm hover:border-gray-200"
+                    title="Configurar Links Rápidos"
+                  >
+                    <Settings size={16} />
+                  </button>
                 </div>
 
                 {/* Publications Stats Grid */}
-                <div className="grid grid-cols-2 gap-y-10 gap-x-12 mb-10 relative z-10 px-2">
-                  <div>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-3 whitespace-nowrap">Publicações Hoje</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-3xl font-bold text-brand-dark">{stats.today}</span>
-                      {stats.today > 0 && <CheckCircle2 size={18} className="text-green-500" />}
+                <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-gray-50 relative z-10 pointer-events-none">
+                  <div className="space-y-1">
+                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Publicações Hoje</p>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xl font-black text-brand-dark">{stats.today}</span>
+                      {stats.today > 0 && <CheckCircle2 size={14} className="text-green-500" />}
                     </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-3 whitespace-nowrap">Total no Mês</p>
-                    <span className="text-3xl font-bold text-brand-dark">{stats.monthTotal}</span>
+                  <div className="space-y-1">
+                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Total no Mês</p>
+                    <span className="text-xl font-black text-brand-dark">{stats.monthTotal}</span>
                   </div>
-                  <div>
-                    <p className="text-[10px] text-red-400/80 font-bold uppercase tracking-widest mb-3 whitespace-nowrap">Em Alteração</p>
-                    <span className="text-3xl font-bold text-red-500">{stats.inRevision}</span>
+                  <div className="space-y-1">
+                    <p className="text-[9px] text-red-500/80 font-bold uppercase tracking-widest">Em Alteração</p>
+                    <span className="text-xl font-black text-red-500">{stats.inRevision}</span>
                   </div>
-                  <div>
-                    <p className="text-[10px] text-orange-400/80 font-bold uppercase tracking-widest mb-3 whitespace-nowrap">Em Aprovação</p>
-                    <span className="text-3xl font-bold text-orange-500">{stats.inApproval}</span>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest mb-3 whitespace-nowrap">Rascunho</p>
-                    <span className="text-3xl font-bold text-gray-400">{stats.drafts}</span>
+                  <div className="space-y-1">
+                    <p className="text-[9px] text-orange-500/80 font-bold uppercase tracking-widest">Em Aprovação</p>
+                    <span className="text-xl font-black text-orange-500">{stats.inApproval}</span>
                   </div>
                 </div>
 
-                {/* Next Publication */}
-                <div className="mb-10 relative z-10 px-2">
-                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-3">Próxima Publicação</p>
-                   <div className="flex items-center gap-3 text-brand-dark font-bold">
-                     <Calendar size={18} className="text-blue-500" />
-                     <span>{stats.nextDate || 'Nenhuma agendada'}</span>
-                   </div>
-                </div>
-
-                {/* Quick Links Section */}
-                <div className="mb-2 relative z-10">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-6 px-2">Links Rápidos</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Instagram */}
-                    <a 
-                      href={client.instagram ? `https://instagram.com/${client.instagram.replace('@', '')}` : '#'} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-brand-dark/5 rounded-[1.25rem] transition-all group/link border border-black/[0.02] hover:border-brand-dark/10"
-                    >
-                      <div className="p-2 bg-white rounded-xl group-hover/link:shadow-sm">
-                        <Instagram size={16} className="text-pink-500" />
-                      </div>
-                      <span className="text-[10px] font-bold text-brand-dark uppercase tracking-widest">Instagram</span>
-                    </a>
-
-                    {/* Business Suite */}
-                    <a 
-                      href="https://business.facebook.com/latest/home" 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-brand-dark/5 rounded-[1.25rem] transition-all group/link border border-black/[0.02] hover:border-brand-dark/10"
-                    >
-                      <div className="p-2 bg-white rounded-xl group-hover/link:shadow-sm">
-                        <Globe size={16} className="text-blue-400" />
-                      </div>
-                      <span className="text-[10px] font-bold text-brand-dark uppercase tracking-widest">B. Suite</span>
-                    </a>
-
-                    {/* Google Ads */}
-                    <a 
-                      href="https://ads.google.com" 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-brand-dark/5 rounded-[1.25rem] transition-all group/link border border-black/[0.02] hover:border-brand-dark/10"
-                    >
-                      <div className="p-2 bg-white rounded-xl group-hover/link:shadow-sm">
-                        <div className="w-4 h-4 rounded-full bg-green-500" />
-                      </div>
-                      <span className="text-[10px] font-bold text-brand-dark uppercase tracking-widest">Google Ads</span>
-                    </a>
-
-                    {/* Meta Ads */}
-                    <a 
-                      href="https://business.facebook.com/adsmanager" 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-brand-dark/5 rounded-[1.25rem] transition-all group/link border border-black/[0.02] hover:border-brand-dark/10"
-                    >
-                      <div className="p-2 bg-white rounded-xl group-hover/link:shadow-sm">
-                        <div className="w-4 h-4 rounded-full bg-blue-600" />
-                      </div>
-                      <span className="text-[10px] font-bold text-brand-dark uppercase tracking-widest">Meta Ads</span>
-                    </a>
-
-                    {/* Tráfego Orgânico (Reportei) */}
-                    <a 
-                      href={client.organic_reportei_url || '#'} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-brand-dark/5 rounded-[1.25rem] transition-all group/link border border-black/[0.02] hover:border-brand-dark/10"
-                    >
-                      <div className="p-2 bg-white rounded-xl group-hover/link:shadow-sm">
-                        <TrendingUp size={16} className="text-indigo-500" />
-                      </div>
-                      <span className="text-[10px] font-bold text-brand-dark uppercase tracking-widest">Orgânico</span>
-                    </a>
-
-                    {/* Tráfego Pago (Reportei) */}
-                    <a 
-                      href={client.paid_reportei_url || '#'} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-brand-dark/5 rounded-[1.25rem] transition-all group/link border border-black/[0.02] hover:border-brand-dark/10"
-                    >
-                      <div className="p-2 bg-white rounded-xl group-hover/link:shadow-sm">
-                        <BarChart2 size={16} className="text-blue-500" />
-                      </div>
-                      <span className="text-[10px] font-bold text-brand-dark uppercase tracking-widest">Pago</span>
-                    </a>
+                {/* Next Publication & Drafts */}
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-50 relative z-10 pointer-events-none">
+                  <div className="flex items-center gap-2">
+                    <Calendar size={14} className="text-blue-500 flex-shrink-0" />
+                    <div>
+                      <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">Próxima Publicação</p>
+                      <p className="text-[11px] font-bold text-gray-700">{stats.nextDate || 'Nenhuma agendada'}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">Rascunhos</p>
+                    <p className="text-[11px] font-bold text-gray-500">{stats.drafts}</p>
                   </div>
                 </div>
+
+                {/* Dynamic Quick Links Section */}
+                <div className="relative z-10 pointer-events-auto mt-auto">
+                  <div className="flex flex-wrap gap-2">
+                    {links.length > 0 ? (
+                      links.map(link => {
+                        let Icon = ExternalLink;
+                        let colorClass = 'text-gray-500';
+                        if (link.type === 'instagram') { Icon = Instagram; colorClass = 'text-pink-500'; }
+                        if (link.type === 'meta_ads') { Icon = Monitor; colorClass = 'text-blue-600'; }
+                        if (link.type === 'google_ads') { Icon = Globe; colorClass = 'text-green-500'; }
+                        if (link.type === 'reportei') { Icon = BarChart2; colorClass = 'text-blue-500'; }
+
+                        return (
+                          <a 
+                            key={link.id}
+                            href={link.url}
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-white rounded-lg transition-all border border-gray-100 hover:border-brand-dark/20 hover:shadow-sm"
+                            title={link.label}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Icon size={12} className={colorClass} />
+                            <span className="text-[10px] font-bold text-gray-600 max-w-[80px] truncate">{link.label}</span>
+                          </a>
+                        );
+                      })
+                    ) : (
+                      <p className="text-[10px] text-gray-400 font-medium py-1">Nenhum link rápido configurado.</p>
+                    )}
+                  </div>
+                </div>
+
               </motion.div>
             );
           })
         )}
       </div>
+
+      {editingQuickLinksClient && (
+        <QuickLinksEditorModal 
+          client={editingQuickLinksClient}
+          onClose={() => setEditingQuickLinksClient(null)}
+          onUpdate={() => {
+            fetchAllData();
+          }}
+        />
+      )}
     </div>
   );
 };

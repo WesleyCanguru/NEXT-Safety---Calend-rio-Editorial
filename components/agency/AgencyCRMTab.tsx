@@ -66,25 +66,20 @@ export const AgencyCRMTab: React.FC = () => {
   const activeCRM = crms.find(c => c.id === activeCRMId);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full space-y-6">
       {/* Header & Tabs */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 shrink-0">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-brand-dark/10 rounded-xl flex items-center justify-center">
-              <Kanban className="w-5 h-5 text-brand-dark" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">CRM da Agência</h1>
-              <p className="text-sm text-gray-500">Gerencie seus funis de prospecção e vendas</p>
-            </div>
+      <div className="shrink-0 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-brand-dark">CRM da Agência</h2>
+            <p className="text-sm text-gray-500 mt-1">Gerencie seus funis de prospecção e vendas.</p>
           </div>
           <button
             onClick={handleCreateCRM}
-            className="flex items-center gap-2 bg-brand-dark text-white px-4 py-2 rounded-lg hover:bg-brand-dark/90 transition-colors text-sm font-medium shadow-sm"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:shadow-xl transition-all transform hover:-translate-y-1 w-full sm:w-auto"
           >
-            <Plus className="w-4 h-4" />
-            Novo CRM
+            <Plus size={18} />
+            <span>Novo CRM</span>
           </button>
         </div>
 
@@ -97,17 +92,17 @@ export const AgencyCRMTab: React.FC = () => {
                   className={`px-4 py-2 rounded-l-lg text-sm font-medium transition-colors whitespace-nowrap ${
                     activeCRMId === crm.id
                       ? 'bg-brand-dark text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 border-r-0'
                   }`}
                 >
                   {crm.name}
                 </button>
                 <button
                   onClick={() => openSettings(crm)}
-                  className={`px-2 py-2 rounded-r-lg transition-colors border-l ${
+                  className={`px-2 py-2 rounded-r-lg transition-colors border ${
                     activeCRMId === crm.id
-                      ? 'bg-brand-dark text-white/80 hover:text-white border-white/20'
-                      : 'bg-gray-100 text-gray-400 hover:text-gray-600 hover:bg-gray-200 border-gray-200'
+                      ? 'bg-brand-dark text-white/80 hover:text-white border-brand-dark border-l-white/20'
+                      : 'bg-white text-gray-400 hover:text-gray-600 hover:bg-gray-50 border-gray-200'
                   }`}
                   title="Configurações do CRM"
                 >
@@ -120,13 +115,13 @@ export const AgencyCRMTab: React.FC = () => {
       </div>
 
       {/* Board Area */}
-      <div className="flex-1 overflow-hidden bg-gray-50">
+      <div className="flex-1 overflow-hidden bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col">
         {activeCRM ? (
           <CRMBoard crm={activeCRM} />
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-center p-6">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
-              <Kanban className="w-8 h-8 text-gray-400" />
+          <div className="h-full flex flex-col items-center justify-center text-center p-6 pb-20">
+            <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 border border-gray-100">
+              <Kanban className="w-8 h-8 text-gray-300" />
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">Nenhum CRM encontrado</h3>
             <p className="text-gray-500 mb-6 max-w-md">
@@ -134,7 +129,7 @@ export const AgencyCRMTab: React.FC = () => {
             </p>
             <button
               onClick={handleCreateCRM}
-              className="bg-brand-dark text-white px-6 py-3 rounded-xl font-bold hover:bg-brand-dark/90 transition-colors shadow-lg shadow-brand-dark/20"
+              className="bg-brand-dark text-white px-6 py-3 rounded-2xl font-bold hover:bg-brand-dark/90 transition-all shadow-lg shadow-brand-dark/20 text-xs uppercase tracking-widest"
             >
               Criar Primeiro CRM
             </button>

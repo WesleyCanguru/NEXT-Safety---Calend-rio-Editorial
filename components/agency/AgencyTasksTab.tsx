@@ -309,14 +309,14 @@ export const AgencyTasksTab: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Header with Add Button */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-brand-dark">Processos & Tarefas</h2>
           <p className="text-sm text-gray-500">Gerencie as atividades diárias e urgentes da agência.</p>
         </div>
         <button
           onClick={() => setIsAddingTask(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:shadow-xl transition-all transform hover:-translate-y-1"
+          className="flex items-center justify-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:shadow-xl transition-all transform hover:-translate-y-1 w-full sm:w-auto"
         >
           <Plus size={18} />
           <span>Nova Tarefa</span>
@@ -755,12 +755,12 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, onEdit, d
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={`
-        group flex items-center gap-4 p-5 rounded-3xl bg-white border border-black/[0.03] shadow-sm hover:shadow-md transition-all
+        group flex sm:items-center items-start gap-3 sm:gap-4 p-4 sm:p-5 rounded-3xl bg-white border border-black/[0.03] shadow-sm hover:shadow-md transition-all
         ${isDone ? 'bg-gray-50/50' : ''}
       `}
     >
       <div 
-        className="flex-shrink-0 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing p-1"
+        className="flex-shrink-0 mt-0.5 sm:mt-0 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing p-1"
         {...dragAttributes} 
         {...dragListeners}
       >
@@ -770,7 +770,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, onEdit, d
       <button
         onClick={() => onToggle(task)}
         className={`
-          flex-shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all
+          flex-shrink-0 w-7 h-7 mt-0.5 sm:mt-0 rounded-full border-2 flex items-center justify-center transition-all
           ${isDone 
             ? 'bg-green-500 border-green-500 text-white' 
             : 'border-gray-200 text-transparent hover:border-brand-dark hover:text-brand-dark/20'
@@ -781,47 +781,49 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, onEdit, d
       </button>
 
       <div className="flex-grow min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <h4 className={`font-bold text-sm truncate ${isDone ? 'text-gray-400 line-through' : 'text-brand-dark'}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2 sm:mb-1">
+          <h4 className={`font-bold text-sm break-words ${isDone ? 'text-gray-400 line-through' : 'text-brand-dark'}`}>
             {task.title}
           </h4>
-          {task.client ? (
-            <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tighter text-white" style={{ backgroundColor: task.client.color }}>
-              {task.client.name}
-            </span>
-          ) : (
-            <span className="px-2 py-0.5 rounded-full bg-brand-dark text-white text-[8px] font-black uppercase tracking-tighter">
-              Canguru Digital
-            </span>
-          )}
-          {recurrenceLabel && (
-            <span className="px-2 py-0.5 rounded-full bg-brand-dark/5 text-brand-dark text-[8px] font-black uppercase tracking-tighter">
-              {recurrenceLabel}
-            </span>
-          )}
+          <div className="flex flex-wrap gap-1">
+            {task.client ? (
+              <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tighter text-white whitespace-nowrap" style={{ backgroundColor: task.client.color }}>
+                {task.client.name}
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 rounded-full bg-brand-dark text-white text-[8px] font-black uppercase tracking-tighter whitespace-nowrap">
+                Canguru Digital
+              </span>
+            )}
+            {recurrenceLabel && (
+              <span className="px-2 py-0.5 rounded-full bg-brand-dark/5 text-brand-dark text-[8px] font-black uppercase tracking-tighter whitespace-nowrap">
+                {recurrenceLabel}
+              </span>
+            )}
+          </div>
         </div>
         
-        <div className="flex items-center gap-3">
-          <span className={`px-2 py-0.5 rounded-lg border text-[9px] font-bold uppercase tracking-wider ${getPriorityColor(task.priority)}`}>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <span className={`px-2 py-0.5 rounded-lg border text-[9px] font-bold uppercase tracking-wider whitespace-nowrap ${getPriorityColor(task.priority)}`}>
             {task.priority === 'urgent' ? 'Urgente' : task.priority === 'high' ? 'Alta' : task.priority === 'normal' ? 'Normal' : 'Baixa'}
           </span>
           
           {dueDateInfo && !isDone && (
-            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider ${dueDateInfo.color}`}>
+            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider whitespace-nowrap ${dueDateInfo.color}`}>
               <Calendar size={10} />
               {dueDateInfo.label}
             </span>
           )}
 
           {isDone && task.completed_at && (
-            <span className="text-[9px] text-gray-400 font-medium italic">
+            <span className="text-[9px] text-gray-400 font-medium italic whitespace-nowrap">
               Concluído em {dayjs(task.completed_at).format("DD/MM [às] HH:mm")}
             </span>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+      <div className="flex sm:items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all flex-col sm:flex-row ml-auto sm:ml-0 flex-shrink-0">
         <button
           onClick={() => onEdit(task)}
           className="p-2 text-gray-300 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"

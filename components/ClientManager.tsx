@@ -538,20 +538,22 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
       >
         
         {/* Header */}
-        <div className="flex items-center gap-4 mb-10">
-          <button onClick={onBack} className="p-3 rounded-2xl hover:bg-gray-100 text-gray-400 hover:text-brand-dark transition-colors">
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold text-brand-dark tracking-tight">Gerenciar Clientes</h1>
-            <p className="text-sm text-gray-500 mt-1">{clients.length} cliente(s) cadastrado(s)</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 w-full">
+          <div className="flex items-center gap-4">
+            <button onClick={onBack} className="p-3 rounded-2xl hover:bg-gray-100 text-gray-400 hover:text-brand-dark transition-colors">
+              <ArrowLeft size={20} />
+            </button>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-brand-dark tracking-tight">Gerenciar Clientes</h1>
+              <p className="text-sm text-gray-500 mt-1">{clients.length} cliente(s) cadastrado(s)</p>
+            </div>
           </div>
           <button
             onClick={() => {
               if (showForm) resetForm();
               setShowForm(!showForm);
             }}
-            className="ml-auto flex items-center gap-2 px-6 py-3 bg-brand-dark hover:bg-opacity-90 text-white rounded-2xl font-bold text-xs uppercase tracking-widest transition-all shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_30px_rgba(0,0,0,0.15)] hover:-translate-y-0.5"
+            className="flex justify-center items-center gap-2 px-6 py-3 bg-brand-dark hover:bg-opacity-90 text-white rounded-2xl font-bold text-xs uppercase tracking-widest transition-all shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_30px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 w-full sm:w-auto"
           >
             {showForm ? <X size={16} /> : <Plus size={16} />}
             {showForm ? 'Fechar' : 'Novo Cliente'}

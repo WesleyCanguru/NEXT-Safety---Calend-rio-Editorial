@@ -64,7 +64,7 @@ export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSele
               {activeTab === 'financeiro' && <FinanceiroTab />}
               {activeTab === 'clientes' && <ClientesTab onBack={() => onTabChange?.('home')} />}
               {activeTab === 'prospeccao' && (
-                <div className="h-[calc(100vh-8rem)] bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="h-[calc(100vh-8rem)] flex flex-col">
                   <AgencyCRMTab />
                 </div>
               )}

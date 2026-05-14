@@ -341,6 +341,13 @@ export const AgencyContractsTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-brand-dark">Contratos</h2>
+          <p className="text-sm text-gray-500 mt-1">Gerencie os contratos e links enviados aos clientes.</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center">
@@ -383,7 +390,131 @@ export const AgencyContractsTab: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile View */}
+        <div className="block md:hidden p-4 space-y-4 bg-gray-50/30">
+          {clients.map(client => {
+            const isSigned = client.contract?.status === 'signed';
+            const isPending = client.contract?.status === 'pending';
+            const isSubmitted = client.contract?.status === 'submitted';
+            const hasContractForm = !!client.contract;
+
+            const startDate = client.contract?.contract_start_date;
+            const monthlyValue = client.contract?.contract_value || 0;
+            const monthsElapsed = startDate ? calculateMonths(startDate) : 0;
+            const lifetimeValue = Math.max(monthsElapsed, 1) * monthlyValue;
+
+            return (
+              <div key={client.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-brand-dark">{client.name}</h3>
+                    {client.segment && <p className="text-xs text-gray-400">{client.segment}</p>}
+                  </div>
+                  <div>
+                    {isSigned ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-green-50 text-green-600">
+                        <CheckCircle size={12} /> Assinado
+                      </span>
+                    ) : isSubmitted ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600">
+                        <Eye size={12} /> Recebido
+                      </span>
+                    ) : isPending ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-yellow-50 text-yellow-600">
+                        <Clock size={12} /> Aguarda
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-gray-100 text-gray-500">
+                        Sem cont.
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {isSigned && startDate && (
+                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-50 text-sm">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Mensalidade</p>
+                      <p className="font-bold text-brand-dark">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlyValue)}</p>
+                      <p className="text-xs text-gray-500">{formatDuration(startDate)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Estimativa LTV</p>
+                      <p className="font-bold text-gray-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(lifetimeValue)}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-50">
+                  {!hasContractForm && (
+                    <button
+                      onClick={() => handleGenerateLink(client.id)}
+                      className="flex-1 bg-brand-dark text-white py-2 rounded-xl text-xs font-bold hover:bg-brand-dark/90 transition-colors text-center"
+                    >
+                      Gerar Link
+                    </button>
+                  )}
+                  
+                  {isPending && client.contract && (
+                    <>
+                      <button
+                        onClick={() => copyToClipboard(client.contract!.form_token)}
+                        className="flex-1 flex justify-center items-center gap-1.5 py-2 rounded-xl border border-gray-200 text-gray-600 hover:text-brand-dark hover:border-brand-dark transition-colors text-xs font-bold"
+                      >
+                        <Copy size={14} /> Copiar Link
+                      </button>
+                      <button
+                        onClick={() => { setSelectedClient(client); setUploadModalOpen(true); }}
+                        className="flex-1 flex justify-center items-center gap-1.5 bg-gray-50 text-gray-600 border border-gray-200 py-2 rounded-xl text-xs font-bold hover:bg-gray-100 transition-colors"
+                      >
+                        <Upload size={14} /> Fazer upload
+                      </button>
+                    </>
+                  )}
+
+                  {isSubmitted && client.contract && (
+                    <>
+                      <button
+                        onClick={() => { setSelectedClient(client); setViewDataModalOpen(true); }}
+                        className="flex-1 flex justify-center items-center gap-1.5 py-2 rounded-xl border border-brand-dark/20 text-brand-dark hover:bg-brand-dark hover:text-white transition-colors text-xs font-bold"
+                      >
+                        <Eye size={14} /> Ver Dados
+                      </button>
+                      <button
+                        onClick={() => { setSelectedClient(client); setUploadModalOpen(true); }}
+                        className="flex-1 flex justify-center items-center gap-1.5 bg-brand-dark text-white py-2 rounded-xl text-xs font-bold hover:bg-brand-dark/90 transition-colors"
+                      >
+                        <Upload size={14} /> Assinado
+                      </button>
+                    </>
+                  )}
+
+                  {isSigned && client.contract && (
+                    <>
+                      {client.contract.signed_contract_url && (
+                        <button
+                          onClick={() => window.open(client.contract!.signed_contract_url!, '_blank')}
+                          className="flex-1 flex justify-center items-center gap-1.5 py-2 rounded-xl border border-brand-dark text-brand-dark hover:bg-brand-dark hover:text-white transition-colors text-xs font-bold"
+                        >
+                          <FileText size={14} /> Ver PDF
+                        </button>
+                      )}
+                      <button
+                        onClick={() => { setSelectedClient(client); setUploadModalOpen(true); }}
+                        className="flex-1 flex justify-center items-center gap-1.5 bg-gray-50 text-gray-600 border border-gray-200 py-2 rounded-xl text-xs font-bold hover:bg-gray-100 transition-colors"
+                      >
+                        <Upload size={14} /> Substituir
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-gray-50/50 border-b border-gray-100">
               <tr>

@@ -51,14 +51,14 @@ export const LoginScreen: React.FC = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-12 text-center flex flex-col items-center justify-center"
+          className="mb-8 text-center flex flex-col items-center justify-center"
         >
-          <div className="relative mb-8 group">
+          <div className="relative mb-6 group">
             <div className="absolute -inset-4 bg-blue-50/50 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
             <AgencyLogo className="h-28 relative mix-blend-multiply" />
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-1">
             <motion.h1 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -71,9 +71,9 @@ export const LoginScreen: React.FC = () => {
               initial={{ width: 0 }}
               animate={{ width: 40 }}
               transition={{ delay: 0.5, duration: 0.8 }}
-              className="h-0.5 bg-brand-dark mx-auto opacity-20"
+              className="h-0.5 bg-brand-dark mx-auto opacity-20 my-2"
             ></motion.div>
-            <p className="text-gray-400 text-[10px] uppercase tracking-[0.4em] font-bold mt-4">
+            <p className="text-gray-400 text-[10px] uppercase tracking-[0.4em] font-bold">
               Canguru Digital • Gestão & Estratégia
             </p>
           </div>
@@ -89,23 +89,25 @@ export const LoginScreen: React.FC = () => {
           <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
           
           <div className="relative z-10">
-            <div className="text-center mb-10">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[9px] font-bold uppercase tracking-widest mb-6">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[9px] font-bold uppercase tracking-widest mb-4">
                 <Sparkles size={10} />
                 <span>Acesso Exclusivo</span>
               </div>
               
               <p className="text-[15px] text-gray-600 leading-relaxed font-medium max-w-md mx-auto">
                 "O canguru carrega seu filhote em uma bolsa,<br />
-                sempre perto, sempre protegido.<br /><br />
-                <span className="text-brand-dark font-bold">Bolsa é isso:</span> o lugar onde a Canguru Digital guarda tudo da sua marca.<br /><br />
+                sempre perto, sempre protegido.<br />
+                <div className="h-3"></div>
+                <span className="text-brand-dark font-bold">Bolsa é isso:</span> o lugar onde a Canguru Digital guarda tudo da sua marca.<br />
+                <div className="h-3"></div>
                 Estratégia, conteúdo, relatórios e acessos em um só lugar,<br />
                 para você sempre ter o que precisa, quando precisar."
               </p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-6">
-              <div className="space-y-2">
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div className="space-y-1">
                 <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 ml-1">Chave de Acesso</label>
                 <div className="relative group">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-brand-dark transition-colors" size={18} />
@@ -144,7 +146,7 @@ export const LoginScreen: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full bg-brand-dark text-white py-5 rounded-2xl font-bold hover:bg-gray-800 transition-all shadow-xl shadow-brand-dark/10 hover:shadow-2xl hover:shadow-brand-dark/20 transform hover:-translate-y-0.5 flex items-center justify-center gap-3 group ${loading ? 'opacity-80 cursor-wait' : ''}`}
+                className={`w-full bg-brand-dark text-white py-4 rounded-2xl font-bold hover:bg-gray-800 transition-all shadow-xl shadow-brand-dark/10 hover:shadow-2xl hover:shadow-brand-dark/20 transform hover:-translate-y-0.5 flex items-center justify-center gap-3 group ${loading ? 'opacity-80 cursor-wait' : ''}`}
               >
                 {loading ? (
                   <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
@@ -156,7 +158,7 @@ export const LoginScreen: React.FC = () => {
               </button>
             </form>
             
-            <div className="mt-10 pt-8 border-t border-gray-50 flex flex-col items-center gap-4">
+            <div className="mt-8 pt-6 border-t border-gray-50 flex flex-col items-center gap-3">
                {!isAdminMode && (
                  <p className="text-[10px] text-gray-400 font-medium">
                    Precisa de ajuda? Nos chame no grupo de WhatsApp.
@@ -183,7 +185,7 @@ export const LoginScreen: React.FC = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1, duration: 1 }}
-          className="mt-12 text-center space-y-4"
+          className="mt-8 text-center space-y-3"
         >
           <p className="text-[10px] text-gray-300 uppercase tracking-[0.4em] font-bold">
             Ambiente Seguro • Canguru Digital 2026

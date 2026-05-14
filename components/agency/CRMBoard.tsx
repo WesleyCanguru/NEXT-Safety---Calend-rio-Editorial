@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, LayoutGrid, List } from 'lucide-react';
 import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { AgencyCRM, AgencyLead } from '../../types';
@@ -21,6 +21,16 @@ export const CRMBoard: React.FC<CRMBoardProps> = ({ crm }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [lossReasonModal, setLossReasonModal] = useState<{ isOpen: boolean; lead: AgencyLead | null; newStage: string }>({ isOpen: false, lead: null, newStage: '' });
   const [lossReason, setLossReason] = useState('');
+
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>(() => {
+    const saved = localStorage.getItem('agency_crm_view_mode_v2');
+    if (saved === 'kanban' || saved === 'list') return saved;
+    return typeof window !== 'undefined' && window.innerWidth < 768 ? 'list' : 'kanban';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('agency_crm_view_mode_v2', viewMode);
+  }, [viewMode]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -106,8 +116,8 @@ export const CRMBoard: React.FC<CRMBoardProps> = ({ crm }) => {
   return (
     <div className="h-full flex flex-col">
       {/* Board Header */}
-      <div className="px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0">
-        <div className="relative w-64">
+      <div className="px-4 sm:px-6 py-4 bg-white border-b border-gray-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between shrink-0 gap-4">
+        <div className="relative w-full sm:w-64">
           <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -117,75 +127,149 @@ export const CRMBoard: React.FC<CRMBoardProps> = ({ crm }) => {
             className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all"
           />
         </div>
-        <button
-          onClick={() => {
-            setSelectedLead(null);
-            setIsNewLeadModalOpen(true);
-          }}
-          className="flex items-center gap-2 bg-brand-dark text-white px-4 py-2 rounded-lg hover:bg-brand-dark/90 transition-colors text-sm font-medium shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Lead
-        </button>
+        
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="flex bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setViewMode('kanban')}
+              className={`p-1.5 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white shadow-sm text-brand-dark' : 'text-gray-400 hover:text-gray-600'}`}
+              title="Visualização Kanban"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-brand-dark' : 'text-gray-400 hover:text-gray-600'}`}
+              title="Visualização em Lista"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+          
+          <button
+            onClick={() => {
+              setSelectedLead(null);
+              setIsNewLeadModalOpen(true);
+            }}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:shadow-xl transition-all transform hover:-translate-y-1 w-full sm:w-auto"
+          >
+            <Plus size={18} />
+            <span>Novo Lead</span>
+          </button>
+        </div>
       </div>
 
-      {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="flex gap-6 h-full items-start">
-            {crm.kanban_stages.map(stage => {
-              const stageLeads = getLeadsByStage(stage.name);
-              return (
-                <div key={stage.id} className="flex-shrink-0 w-80 flex flex-col max-h-full bg-gray-100/50 rounded-2xl border border-gray-200/60">
-                  {/* Column Header */}
-                  <div className="p-4 flex items-center justify-between shrink-0 border-b border-gray-200/60 bg-white/50 rounded-t-2xl">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: stage.color }} />
-                      <h3 className="font-bold text-gray-800">{stage.name}</h3>
+      {/* Board Content */}
+      <div className={`flex-1 ${viewMode === 'kanban' ? 'overflow-x-auto overflow-y-hidden' : 'overflow-y-auto'} p-4 sm:p-6 bg-gray-50/30`}>
+        {viewMode === 'kanban' ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="flex gap-6 h-full items-start">
+              {crm.kanban_stages.map(stage => {
+                const stageLeads = getLeadsByStage(stage.name);
+                return (
+                  <div key={stage.id} className="flex-shrink-0 w-80 flex flex-col max-h-full bg-gray-100/50 rounded-2xl border border-gray-200/60">
+                    {/* Column Header */}
+                    <div className="p-4 flex items-center justify-between shrink-0 border-b border-gray-200/60 bg-white/50 rounded-t-2xl">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: stage.color }} />
+                        <h3 className="font-bold text-gray-800">{stage.name}</h3>
+                      </div>
+                      <span className="bg-white text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm border border-gray-100">
+                        {stageLeads.length}
+                      </span>
                     </div>
-                    <span className="bg-white text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm border border-gray-100">
-                      {stageLeads.length}
-                    </span>
-                  </div>
 
-                  {/* Column Content */}
-                  <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-[150px]" id={stage.name}>
-                    <SortableContext
-                      id={stage.name}
-                      items={stageLeads.map(l => l.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {stageLeads.map(lead => (
-                        <SortableLeadCard
-                          key={lead.id}
-                          lead={lead}
-                          crm={crm}
-                          onClick={() => {
-                            setSelectedLead(lead);
-                            setIsModalOpen(true);
-                          }}
-                        />
-                      ))}
-                    </SortableContext>
+                    {/* Column Content */}
+                    <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-[150px]" id={stage.name}>
+                      <SortableContext
+                        id={stage.name}
+                        items={stageLeads.map(l => l.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        {stageLeads.map(lead => (
+                          <SortableLeadCard
+                            key={lead.id}
+                            lead={lead}
+                            crm={crm}
+                            onClick={() => {
+                              setSelectedLead(lead);
+                              setIsModalOpen(true);
+                            }}
+                          />
+                        ))}
+                      </SortableContext>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <DragOverlay>
+              {activeLead ? (
+                <div className="opacity-80 rotate-2 scale-105 transition-transform cursor-grabbing">
+                  <CRMLeadCard lead={activeLead} crm={crm} onClick={() => {}} />
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        ) : (
+          <div className="max-w-4xl mx-auto space-y-4 pb-20">
+            {filteredLeads.length === 0 ? (
+               <div className="p-8 text-center bg-white rounded-2xl border border-gray-200/60 shadow-sm">
+                  <p className="text-gray-500 font-medium">Nenhum lead encontrado.</p>
+               </div>
+            ) : null}
+            {filteredLeads.map(lead => {
+              const primaryField = crm.form_fields.find(f => lead.form_data[f.key]);
+              const primaryValue = primaryField ? lead.form_data[primaryField.key] : null;
+              
+              const isOverdue = lead.next_stage_at && new Date(lead.next_stage_at).getTime() < new Date().getTime();
+
+              return (
+                <div 
+                  key={lead.id}
+                  onClick={() => {
+                    setSelectedLead(lead);
+                    setIsModalOpen(true);
+                  }} 
+                  className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-gray-200 hover:border-brand-dark/30 hover:shadow-md transition-all cursor-pointer group flex flex-col sm:flex-row sm:items-center gap-4"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-bold text-gray-900 text-base">{lead.name}</h4>
+                    </div>
+                    {primaryValue && (
+                      <div className="text-sm text-gray-500 line-clamp-1">
+                        <span className="font-medium text-gray-600">{primaryField?.label}:</span> {String(primaryValue)}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-3 sm:w-auto">
+                    <div className="text-xs font-bold px-2.5 py-1 bg-gray-100 text-gray-600 rounded-md">
+                      {lead.stage}
+                    </div>
+                    
+                    {lead.next_stage_at && !lead.auto_advance_paused && (
+                      <div className={`text-[10px] font-bold px-2.5 py-1 rounded-md border ${isOverdue ? 'text-red-700 bg-red-50 border-red-100' : 'text-blue-700 bg-blue-50 border-blue-100'}`}>
+                        {isOverdue ? 'Atrasado' : 'No prazo'}
+                      </div>
+                    )}
+                    
+                    <div className="text-[11px] text-gray-400 font-medium">
+                      {new Date(lead.created_at).toLocaleDateString()}
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
-
-          <DragOverlay>
-            {activeLead ? (
-              <div className="opacity-80 rotate-2 scale-105 transition-transform cursor-grabbing">
-                <CRMLeadCard lead={activeLead} crm={crm} onClick={() => {}} />
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+        )}
       </div>
 
       {/* Modals */}

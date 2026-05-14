@@ -160,12 +160,10 @@ export const OnboardingTab: React.FC<{ onNavigateToClients: (client: Client) => 
 
   return (
     <div className="p-4 sm:p-8 max-w-7xl mx-auto flex flex-col gap-8 pb-32">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-black text-brand-dark tracking-tight flex items-center gap-3">
-            <Target className="w-8 h-8 text-[#00E5FF]" /> Onboarding
-          </h2>
-          <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mt-2">Visão geral do embarque de clientes</p>
+          <h2 className="text-2xl font-bold text-brand-dark">Onboarding de Clientes</h2>
+          <p className="text-sm text-gray-500 mt-1">Acompanhe a entrada de clientes e envio de formulários.</p>
         </div>
       </div>
 
@@ -202,7 +200,135 @@ export const OnboardingTab: React.FC<{ onNavigateToClients: (client: Client) => 
       </div>
 
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile View */}
+        <div className="block md:hidden p-4 space-y-4 bg-gray-50/30">
+          {clients.map((client) => {
+            const contractStatus = client.contract?.status || 'none';
+            
+            const requiredTypes = new Set<string>();
+            (client.services || []).forEach(service => {
+              const types = SERVICE_TO_BRIEFINGS[service] || [];
+              types.forEach(t => requiredTypes.add(t));
+            });
+            
+            const expectedBriefings = requiredTypes.size;
+            const completedBriefings = client.briefings?.filter(b => requiredTypes.has(b.briefing_type) && b.is_completed).length || 0;
+            
+            let totalChecklist = 0;
+            let completedChecklist = 0;
+
+            if (client.onboarding && client.onboarding.steps) {
+              totalChecklist = client.onboarding.steps.length;
+              completedChecklist = client.onboarding.steps.filter((s: any) => s.completed).length;
+            } else {
+              const serviceExtraSteps = (client.services || []).reduce((acc: number, s: string) => {
+                if (s === 'Social Media') return acc + 4;
+                if (s === 'Tráfego Pago') return acc + 6;
+                if (s.includes('Site')) return acc + 4;
+                if (s === 'Identidade Visual') return acc + 3;
+                if (s === 'Papelaria') return acc + 3;
+                if (s === 'Email Marketing') return acc + 3;
+                return acc;
+              }, 0);
+              totalChecklist = 7 + serviceExtraSteps;
+              completedChecklist = 0;
+            }
+
+            const checklistPercentage = totalChecklist > 0 ? (completedChecklist / totalChecklist) * 100 : 0;
+
+            return (
+              <div key={client.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-4 relative">
+                <button 
+                  onClick={() => setSelectedClientId(client.id)}
+                  className="absolute right-4 top-4 p-2 text-gray-400 hover:text-brand-dark bg-gray-50 hover:bg-gray-100 rounded-xl transition-all"
+                >
+                  <ChevronRight size={18} />
+                </button>
+                
+                <div className="flex items-center gap-3 pr-10">
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0"
+                    style={{ backgroundColor: client.color }}
+                  >
+                    {client.initials}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-gray-900 truncate">{client.name}</p>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-widest truncate">{client.segment || 'Sem segmento'}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1">
+                  {client.services?.map(service => (
+                    <span key={service} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[9px] font-bold uppercase tracking-wider whitespace-nowrap">
+                      {service}
+                    </span>
+                  ))}
+                  {(!client.services || client.services.length === 0) && (
+                    <span className="text-[10px] text-gray-400 italic">Nenhum serviço</span>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-50">
+                  <div>
+                    <span className="text-[9px] uppercase tracking-widest font-bold text-gray-400 block mb-1.5">Contrato</span>
+                    {contractStatus === 'signed' ? (
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-600 rounded-lg text-[9px] font-bold uppercase tracking-widest">
+                        <Check size={10} /> Assinado
+                      </div>
+                    ) : contractStatus === 'submitted' ? (
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-bold uppercase tracking-widest">
+                        <FileText size={10} /> Recebido
+                      </div>
+                    ) : contractStatus === 'pending' ? (
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-yellow-50 text-yellow-600 rounded-lg text-[9px] font-bold uppercase tracking-widest">
+                        <Clock size={10} /> Aguarda
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 text-gray-500 rounded-lg text-[9px] font-bold uppercase tracking-widest">
+                        Sem
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-[9px] uppercase tracking-widest font-bold text-gray-400 block mb-1.5">Briefings</span>
+                    <button 
+                      onClick={() => setViewingBriefingsClient(client)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-colors ${
+                        expectedBriefings === 0 ? 'bg-gray-50 text-gray-500' :
+                        completedBriefings === expectedBriefings ? 'bg-green-50 text-green-600' :
+                        completedBriefings > 0 ? 'bg-yellow-50 text-yellow-600' : 'bg-red-50 text-red-600'
+                      }`}
+                    >
+                      {completedBriefings} / {expectedBriefings}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-gray-50">
+                  <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">
+                    <span>Checklist Interno</span>
+                    <span className="text-brand-dark">{completedChecklist} / {totalChecklist} ({Math.round(checklistPercentage)}%)</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-brand-dark rounded-full transition-all duration-500"
+                      style={{ width: `${checklistPercentage}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {clients.length === 0 && (
+            <div className="p-8 text-center bg-white rounded-2xl">
+              <p className="text-gray-500 font-medium text-sm">Nenhum cliente encomendado ainda.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50">
