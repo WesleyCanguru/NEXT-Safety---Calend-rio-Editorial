@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -8,35 +7,23 @@ import {
   Circle, 
   AlertCircle, 
   Calendar, 
-  Clock, 
   ChevronRight,
+  ChevronDown,
   Search,
   Filter,
   MoreVertical,
   X,
   Check,
   Edit2,
-  GripVertical
+  Image as ImageIcon,
+  Video,
+  Megaphone,
+  BarChart3,
+  Clock,
+  Briefcase
 } from 'lucide-react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { supabase } from '../../lib/supabase';
-import { AgencyTask, AgencyTaskPriority, AgencyTaskRecurrenceType } from '../../types';
+import { AgencyTask, AgencyTaskPriority, AgencyTaskRecurrenceType, ProcessInstance, ProcessChecklist } from '../../types';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -48,526 +35,489 @@ dayjs.extend(isToday);
 dayjs.extend(isTomorrow);
 dayjs.locale('pt-br');
 
-const WEEK_DAYS = [
-  { id: 0, label: 'Dom' },
-  { id: 1, label: 'Seg' },
-  { id: 2, label: 'Ter' },
-  { id: 3, label: 'Qua' },
-  { id: 4, label: 'Qui' },
-  { id: 5, label: 'Sex' },
-  { id: 6, label: 'Sáb' },
+const PROCESS_TYPES = [
+  { id: 'carrossel', name: 'Carrossel', icon: ImageIcon, color: 'text-purple-500 bg-purple-50 border-purple-100' },
+  { id: 'reels', name: 'Reels', icon: Video, color: 'text-pink-500 bg-pink-50 border-pink-100' },
+  { id: 'meta_ads', name: 'Campanha Meta Ads', icon: Megaphone, color: 'text-blue-500 bg-blue-50 border-blue-100' },
+  { id: 'google_ads', name: 'Campanha Google Ads', icon: Search, color: 'text-green-500 bg-green-50 border-green-100' },
+  { id: 'report', name: 'Relatório Mensal', icon: BarChart3, color: 'text-orange-500 bg-orange-50 border-orange-100' },
 ];
 
 export const AgencyTasksTab: React.FC = () => {
-  const [tasks, setTasks] = useState<AgencyTask[]>([]);
-  const [clients, setClients] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [debugError, setDebugError] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'hoje' | 'processos' | 'todas'>('hoje');
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [isAddingProcess, setIsAddingProcess] = useState(false);
   const [editingTask, setEditingTask] = useState<AgencyTask | null>(null);
-  const [filterClient, setFilterClient] = useState<string>('all');
-  const [newTask, setNewTask] = useState({
-    title: '',
-    client_id: '' as string | null,
-    priority: 'normal' as AgencyTaskPriority,
-    recurrence_type: 'none' as AgencyTaskRecurrenceType,
-    recurrence_days: [] as number[],
-    due_date: ''
-  });
+  const [clients, setClients] = useState<any[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    fetchTasks();
     fetchClients();
   }, []);
 
   const fetchClients = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('id, name, color, initials')
-        .order('name');
-      if (error) throw error;
-      setClients(data || []);
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-    }
+    const { data } = await supabase.from('clients').select('id, name, color, initials').order('name');
+    if (data) setClients(data);
   };
 
-  const fetchTasks = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('agency_tasks')
-        .select('*, client:clients(id, name, color, initials)')
-        .order('status', { ascending: true })
-        .order('priority', { ascending: false }) // Urgent first
-        .order('due_date', { ascending: true, nullsFirst: false });
-
-      if (error) { setDebugError(JSON.stringify(error)); throw error; }
-      setTasks(data || []);
-    } catch (error: any) {
-      console.error('Error fetching tasks:', error);
-      setDebugError(error.message || String(error));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTask.title.trim()) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('agency_tasks')
-        .insert([{
-          title: newTask.title,
-          client_id: newTask.client_id || null,
-          priority: newTask.priority,
-          recurrence_type: newTask.recurrence_type,
-          recurrence_days: newTask.recurrence_type === 'custom_days' ? newTask.recurrence_days : null,
-          is_daily: newTask.recurrence_type === 'daily',
-          due_date: newTask.due_date || null,
-          status: 'pending'
-        }])
-        .select();
-
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        setTasks(prev => [data[0], ...prev]);
-      }
-      setIsAddingTask(false);
-      setNewTask({ title: '', client_id: '', priority: 'normal', recurrence_type: 'none', recurrence_days: [], due_date: '' });
-      fetchTasks(); // Refresh to ensure correct ordering
-    } catch (error: any) {
-      console.error('Error adding task:', error);
-      alert(`Erro ao salvar tarefa: ${error.message || 'Erro desconhecido'}. \n\nCertifique-se de que rodou o SQL para adicionar as novas colunas no Supabase.`);
-    }
-  };
-
-  const handleEditTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingTask || !editingTask.title.trim()) return;
-
-    try {
-      const { error } = await supabase
-        .from('agency_tasks')
-        .update({
-          title: editingTask.title,
-          client_id: editingTask.client_id || null,
-          priority: editingTask.priority,
-          recurrence_type: editingTask.recurrence_type,
-          recurrence_days: editingTask.recurrence_type === 'custom_days' ? editingTask.recurrence_days : null,
-          is_daily: editingTask.recurrence_type === 'daily',
-          due_date: editingTask.due_date || null,
-        })
-        .eq('id', editingTask.id);
-
-      if (error) throw error;
-      
-      setEditingTask(null);
-      fetchTasks(); // Refresh to ensure correct ordering
-    } catch (error: any) {
-      console.error('Error updating task:', error);
-      alert(`Erro ao atualizar tarefa: ${error.message || 'Erro desconhecido'}.`);
-    }
-  };
-
-  const toggleTaskStatus = async (task: AgencyTask) => {
-    const newStatus = task.status === 'done' ? 'pending' : 'done';
-    const completedAt = newStatus === 'done' ? new Date().toISOString() : null;
-
-    try {
-      const { error } = await supabase
-        .from('agency_tasks')
-        .update({ 
-          status: newStatus,
-          completed_at: completedAt
-        })
-        .eq('id', task.id);
-
-      if (error) throw error;
-
-      setTasks(prev => prev.map(t => 
-        t.id === task.id ? { ...t, status: newStatus, completed_at: completedAt } : t
-      ));
-    } catch (error) {
-      console.error('Error updating task:', error);
-    }
-  };
-
-  const deleteTask = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('agency_tasks')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      setTasks(prev => prev.filter(t => t.id !== id));
-    } catch (error) {
-      console.error('Error deleting task:', error);
-    }
-  };
-
-  const getPriorityColor = (priority: AgencyTaskPriority) => {
-    switch (priority) {
-      case 'urgent': return 'text-red-500 bg-red-50 border-red-100';
-      case 'high': return 'text-orange-500 bg-orange-50 border-orange-100';
-      case 'normal': return 'text-blue-500 bg-blue-50 border-blue-100';
-      case 'low': return 'text-gray-500 bg-gray-50 border-gray-100';
-      default: return 'text-gray-500 bg-gray-50 border-gray-100';
-    }
-  };
-
-  const getDueDateLabel = (dateStr: string | null | undefined) => {
-    if (!dateStr) return null;
-    const date = dayjs(dateStr);
-    if (date.isToday()) return { label: 'Hoje', color: 'text-orange-600 bg-orange-50' };
-    if (date.isTomorrow()) return { label: 'Amanhã', color: 'text-blue-600 bg-blue-50' };
-    if (date.isBefore(dayjs(), 'day')) return { label: 'Atrasado', color: 'text-red-600 bg-red-50' };
-    return { label: date.format('DD [de] MMM'), color: 'text-gray-600 bg-gray-50' };
-  };
-
-  const filteredTasks = tasks.filter(t => {
-    if (filterClient === 'all') return true;
-    if (filterClient === 'internal') return !t.client_id;
-    return t.client_id === filterClient;
-  });
-
-  const urgentTasks = filteredTasks.filter(t => t.priority === 'urgent' && t.status === 'pending').sort((a, b) => (a.position || 0) - (b.position || 0));
-  const recurringTasks = filteredTasks.filter(t => t.recurrence_type !== 'none' && t.status === 'pending').sort((a, b) => (a.position || 0) - (b.position || 0));
-  const otherTasks = filteredTasks.filter(t => t.priority !== 'urgent' && t.recurrence_type === 'none' && t.status === 'pending').sort((a, b) => (a.position || 0) - (b.position || 0));
-  const completedTasks = filteredTasks.filter(t => t.status === 'done').sort((a, b) => (a.position || 0) - (b.position || 0));
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const onDragEnd = async (event: DragEndEvent, taskGroup: AgencyTask[]) => {
-    const { active, over } = event;
-    
-    if (over && active.id !== over.id) {
-      const oldIndex = taskGroup.findIndex(t => t.id === active.id);
-      const newIndex = taskGroup.findIndex(t => t.id === over.id);
-      
-      const reordered = arrayMove(taskGroup, oldIndex, newIndex);
-      
-      const updatedTasks = [...tasks];
-      const updatesToDb: any[] = [];
-
-      reordered.forEach((task, index) => {
-        const taskIndex = updatedTasks.findIndex(t => t.id === task.id);
-        if (taskIndex !== -1) {
-          updatedTasks[taskIndex] = { ...updatedTasks[taskIndex], position: index };
-          updatesToDb.push({ id: task.id, position: index });
-        }
-      });
-      
-      setTasks(updatedTasks);
-
-      for (const update of updatesToDb) {
-        await supabase
-          .from('agency_tasks')
-          .update({ position: update.position })
-          .eq('id', update.id);
-      }
-    }
-  };
-
-  const toggleDay = (dayId: number) => {
-    setNewTask(prev => ({
-      ...prev,
-      recurrence_days: prev.recurrence_days.includes(dayId)
-        ? prev.recurrence_days.filter(d => d !== dayId)
-        : [...prev.recurrence_days, dayId]
-    }));
-  };
-
-  const toggleDayEdit = (dayId: number) => {
-    if (!editingTask) return;
-    setEditingTask(prev => {
-      if (!prev) return prev;
-      const currentDays = prev.recurrence_days || [];
-      return {
-        ...prev,
-        recurrence_days: currentDays.includes(dayId)
-          ? currentDays.filter(d => d !== dayId)
-          : [...currentDays, dayId]
-      };
-    });
-  };
+  const triggerRefresh = () => setRefreshKey(k => k + 1);
 
   return (
-    <div className="space-y-8">
-      {/* Header with Add Button */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-brand-dark">Processos & Tarefas</h2>
-          <p className="text-sm text-gray-500">Gerencie as atividades diárias e urgentes da agência.</p>
+    <div className="space-y-6">
+      {/* Header and Actions */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 border-b border-gray-100 pb-4">
+        <div className="flex gap-6 overflow-x-auto hide-scrollbar">
+          <button 
+            onClick={() => setActiveTab('hoje')}
+            className={`pb-4 text-sm font-bold uppercase tracking-widest transition-colors relative whitespace-nowrap ${activeTab === 'hoje' ? 'text-brand-dark' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Hoje
+            {activeTab === 'hoje' && <motion.div layoutId="taskTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-dark" />}
+          </button>
+          <button 
+            onClick={() => setActiveTab('processos')}
+            className={`pb-4 text-sm font-bold uppercase tracking-widest transition-colors relative whitespace-nowrap ${activeTab === 'processos' ? 'text-brand-dark' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Processos
+            {activeTab === 'processos' && <motion.div layoutId="taskTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-dark" />}
+          </button>
+          <button 
+            onClick={() => setActiveTab('todas')}
+            className={`pb-4 text-sm font-bold uppercase tracking-widest transition-colors relative whitespace-nowrap ${activeTab === 'todas' ? 'text-brand-dark' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Todas as Tarefas
+            {activeTab === 'todas' && <motion.div layoutId="taskTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-dark" />}
+          </button>
         </div>
-        <button
-          onClick={() => setIsAddingTask(true)}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:shadow-xl transition-all transform hover:-translate-y-1 w-full sm:w-auto"
-        >
-          <Plus size={18} />
-          <span>Nova Tarefa</span>
-        </button>
+
+        <div className="flex gap-3 pb-2">
+          {activeTab === 'processos' ? (
+            <button
+              onClick={() => setIsAddingProcess(true)}
+              className="flex items-center gap-2 px-6 py-2.5 bg-brand-dark text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:shadow-lg transition-all whitespace-nowrap"
+            >
+              <Plus size={16} /> Iniciar Processo
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => setIsAddingProcess(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-brand-dark/5 text-brand-dark rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-brand-dark/10 transition-all whitespace-nowrap"
+              >
+                + Processo
+              </button>
+              <button
+                onClick={() => { setEditingTask(null); setIsAddingTask(true); }}
+                className="flex items-center gap-2 px-6 py-2.5 bg-brand-dark text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:shadow-lg transition-all whitespace-nowrap"
+              >
+                <Plus size={16} /> Nova Tarefa
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Add Task Modal/Form */}
+      {activeTab === 'hoje' && <HojeTasks key={`hoje-${refreshKey}`} clients={clients} onEditTask={(t) => { setEditingTask(t); setIsAddingTask(true); }} onRefresh={triggerRefresh} />}
+      {activeTab === 'processos' && <ProcessosView key={`proc-${refreshKey}`} clients={clients} />}
+      {activeTab === 'todas' && <TodasTasks key={`todas-${refreshKey}`} clients={clients} onEditTask={(t) => { setEditingTask(t); setIsAddingTask(true); }} onRefresh={triggerRefresh} />}
+
+      {/* Drawer Nova/Editar Tarefa */}
       <AnimatePresence>
         {isAddingTask && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brand-dark/20 backdrop-blur-sm"
-          >
-            <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl border border-black/[0.05] max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-brand-dark">Cadastrar Tarefa</h3>
-                <button onClick={() => setIsAddingTask(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
-                  <X size={20} className="text-gray-400" />
-                </button>
-              </div>
-
-              <form onSubmit={handleAddTask} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Cliente / Projeto</label>
-                  <select
-                    value={newTask.client_id || ''}
-                    onChange={e => setNewTask({ ...newTask, client_id: e.target.value || null })}
-                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all appearance-none"
-                  >
-                    <option value="">Canguru Digital (Interno)</option>
-                    {clients.map(client => (
-                      <option key={client.id} value={client.id}>{client.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Título da Tarefa</label>
-                  <input
-                    autoFocus
-                    type="text"
-                    value={newTask.title}
-                    onChange={e => setNewTask({ ...newTask, title: e.target.value })}
-                    placeholder="Ex: Checar contas de anúncios"
-                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Prioridade</label>
-                    <select
-                      value={newTask.priority}
-                      onChange={e => setNewTask({ ...newTask, priority: e.target.value as AgencyTaskPriority })}
-                      className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all appearance-none"
-                    >
-                      <option value="low">Baixa</option>
-                      <option value="normal">Normal</option>
-                      <option value="high">Alta</option>
-                      <option value="urgent">Urgente</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Data Limite</label>
-                    <input
-                      type="date"
-                      value={newTask.due_date}
-                      onChange={e => setNewTask({ ...newTask, due_date: e.target.value })}
-                      className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Repetição</label>
-                    <select
-                      value={newTask.recurrence_type}
-                      onChange={e => setNewTask({ ...newTask, recurrence_type: e.target.value as AgencyTaskRecurrenceType })}
-                      className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all appearance-none"
-                    >
-                      <option value="none">Nenhuma</option>
-                      <option value="daily">Diária</option>
-                      <option value="weekly">Semanal</option>
-                      <option value="monthly">Mensal</option>
-                      <option value="custom_days">Dias Específicos</option>
-                    </select>
-                  </div>
-
-                  {newTask.recurrence_type === 'custom_days' && (
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Dias da Semana</label>
-                      <div className="flex flex-wrap gap-2">
-                        {WEEK_DAYS.map(day => (
-                          <button
-                            key={day.id}
-                            type="button"
-                            onClick={() => toggleDay(day.id)}
-                            className={`
-                              px-3 py-2 rounded-xl text-[10px] font-bold uppercase transition-all border
-                              ${newTask.recurrence_days.includes(day.id)
-                                ? 'bg-brand-dark border-brand-dark text-white'
-                                : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-brand-dark/20'
-                              }
-                            `}
-                          >
-                            {day.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-4 bg-brand-dark text-white rounded-2xl font-bold uppercase tracking-widest hover:shadow-xl transition-all transform hover:-translate-y-1"
-                >
-                  Salvar Tarefa
-                </button>
-              </form>
-            </div>
-          </motion.div>
+          <TaskFormDrawer 
+            clients={clients} 
+            task={editingTask}
+            onClose={() => { setIsAddingTask(false); setEditingTask(null); }} 
+            onSuccess={() => { setIsAddingTask(false); setEditingTask(null); triggerRefresh(); }}
+          />
         )}
       </AnimatePresence>
 
-      {/* Edit Task Modal/Form */}
       <AnimatePresence>
-        {editingTask && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brand-dark/20 backdrop-blur-sm"
-          >
-            <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl border border-black/[0.05] max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-brand-dark">Editar Tarefa</h3>
-                <button onClick={() => setEditingTask(null)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
-                  <X size={20} className="text-gray-400" />
-                </button>
-              </div>
-
-              <form onSubmit={handleEditTask} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Cliente / Projeto</label>
-                  <select
-                    value={editingTask.client_id || ''}
-                    onChange={e => setEditingTask({ ...editingTask, client_id: e.target.value || null })}
-                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all appearance-none"
-                  >
-                    <option value="">Canguru Digital (Interno)</option>
-                    {clients.map(client => (
-                      <option key={client.id} value={client.id}>{client.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Título da Tarefa</label>
-                  <input
-                    autoFocus
-                    type="text"
-                    value={editingTask.title}
-                    onChange={e => setEditingTask({ ...editingTask, title: e.target.value })}
-                    placeholder="Ex: Checar contas de anúncios"
-                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Prioridade</label>
-                    <select
-                      value={editingTask.priority}
-                      onChange={e => setEditingTask({ ...editingTask, priority: e.target.value as AgencyTaskPriority })}
-                      className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all appearance-none"
-                    >
-                      <option value="low">Baixa</option>
-                      <option value="normal">Normal</option>
-                      <option value="high">Alta</option>
-                      <option value="urgent">Urgente</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Data Limite</label>
-                    <input
-                      type="date"
-                      value={editingTask.due_date || ''}
-                      onChange={e => setEditingTask({ ...editingTask, due_date: e.target.value })}
-                      className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Repetição</label>
-                    <select
-                      value={editingTask.recurrence_type}
-                      onChange={e => setEditingTask({ ...editingTask, recurrence_type: e.target.value as AgencyTaskRecurrenceType })}
-                      className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-brand-dark/10 text-brand-dark font-medium transition-all appearance-none"
-                    >
-                      <option value="none">Nenhuma</option>
-                      <option value="daily">Diária</option>
-                      <option value="weekly">Semanal</option>
-                      <option value="monthly">Mensal</option>
-                      <option value="custom_days">Dias Específicos</option>
-                    </select>
-                  </div>
-
-                  {editingTask.recurrence_type === 'custom_days' && (
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Dias da Semana</label>
-                      <div className="flex flex-wrap gap-2">
-                        {WEEK_DAYS.map(day => (
-                          <button
-                            key={day.id}
-                            type="button"
-                            onClick={() => toggleDayEdit(day.id)}
-                            className={`
-                              px-3 py-2 rounded-xl text-[10px] font-bold uppercase transition-all border
-                              ${(editingTask.recurrence_days || []).includes(day.id)
-                                ? 'bg-brand-dark border-brand-dark text-white'
-                                : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-brand-dark/20'
-                              }
-                            `}
-                          >
-                            {day.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-4 bg-brand-dark text-white rounded-2xl font-bold uppercase tracking-widest hover:shadow-xl transition-all transform hover:-translate-y-1"
-                >
-                  Salvar Alterações
-                </button>
-              </form>
-            </div>
-          </motion.div>
+        {isAddingProcess && (
+          <ProcessFormModal 
+            clients={clients} 
+            onClose={() => setIsAddingProcess(false)}
+            onSuccess={() => { setIsAddingProcess(false); triggerRefresh(); }}
+          />
         )}
       </AnimatePresence>
+    </div>
+  );
+};
 
-      {/* Filter and Task Lists */}
+// ==========================================
+// ABA 1: HOJE
+// ==========================================
+const HojeTasks: React.FC<{ clients: any[], onEditTask: (t: AgencyTask) => void, onRefresh: () => void }> = ({ clients, onEditTask, onRefresh }) => {
+  const [tasks, setTasks] = useState<AgencyTask[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const fetchTasks = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('agency_tasks')
+      .select('*, client:clients(id, name, color, initials)')
+      .eq('status', 'pending')
+      .or('due_date.lte.' + dayjs().format('YYYY-MM-DD') + ',priority.eq.urgente');
+
+    if (data) {
+      // Sort in JS instead of the complex SQL order since its easier
+      const priorityOrder = { urgente: 1, alta: 2, normal: 3, baixa: 4 };
+      const sorted = data.sort((a, b) => {
+        const p1 = priorityOrder[a.priority as keyof typeof priorityOrder] || 3;
+        const p2 = priorityOrder[b.priority as keyof typeof priorityOrder] || 3;
+        if (p1 !== p2) return p1 - p2;
+        if (a.due_date === b.due_date) return 0;
+        if (!a.due_date) return 1;
+        if (!b.due_date) return -1;
+        return a.due_date.localeCompare(b.due_date);
+      });
+      setTasks(sorted);
+    }
+    setLoading(false);
+  };
+
+  const toggleStatus = async (task: AgencyTask) => {
+    const newStatus = task.status === 'completed' ? 'pending' : 'completed';
+    await supabase.from('agency_tasks').update({ status: newStatus, completed_at: newStatus === 'completed' ? new Date().toISOString() : null }).eq('id', task.id);
+    onRefresh();
+  };
+
+  if (loading) return <div className="text-gray-400 text-sm">Carregando...</div>;
+
+  if (tasks.length === 0) {
+    return (
+      <div className="bg-brand-dark/5 rounded-3xl p-10 flex flex-col items-center justify-center text-center border border-brand-dark/10 gap-4">
+        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-green-500 shadow-sm border border-black/5">
+          <CheckCircle2 size={32} />
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-brand-dark">Tudo tranquilo!</h3>
+          <p className="text-gray-500 mt-1">Nada urgente ou atrasado por hoje. ✓</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {tasks.map(task => (
+        <TaskListItem key={task.id} task={task} onToggle={() => toggleStatus(task)} onEdit={() => onEditTask(task)} />
+      ))}
+    </div>
+  );
+};
+
+// ==========================================
+// ABA 2: PROCESSOS
+// ==========================================
+const ProcessosView: React.FC<{ clients: any[] }> = ({ clients }) => {
+  const [instances, setInstances] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedProcess, setSelectedProcess] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (!selectedProcess) fetchInstances();
+  }, [selectedProcess]);
+
+  const fetchInstances = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('process_instances')
+      .select('*, client:clients(id, name, color, initials), process_checklist(*)')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      const formatted = data.map(pi => {
+        const itensPrincipais = pi.process_checklist?.filter((c: any) => !c.parent_id) || [];
+        const concluidas = itensPrincipais.filter((c: any) => c.is_completed).length;
+        return {
+          ...pi,
+          total_etapas: itensPrincipais.length,
+          etapas_concluidas: concluidas,
+          itens_principais: itensPrincipais
+        };
+      });
+      setInstances(formatted);
+    }
+    setLoading(false);
+  };
+
+  if (selectedProcess) {
+    return (
+      <ProcessChecklistView 
+        process={selectedProcess} 
+        onBack={() => { setSelectedProcess(null); }} 
+      />
+    );
+  }
+
+  if (loading) return <div className="text-gray-400 text-sm">Carregando processos...</div>;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {instances.map(process => {
+        const typeInfo = PROCESS_TYPES.find(t => t.id === process.process_type) || PROCESS_TYPES[0];
+        const Icon = typeInfo.icon;
+        const progress = process.total_etapas > 0 ? (process.etapas_concluidas / process.total_etapas) * 100 : 0;
+        
+        return (
+          <div 
+            key={process.id} 
+            onClick={() => setSelectedProcess(process)}
+            className="bg-white border border-gray-100 rounded-3xl p-6 cursor-pointer hover:shadow-lg hover:border-brand-dark/20 transition-all group"
+          >
+           <div className="flex items-start justify-between mb-4">
+             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${typeInfo.color}`}>
+               <Icon size={24} />
+             </div>
+             {process.client && (
+               <div className="px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-white" style={{ backgroundColor: process.client.color }}>
+                 {process.client.name}
+               </div>
+             )}
+           </div>
+           
+           <h3 className="text-lg font-bold text-gray-900 group-hover:text-brand-dark transition-colors">{process.process_name}</h3>
+           <p className="text-xs text-gray-400 font-medium mt-1">Iniciado em {dayjs(process.created_at).format('DD/MM/YY')}</p>
+           
+           <div className="mt-6">
+             <div className="flex justify-between items-center mb-2">
+               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Progresso</span>
+               <span className="text-xs font-bold text-brand-dark">{process.etapas_concluidas} / {process.total_etapas}</span>
+             </div>
+             <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+               <div className="h-full bg-brand-dark transition-all duration-500 rounded-full" style={{ width: `${progress}%` }} />
+             </div>
+           </div>
+          </div>
+        );
+      })}
+
+      {instances.length === 0 && (
+        <div className="col-span-full py-12 text-center border border-dashed border-gray-200 rounded-3xl">
+          <p className="text-gray-400 font-medium">Nenhum processo em andamento.</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ProcessChecklistView: React.FC<{ process: any, onBack: () => void }> = ({ process: initialProcess, onBack }) => {
+  const [items, setItems] = useState<any[]>([]);
+  const [process, setProcess] = useState(initialProcess);
+  
+  useEffect(() => {
+    fetchChecklist();
+  }, []);
+
+  const fetchChecklist = async () => {
+    const { data } = await supabase
+      .from('process_checklist')
+      .select('*')
+      .eq('instance_id', process.id)
+      .order('position');
+      
+    if (data) {
+      const pais = data.filter(d => !d.parent_id);
+      const filhos = data.filter(d => d.parent_id);
+      
+      const hierarquized = pais.map(p => ({
+        ...p,
+        subitens: filhos.filter(f => f.parent_id === p.id)
+      }));
+      setItems(hierarquized);
+    }
+  };
+
+  const toggleItem = async (item: any) => {
+    const newStatus = !item.is_completed;
+    const completedAt = newStatus ? new Date().toISOString() : null;
+
+    // Atualização otimista
+    const updatedItems = items.map(p => {
+      if (p.id === item.id) {
+        // Se for o pai, se marcarmos, concluimos pai; e não mexemos nos filhos obrigatoriamente (logica simples)
+        return { ...p, is_completed: newStatus, completed_at: completedAt };
+      }
+      
+      // se é filho
+      const isMyChild = p.subitens?.find((s: any) => s.id === item.id);
+      if (isMyChild) {
+        const newSubitens = p.subitens.map((s: any) => s.id === item.id ? { ...s, is_completed: newStatus, completed_at: completedAt } : s);
+        // checa se todos os filhos estao concluidos agora
+        const allChildrenCompleted = newSubitens.every((s: any) => s.is_completed);
+        return { 
+          ...p, 
+          subitens: newSubitens,
+          is_completed: allChildrenCompleted, 
+          completed_at: allChildrenCompleted ? (p.completed_at || completedAt) : null 
+        };
+      }
+      return p;
+    });
+    setItems(updatedItems);
+    
+    // Atualiza BD
+    await supabase.from('process_checklist').update({ is_completed: newStatus, completed_at: completedAt }).eq('id', item.id);
+    
+    // Se marcamos um filho, e ele fez o pai ser marcado/desmarcado, atualiza o pai no bd
+    if (item.parent_id) {
+       const parentNow = updatedItems.find(p => p.id === item.parent_id);
+       if (parentNow) {
+         await supabase.from('process_checklist').update({ is_completed: parentNow.is_completed, completed_at: parentNow.completed_at }).eq('id', parentNow.id);
+       }
+    }
+  };
+
+  const total = items.length;
+  const concluidas = items.filter(i => i.is_completed).length;
+  const progress = total > 0 ? (concluidas / total) * 100 : 0;
+
+  const handleFinishProcess = async () => {
+    await supabase.from('process_instances').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', process.id);
+    onBack();
+  };
+
+  const typeInfo = PROCESS_TYPES.find(t => t.id === process.process_type) || PROCESS_TYPES[0];
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-3xl p-6 sm:p-10 shadow-sm">
+      <div className="flex items-center gap-4 mb-8 pb-6 border-b border-gray-50">
+        <button onClick={onBack} className="p-2 hover:bg-gray-50 rounded-xl text-gray-400 transition-colors">
+          <ChevronRight size={20} className="rotate-180" />
+        </button>
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-1">
+            <h2 className="text-xl font-black text-brand-dark">{process.process_name}</h2>
+            {process.client && (
+               <div className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white" style={{ backgroundColor: process.client.color }}>
+                 {process.client.name}
+               </div>
+            )}
+          </div>
+          <p className="text-sm font-medium text-gray-500">{typeInfo.name}</p>
+        </div>
+        <div className="text-right ml-4">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Progresso</div>
+          <div className="text-lg font-black text-brand-dark">{Math.round(progress)}%</div>
+        </div>
+      </div>
+
+      <div className="space-y-4 mb-10">
+        {items.map(pai => (
+          <div key={pai.id} className="bg-gray-50/50 rounded-2xl border border-gray-100 p-4">
+            <div className={`flex items-start gap-4 ${pai.is_completed ? 'opacity-60' : ''}`}>
+              <button 
+                onClick={() => toggleItem(pai)}
+                className={`mt-1 flex-shrink-0 text-gray-300 hover:text-brand-dark transition-colors ${pai.is_completed ? 'text-green-500' : ''}`}
+                disabled={pai.subitens?.length > 0} // Se tem subitem, o pai é marcado automatico pelos filhos
+              >
+                {pai.is_completed ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+              </button>
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <h4 className={`font-bold text-lg ${pai.is_completed ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+                    {pai.title} 
+                    {pai.subitens?.length > 0 && (
+                       <span className="ml-2 text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full no-underline inline-block">
+                         ({pai.subitens.filter((s: any) => s.is_completed).length}/{pai.subitens.length})
+                       </span>
+                    )}
+                  </h4>
+                  {pai.responsible === 'sarah' && <span className="px-2 py-0.5 rounded-md text-[10px] uppercase font-bold bg-purple-100 text-purple-600">Sarah</span>}
+                  {pai.responsible === 'client' && <span className="px-2 py-0.5 rounded-md text-[10px] uppercase font-bold bg-blue-100 text-blue-600">Cliente</span>}
+                </div>
+                {pai.description && <p className="text-sm text-gray-500">{pai.description}</p>}
+              </div>
+            </div>
+
+            {/* Subitens */}
+            {pai.subitens?.length > 0 && (
+              <div className="ml-10 mt-4 space-y-2 border-l-2 border-gray-200 pl-4">
+                {pai.subitens.map((filho: any) => (
+                  <div key={filho.id} className="flex items-center gap-3">
+                    <button 
+                      onClick={() => toggleItem(filho)}
+                      className={`text-gray-300 hover:text-brand-dark transition-colors ${filho.is_completed ? 'text-green-500' : ''}`}
+                    >
+                      {filho.is_completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+                    </button>
+                    <span className={`text-sm font-medium ${filho.is_completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                      {filho.title}
+                    </span>
+                    {filho.responsible === 'sarah' && <span className="px-1.5 py-0.5 rounded-md text-[9px] uppercase font-bold bg-purple-100 text-purple-600 ml-2">Sarah</span>}
+                    {filho.responsible === 'client' && <span className="px-1.5 py-0.5 rounded-md text-[9px] uppercase font-bold bg-blue-100 text-blue-600 ml-2">Cliente</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-end pt-6 border-t border-gray-100">
+        <button 
+          onClick={handleFinishProcess}
+          disabled={concluidas < total}
+          className={`px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition-all ${concluidas === total ? 'bg-green-500 text-white hover:shadow-lg' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+        >
+          {concluidas === total ? 'Concluir Processo' : 'Aguardando Etapas'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
+// ABA 3: TODAS AS TAREFAS
+// ==========================================
+const TodasTasks: React.FC<{ clients: any[], onEditTask: (t: AgencyTask) => void, onRefresh: () => void }> = ({ clients, onEditTask, onRefresh }) => {
+  const [tasks, setTasks] = useState<AgencyTask[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filterClient, setFilterClient] = useState('all');
+  const [showCompleted, setShowCompleted] = useState(false);
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const fetchTasks = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('agency_tasks')
+      .select('*, client:clients(id, name, color, initials)')
+      .order('status', { ascending: true }) // pending first
+      .order('due_date', { ascending: true, nullsFirst: false });
+
+    if (data) setTasks(data);
+    setLoading(false);
+  };
+
+  const toggleStatus = async (task: AgencyTask) => {
+    const newStatus = task.status === 'completed' ? 'pending' : 'completed';
+    await supabase.from('agency_tasks').update({ status: newStatus, completed_at: newStatus === 'completed' ? new Date().toISOString() : null }).eq('id', task.id);
+    await fetchTasks();
+    onRefresh();
+  };
+
+  const filtered = tasks.filter(t => {
+    if (filterClient === 'internal') return !t.client_id;
+    if (filterClient !== 'all') return t.client_id === filterClient;
+    return true;
+  });
+
+  const pending = filtered.filter(t => t.status === 'pending');
+  const completed = filtered.filter(t => t.status === 'completed');
+
+  return (
+    <div className="space-y-6">
       <div className="flex items-center gap-4 mb-6">
         <div className="flex items-center gap-2 text-gray-400">
           <Filter size={18} />
@@ -576,7 +526,7 @@ export const AgencyTasksTab: React.FC = () => {
         <select
           value={filterClient}
           onChange={(e) => setFilterClient(e.target.value)}
-          className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-medium text-brand-dark focus:ring-2 focus:ring-brand-dark/10 outline-none"
+          className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-medium text-brand-dark outline-none cursor-pointer"
         >
           <option value="all">Todos</option>
           <option value="internal">Canguru Digital (Interno)</option>
@@ -586,285 +536,333 @@ export const AgencyTasksTab: React.FC = () => {
         </select>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Urgent & Daily Column */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Urgent Section */}
-          {urgentTasks.length > 0 && (
-            <section className="space-y-4">
-              <div className="flex items-center gap-2 text-red-500">
-                <AlertCircle size={20} />
-                <h3 className="font-bold uppercase tracking-[0.2em] text-xs">Urgentes</h3>
-              </div>
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => onDragEnd(e, urgentTasks)}>
-                <SortableContext items={urgentTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                  <div className="grid gap-3">
-                    {urgentTasks.map(task => (
-                      <SortableTaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            </section>
-          )}
-
-          {/* Recurring Section */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-2 text-brand-dark">
-              <Clock size={20} />
-              <h3 className="font-bold uppercase tracking-[0.2em] text-xs">Processos Recorrentes</h3>
-            </div>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => onDragEnd(e, recurringTasks)}>
-              <SortableContext items={recurringTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                <div className="grid gap-3">
-                  {recurringTasks.length > 0 ? (
-                    recurringTasks.map(task => (
-                      <SortableTaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} />
-                    ))
-                  ) : (
-                    <EmptyState message="Nenhum processo recorrente pendente." />
-                  )}
-                </div>
-              </SortableContext>
-            </DndContext>
-          </section>
-
-          {/* Other Tasks Section */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-2 text-gray-400">
-              <ClipboardList size={20} />
-              <h3 className="font-bold uppercase tracking-[0.2em] text-xs">Tarefas Únicas</h3>
-            </div>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => onDragEnd(e, otherTasks)}>
-              <SortableContext items={otherTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                <div className="grid gap-3">
-                  {otherTasks.length > 0 ? (
-                    otherTasks.map(task => (
-                      <SortableTaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} />
-                    ))
-                  ) : (
-                    <EmptyState message="Nenhuma outra tarefa pendente." />
-                  )}
-                </div>
-              </SortableContext>
-            </DndContext>
-          </section>
-        </div>
-
-        {/* Completed Column */}
+      {loading ? (
+        <div className="text-gray-400 text-sm">Carregando...</div>
+      ) : (
         <div className="space-y-8">
-          <section className="space-y-4">
-            <div className="flex items-center gap-2 text-green-500">
-              <CheckCircle2 size={20} />
-              <h3 className="font-bold uppercase tracking-[0.2em] text-xs">Concluídas</h3>
-            </div>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => onDragEnd(e, completedTasks)}>
-              <SortableContext items={completedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                <div className="grid gap-3 opacity-60">
-                  {completedTasks.length > 0 ? (
-                    completedTasks.map(task => (
-                      <SortableTaskCard key={task.id} task={task} onToggle={toggleTaskStatus} onDelete={deleteTask} onEdit={setEditingTask} />
-                    ))
-                  ) : (
-                    <EmptyState message="Nenhuma tarefa concluída ainda." />
-                  )}
-                </div>
-              </SortableContext>
-            </DndContext>
-          </section>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-interface TaskCardProps {
-  task: AgencyTask;
-  onToggle: (task: AgencyTask) => void;
-  onDelete: (id: string) => void;
-  onEdit: (task: AgencyTask) => void;
-  dragListeners?: any;
-  dragAttributes?: any;
-}
-
-const SortableTaskCard: React.FC<TaskCardProps> = (props) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: props.task.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 1 : 0,
-    position: 'relative' as const,
-  };
-
-  return (
-    <div ref={setNodeRef} style={style}>
-      <TaskCard {...props} dragListeners={listeners} dragAttributes={attributes} />
-    </div>
-  );
-};
-
-const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, onEdit, dragListeners, dragAttributes }) => {
-  const isDone = task.status === 'done';
-  const dueDateInfo = getDueDateLabel(task.due_date);
-
-  function getPriorityColor(priority: AgencyTaskPriority) {
-    switch (priority) {
-      case 'urgent': return 'text-red-500 bg-red-50 border-red-100';
-      case 'high': return 'text-orange-500 bg-orange-50 border-orange-100';
-      case 'normal': return 'text-blue-500 bg-blue-50 border-blue-100';
-      case 'low': return 'text-gray-500 bg-gray-50 border-gray-100';
-      default: return 'text-gray-500 bg-gray-50 border-gray-100';
-    }
-  }
-  
-  function getDueDateLabel(dateStr: string | null | undefined) {
-    if (!dateStr) return null;
-    const date = dayjs(dateStr);
-    if (date.isToday()) return { label: 'Hoje', color: 'text-orange-600 bg-orange-50' };
-    if (date.isTomorrow()) return { label: 'Amanhã', color: 'text-blue-600 bg-blue-50' };
-    if (date.isBefore(dayjs(), 'day')) return { label: 'Atrasado', color: 'text-red-600 bg-red-50' };
-    return { label: date.format('DD [de] MMM'), color: 'text-gray-600 bg-gray-50' };
-  }
-
-  const getRecurrenceLabel = () => {
-    switch (task.recurrence_type) {
-      case 'daily': return 'Diário';
-      case 'weekly': return 'Semanal';
-      case 'monthly': return 'Mensal';
-      case 'custom_days': 
-        if (!task.recurrence_days) return 'Personalizado';
-        return task.recurrence_days.map(d => WEEK_DAYS.find(wd => wd.id === d)?.label).join(', ');
-      default: return null;
-    }
-  };
-
-  const recurrenceLabel = getRecurrenceLabel();
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`
-        group flex sm:items-center items-start gap-3 sm:gap-4 p-4 sm:p-5 rounded-3xl bg-white border border-black/[0.03] shadow-sm hover:shadow-md transition-all
-        ${isDone ? 'bg-gray-50/50' : ''}
-      `}
-    >
-      <div 
-        className="flex-shrink-0 mt-0.5 sm:mt-0 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing p-1"
-        {...dragAttributes} 
-        {...dragListeners}
-      >
-        <GripVertical size={16} />
-      </div>
-
-      <button
-        onClick={() => onToggle(task)}
-        className={`
-          flex-shrink-0 w-7 h-7 mt-0.5 sm:mt-0 rounded-full border-2 flex items-center justify-center transition-all
-          ${isDone 
-            ? 'bg-green-500 border-green-500 text-white' 
-            : 'border-gray-200 text-transparent hover:border-brand-dark hover:text-brand-dark/20'
-          }
-        `}
-      >
-        <Check size={16} strokeWidth={3} />
-      </button>
-
-      <div className="flex-grow min-w-0">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2 sm:mb-1">
-          <h4 className={`font-bold text-sm break-words ${isDone ? 'text-gray-400 line-through' : 'text-brand-dark'}`}>
-            {task.title}
-          </h4>
-          <div className="flex flex-wrap gap-1">
-            {task.client ? (
-              <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tighter text-white whitespace-nowrap" style={{ backgroundColor: task.client.color }}>
-                {task.client.name}
-              </span>
+          <div className="space-y-2">
+            {pending.length === 0 ? (
+               <div className="text-center py-8 text-gray-400 text-sm border border-dashed rounded-2xl">Nenhuma tarefa pendente neste filtro.</div>
             ) : (
-              <span className="px-2 py-0.5 rounded-full bg-brand-dark text-white text-[8px] font-black uppercase tracking-tighter whitespace-nowrap">
-                Canguru Digital
-              </span>
-            )}
-            {recurrenceLabel && (
-              <span className="px-2 py-0.5 rounded-full bg-brand-dark/5 text-brand-dark text-[8px] font-black uppercase tracking-tighter whitespace-nowrap">
-                {recurrenceLabel}
-              </span>
+               pending.map(task => <TaskListItem key={task.id} task={task} onToggle={() => toggleStatus(task)} onEdit={() => onEditTask(task)} />)
             )}
           </div>
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <span className={`px-2 py-0.5 rounded-lg border text-[9px] font-bold uppercase tracking-wider whitespace-nowrap ${getPriorityColor(task.priority)}`}>
-            {task.priority === 'urgent' ? 'Urgente' : task.priority === 'high' ? 'Alta' : task.priority === 'normal' ? 'Normal' : 'Baixa'}
-          </span>
-          
-          {dueDateInfo && !isDone && (
-            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider whitespace-nowrap ${dueDateInfo.color}`}>
-              <Calendar size={10} />
-              {dueDateInfo.label}
-            </span>
-          )}
 
-          {isDone && task.completed_at && (
-            <span className="text-[9px] text-gray-400 font-medium italic whitespace-nowrap">
-              Concluído em {dayjs(task.completed_at).format("DD/MM [às] HH:mm")}
-            </span>
-          )}
+          <div className="border-t border-gray-100 pt-6">
+            <button 
+              onClick={() => setShowCompleted(!showCompleted)}
+              className="flex items-center gap-2 text-gray-500 hover:text-brand-dark transition-colors font-bold text-sm uppercase tracking-widest mb-4"
+            >
+              <ChevronRight size={18} className={`transition-transform ${showCompleted ? 'rotate-90' : ''}`} />
+              Ver Concluídas ({completed.length})
+            </button>
+            <AnimatePresence>
+              {showCompleted && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden space-y-2">
+                  {completed.map(task => <TaskListItem key={task.id} task={task} onToggle={() => toggleStatus(task)} onEdit={() => onEditTask(task)} />)}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
-      </div>
-
-      <div className="flex sm:items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all flex-col sm:flex-row ml-auto sm:ml-0 flex-shrink-0">
-        <button
-          onClick={() => onEdit(task)}
-          className="p-2 text-gray-300 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
-        >
-          <Edit2 size={16} />
-        </button>
-        <button
-          onClick={() => onDelete(task.id)}
-          className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-        >
-          <Trash2 size={16} />
-        </button>
-      </div>
-    </motion.div>
+      )}
+    </div>
   );
 };
 
-const EmptyState: React.FC<{ message: string }> = ({ message }) => (
-  <div className="p-8 rounded-3xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-center">
-    <p className="text-sm text-gray-400 font-medium">{message}</p>
-  </div>
-);
 
-const ClipboardList: React.FC<{ size?: number; className?: string }> = ({ size = 24, className }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
-    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-    <path d="M12 11h4"/>
-    <path d="M12 16h4"/>
-    <path d="M8 11h.01"/>
-    <path d="M8 16h.01"/>
-  </svg>
-);
+// ==========================================
+// SHARED UI: TASK ITEM
+// ==========================================
+const TaskListItem: React.FC<{ task: AgencyTask, onToggle: () => void, onEdit: () => void }> = ({ task, onToggle, onEdit }) => {
+  const isDone = task.status === 'completed';
+  const getPriorityColor = (p: string) => {
+    switch (p) {
+      case 'urgente': return 'text-red-500 bg-red-50 border-red-100';
+      case 'alta': return 'text-orange-500 bg-orange-50 border-orange-100';
+      case 'normal': return 'text-blue-500 bg-blue-50 border-blue-100';
+      case 'baixa': return 'text-gray-500 bg-gray-50 border-gray-100';
+      default: return 'text-gray-500 bg-gray-50 border-gray-100';
+    }
+  };
+  
+  const dateObj = task.due_date ? dayjs(task.due_date) : null;
+  const isOverdue = !isDone && dateObj && dateObj.isBefore(dayjs(), 'day');
+
+  return (
+    <div className={`group flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-100 hover:border-brand-dark/20 hover:shadow-sm transition-all ${isDone ? 'opacity-60 bg-gray-50' : ''}`}>
+      <button onClick={onToggle} className={`flex-shrink-0 text-gray-300 hover:text-brand-dark transition-colors ${isDone ? 'text-green-500' : ''}`}>
+        {isDone ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+      </button>
+      
+      <div className="flex-1 min-w-0 flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+        <div className="flex-1 truncate">
+          <span className={`font-bold text-sm ${isDone ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+            {task.title}
+          </span>
+        </div>
+        
+        <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+          {task.client ? (
+             <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider text-white whitespace-nowrap" style={{ backgroundColor: task.client.color }}>
+               {task.client.name}
+             </span>
+          ) : (
+             <span className="px-2 py-0.5 rounded-md bg-brand-dark/10 text-brand-dark text-[10px] font-black uppercase tracking-wider whitespace-nowrap">
+               Interno
+             </span>
+          )}
+          
+          <span className={`px-2 py-0.5 rounded-md border text-[9px] font-bold uppercase tracking-wider whitespace-nowrap ${getPriorityColor(task.priority)}`}>
+            {task.priority || 'Normal'}
+          </span>
+          
+          {dateObj && (
+            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${isOverdue ? 'text-red-500 bg-red-50' : 'text-gray-500 bg-gray-50'}`}>
+              <Calendar size={12} />
+              {isOverdue ? 'Atrasado' : dateObj.format('DD/MM')}
+            </span>
+          )}
+        </div>
+      </div>
+      
+      <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button onClick={onEdit} className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all">
+          <Edit2 size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// DRAWER: NOVA TAREFA
+// ==========================================
+const TaskFormDrawer: React.FC<{ clients: any[], task?: AgencyTask | null, onClose: () => void, onSuccess: () => void }> = ({ clients, task, onClose, onSuccess }) => {
+  const [form, setForm] = useState({
+    title: task?.title || '',
+    client_id: task?.client_id || '',
+    priority: task?.priority || 'normal',
+    due_date: task?.due_date || '',
+    description: task?.description || ''
+  });
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.title.trim()) return;
+    
+    const payload = {
+      title: form.title,
+      client_id: form.client_id || null,
+      priority: form.priority,
+      due_date: form.due_date || null,
+      description: form.description
+    };
+    
+    if (task) {
+      await supabase.from('agency_tasks').update(payload).eq('id', task.id);
+    } else {
+      await supabase.from('agency_tasks').insert([payload]);
+    }
+    onSuccess();
+  };
+
+  const handleDelete = async () => {
+    if (task && window.confirm('Deseja excluir esta tarefa?')) {
+      await supabase.from('agency_tasks').delete().eq('id', task.id);
+      onSuccess();
+    }
+  };
+
+  return (
+    <>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
+      <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-[60] flex flex-col">
+        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-brand-dark">{task ? 'Editar Tarefa' : 'Nova Tarefa'}</h2>
+          <button onClick={onClose} className="p-2 text-gray-400 hover:bg-gray-100 rounded-xl transition-colors"><X size={20}/></button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-6">
+          <form id="task-form" onSubmit={handleSave} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Título</label>
+              <input autoFocus type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-dark/20 outline-none" required />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Cliente (Opcional)</label>
+              <select value={form.client_id} onChange={e => setForm({...form, client_id: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-dark/20 outline-none cursor-pointer">
+                <option value="">Nenhum (Agência Interno)</option>
+                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Prioridade</label>
+                <select value={form.priority} onChange={e => setForm({...form, priority: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-dark/20 outline-none cursor-pointer">
+                  <option value="baixa">Baixa</option>
+                  <option value="normal">Normal</option>
+                  <option value="alta">Alta</option>
+                  <option value="urgente">Urgente</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Data Limite</label>
+                <input type="date" value={form.due_date} onChange={e => setForm({...form, due_date: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-dark/20 outline-none" />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Descrição (Opcional)</label>
+              <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={4} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-dark/20 outline-none resize-none"></textarea>
+            </div>
+          </form>
+        </div>
+        
+        <div className="p-6 border-t border-gray-100 flex gap-4 bg-gray-50/50">
+          {task && (
+            <button type="button" onClick={handleDelete} className="p-4 text-red-500 hover:bg-red-50 rounded-xl transition-all">
+              <Trash2 size={24} />
+            </button>
+          )}
+          <button type="submit" form="task-form" className="flex-1 py-4 bg-brand-dark text-white rounded-xl font-bold uppercase tracking-widest hover:opacity-90 transition-opacity">
+            Salvar
+          </button>
+        </div>
+      </motion.div>
+    </>
+  );
+};
+
+// ==========================================
+// MODAL: NOVO PROCESSO
+// ==========================================
+const ProcessFormModal: React.FC<{ clients: any[], onClose: () => void, onSuccess: () => void }> = ({ clients, onClose, onSuccess }) => {
+  const [form, setForm] = useState({ client_id: '', process_type: PROCESS_TYPES[0].id, process_name: '' });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.client_id || !form.process_type || !form.process_name) return alert('Preencha os campos.');
+    
+    setLoading(true);
+    try {
+      // 1. Criar a instância
+      const { data: instance, error: errInstance } = await supabase
+        .from('process_instances')
+        .insert({ client_id: form.client_id, process_type: form.process_type, process_name: form.process_name, agency_id: 1 })
+        .select().single();
+        
+      if (errInstance || !instance) throw errInstance;
+
+      // 2. Buscar templates pai
+      const { data: pais } = await supabase
+        .from('process_templates')
+        .select('*')
+        .eq('process_type', form.process_type)
+        .is('parent_id', null)
+        .order('position');
+
+      const mapaIds: Record<string, string> = {};
+      
+      if (pais && pais.length > 0) {
+        // 3. Inserir etapas pai e mapear IDs
+        for (const pai of pais) {
+          const { data } = await supabase
+            .from('process_checklist')
+            .insert({
+              instance_id: instance.id,
+              client_id: form.client_id,
+              agency_id: 1,
+              title: pai.title,
+              description: pai.description,
+              responsible: pai.responsible,
+              position: pai.position
+            }).select().single();
+          if (data) mapaIds[pai.id] = data.id;
+        }
+
+        // 4. Buscar e inserir sub-etapas
+        const { data: filhos } = await supabase
+          .from('process_templates')
+          .select('*')
+          .eq('process_type', form.process_type)
+          .not('parent_id', 'is', null)
+          .order('position');
+
+        if (filhos && filhos.length > 0) {
+          const payloadFilhos = filhos.filter(f => mapaIds[f.parent_id!]).map(filho => ({
+            instance_id: instance.id,
+            client_id: form.client_id,
+            agency_id: 1,
+            title: filho.title,
+            description: filho.description,
+            responsible: filho.responsible,
+            position: filho.position,
+            parent_id: mapaIds[filho.parent_id!]
+          }));
+          if (payloadFilhos.length > 0) await supabase.from('process_checklist').insert(payloadFilhos);
+        }
+      }
+      onSuccess();
+    } catch (e: any) {
+      console.error(e);
+      alert('Erro ao iniciar processo: ' + e.message);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl relative">
+          <button onClick={onClose} className="absolute top-6 right-6 p-2 text-gray-400 hover:bg-gray-100 rounded-xl transition-colors"><X size={20}/></button>
+          
+          <h2 className="text-xl font-bold text-brand-dark mb-6">Iniciar Novo Processo</h2>
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Cliente</label>
+              <select value={form.client_id} onChange={e => setForm({...form, client_id: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-dark/20 outline-none cursor-pointer" required>
+                <option value="">Selecione o Cliente</option>
+                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Tipo de Processo</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {PROCESS_TYPES.map(type => {
+                  const Icon = type.icon;
+                  return (
+                    <button 
+                      key={type.id} 
+                      type="button"
+                      onClick={() => setForm({...form, process_type: type.id, process_name: form.process_name || `Novo ${type.name}`})}
+                      className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${form.process_type === type.id ? 'border-brand-dark bg-brand-dark/5' : 'border-gray-200 hover:border-gray-300'}`}
+                    >
+                      <div className={`p-2 rounded-lg ${type.color}`}><Icon size={16} /></div>
+                      <span className="text-sm font-bold text-gray-700">{type.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Identificação do Processo</label>
+              <input type="text" value={form.process_name} onChange={e => setForm({...form, process_name: e.target.value})} placeholder="Ex: Campanha Dia das Mães" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-dark/20 outline-none" required />
+            </div>
+            
+            <button type="submit" disabled={loading} className="w-full mt-4 py-4 bg-brand-dark text-white rounded-xl font-bold uppercase tracking-widest hover:opacity-90 transition-opacity disabled:opacity-50">
+              {loading ? 'Iniciando...' : 'Iniciar Processo'}
+            </button>
+          </form>
+        </div>
+      </motion.div>
+    </>
+  );
+}

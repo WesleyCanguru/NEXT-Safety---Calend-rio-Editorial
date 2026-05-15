@@ -191,7 +191,7 @@ export function ClientChecklistView({ client, onClose }: OnboardingChecklistModa
 
     const newItem = {
       client_id: client.id,
-      agency_id: client.agency_id || 1,
+      agency_id: 1,
       phase,
       phase_name: phaseName,
       title: newItemTitle,

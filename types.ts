@@ -446,8 +446,8 @@ export interface ClientBriefing {
 
 // --- NOVOS TIPOS PARA TAREFAS DA AGÊNCIA ---
 
-export type AgencyTaskPriority = 'urgent' | 'high' | 'normal' | 'low';
-export type AgencyTaskStatus = 'pending' | 'done';
+export type AgencyTaskPriority = 'urgente' | 'alta' | 'normal' | 'baixa';
+export type AgencyTaskStatus = 'pending' | 'completed';
 export type AgencyTaskRecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly' | 'custom_days';
 
 export interface AgencyTask {
@@ -466,3 +466,50 @@ export interface AgencyTask {
   client?: { id: string; name: string; color: string; initials: string };
   position?: number;
 }
+
+export type ProcessResponsible = 'wesley' | 'sarah' | 'client';
+export type ProcessStatus = 'active' | 'completed' | 'paused';
+
+export interface ProcessTemplate {
+  id: string;
+  agency_id: number;
+  process_type: string;
+  process_name: string;
+  service: string | null;
+  title: string;
+  description: string | null;
+  responsible: ProcessResponsible;
+  position: number;
+  parent_id: string | null;
+  is_active: boolean;
+}
+
+export interface ProcessInstance {
+  id: string;
+  agency_id: number;
+  client_id: string;
+  process_type: string;
+  process_name: string;
+  status: ProcessStatus;
+  created_at: string;
+  completed_at: string | null;
+  client?: { id: string; name: string; color: string; initials: string };
+  total_etapas?: number;
+  etapas_concluidas?: number;
+}
+
+export interface ProcessChecklist {
+  id: string;
+  instance_id: string;
+  client_id: string;
+  agency_id: number;
+  title: string;
+  description: string | null;
+  responsible: ProcessResponsible;
+  is_completed: boolean;
+  completed_at: string | null;
+  position: number;
+  parent_id: string | null;
+  created_at: string;
+}
+
