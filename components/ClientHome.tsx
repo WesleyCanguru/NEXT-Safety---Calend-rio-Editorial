@@ -72,7 +72,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
     }
   }, [initialActiveView]);
 
-  const { isCompleted: isOnboardingCompleted, loading: loadingOnboarding } = useClientOnboarding(activeClient?.id);
+  const { isCompleted: isOnboardingCompleted, loading: loadingOnboarding, stats } = useClientOnboarding(activeClient?.id);
   const isAdmin = userRole === 'admin';
 
   // Handle deep link to CRM
@@ -677,32 +677,49 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
       {/* Dashboard Grid */}
       <div className="max-w-6xl w-full">
         {/* Onboarding section (separate, always top) */}
-        {isAdmin && !isActuallyOnboardingCompleted && !loadingOnboarding && (
+        {!isActuallyOnboardingCompleted && !loadingOnboarding && stats && stats.total > 0 && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             className="mb-8 px-4 sm:px-0"
           >
-            <motion.div 
-              whileHover={{ y: -4, shadow: '0 20px 40px rgba(0,0,0,0.04)' }}
-              onClick={onNavigateToOnboarding} 
-              className="flex items-center gap-5 p-6 bg-white border border-brand-dark/10 rounded-[32px] cursor-pointer transition-all shadow-sm group"
+            <div 
+              onClick={() => isAdmin && onNavigateToOnboarding?.()}
+              className={`bg-brand-dark/5 border border-brand-dark/10 rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden group transition-colors ${isAdmin ? 'cursor-pointer hover:bg-brand-dark/10' : ''}`}
             >
-              <div className="w-12 h-12 bg-brand-dark/5 rounded-2xl flex items-center justify-center text-brand-dark group-hover:bg-brand-dark group-hover:text-white transition-all">
-                <ClipboardList size={24} />
+              <div className="absolute top-0 right-0 w-64 h-64 bg-brand-dark/5 rounded-full blur-[80px] -mr-32 -mt-32 opacity-50"></div>
+              
+              <div className="flex items-center gap-6 relative z-10 w-full md:w-auto">
+                <div className="flex-shrink-0 w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-brand-dark shadow-sm">
+                  <Target size={32} />
+                </div>
+                <div className="text-left flex-1">
+                  <h3 className="text-xl font-black text-brand-dark tracking-tight">Sua jornada de onboarding</h3>
+                  {stats.currentPhaseName ? (
+                    <p className="text-sm font-bold text-gray-500 mt-1">
+                      📍 Agora estamos em: <span className="text-brand-dark">{stats.currentPhaseName}</span>
+                    </p>
+                  ) : (
+                    <p className="text-sm font-bold text-gray-500 mt-1">Quase lá!</p>
+                  )}
+                </div>
               </div>
-              <div className="flex-1 text-left">
-                <p className="text-[10px] font-bold text-brand-dark uppercase tracking-widest mb-1">
-                  Área Interna da Agência
-                </p>
-                <h3 className="text-lg font-bold text-gray-900 leading-tight">
-                  Checklist de Onboarding do Cliente
-                </h3>
+
+              <div className="md:w-64 flex-shrink-0 relative z-10 text-left">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-bold uppercase tracking-widest text-brand-dark/60">Progresso</span>
+                  <span className="text-sm font-black text-brand-dark">
+                    {stats.completed} / {stats.total}
+                  </span>
+                </div>
+                <div className="h-3 w-full bg-white rounded-full overflow-hidden border border-brand-dark/10 relative">
+                  <div 
+                    className="h-full bg-brand-dark rounded-full transition-all duration-1000 ease-out"
+                    style={{ width: `${(stats.completed / (stats.total || 1)) * 100}%` }}
+                  />
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <ArrowRight size={20} className="text-brand-dark/40" />
-              </div>
-            </motion.div>
+            </div>
           </motion.div>
         )}
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, useAuth } from '../../lib/supabase';
 import { OnboardingChecklist, OnboardingTemplate, Client } from '../../types';
-import { X, CheckCircle, Circle, Plus, Trash2, Calendar, Target, Flag } from 'lucide-react';
+import { X, CheckCircle, Circle, Plus, Trash2, Calendar, Target, Flag, ChevronRight, ChevronDown } from 'lucide-react';
 import dayjs from 'dayjs';
 
 interface OnboardingChecklistModalProps {
@@ -31,6 +31,7 @@ export function ClientChecklistView({ client, onClose }: OnboardingChecklistModa
   const [addingPhase, setAddingPhase] = useState<number | null>(null);
   const [newItemTitle, setNewItemTitle] = useState('');
   const [activePhase, setActivePhase] = useState<number>(2);
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if ((!items || items.length === 0) && userRole === 'admin') {
@@ -275,7 +276,7 @@ export function ClientChecklistView({ client, onClose }: OnboardingChecklistModa
                           : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
                     }`}
                   >
-                    Fase {p.phase}
+                    {p.defaultName}
                     {isCompleted && <CheckCircle size={16} />}
                   </button>
                 );
@@ -299,20 +300,42 @@ export function ClientChecklistView({ client, onClose }: OnboardingChecklistModa
                               {/* Parent Item */}
                               <div 
                                 className={`flex items-start gap-4 p-4 rounded-2xl border transition-all group ${
-                                  children.length === 0 ? 'cursor-pointer hover:border-gray-200' : ''
+                                  children.length === 0 ? 'cursor-pointer hover:border-gray-200' : 'cursor-pointer'
                                 } ${
                                   parentItem.is_completed ? 'bg-gray-50 border-green-100' : 'bg-white border-gray-100'
                                 }`}
                                 onClick={() => {
-                                  if (children.length === 0 && userRole === 'admin') toggleItem(parentItem);
+                                  if (children.length > 0) {
+                                    setExpandedItems(prev => ({ ...prev, [parentItem.id]: !prev[parentItem.id] }));
+                                  } else if (userRole === 'admin') {
+                                    toggleItem(parentItem);
+                                  }
                                 }}
                               >
-                                <div className={`pt-0.5 transition-colors ${parentItem.is_completed ? 'text-green-500' : 'text-gray-300 group-hover:text-gray-400'}`}>
+                                {children.length > 0 && (
+                                  <div className="pt-0.5 text-gray-400">
+                                    {expandedItems[parentItem.id] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                                  </div>
+                                )}
+                                <div 
+                                  className={`pt-0.5 transition-colors ${parentItem.is_completed ? 'text-green-500' : 'text-gray-300'} ${children.length === 0 && userRole === 'admin' ? 'group-hover:text-gray-400' : ''}`}
+                                  onClick={(e) => {
+                                    // if it has children, we shouldn't allow checking natively through clicking the icon, but it's optional. Let's make icon unclickable if it has children.
+                                    if (children.length > 0) return;
+                                    e.stopPropagation();
+                                    if (userRole === 'admin') toggleItem(parentItem);
+                                  }}
+                                >
                                   {parentItem.is_completed ? <CheckCircle size={20} /> : <Circle size={20} />}
                                 </div>
                                 <div className="flex-1">
                                   <p className={`font-bold transition-all ${parentItem.is_completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
                                     {parentItem.title}
+                                    {children.length > 0 && (
+                                      <span className="ml-2 text-xs font-semibold text-gray-400 no-underline inline-block rounded-full px-2 py-0.5 bg-gray-100/50">
+                                        ({children.filter(c => c.is_completed).length}/{children.length})
+                                      </span>
+                                    )}
                                   </p>
                                   {parentItem.description && (
                                     <p className={`text-sm mt-1 transition-all ${parentItem.is_completed ? 'text-gray-400 line-through' : 'text-gray-500'}`}>
@@ -337,8 +360,8 @@ export function ClientChecklistView({ client, onClose }: OnboardingChecklistModa
                               </div>
 
                               {/* Children Items */}
-                              {children.length > 0 && (
-                                <div className="pl-6 md:pl-12 space-y-2">
+                              {children.length > 0 && expandedItems[parentItem.id] && (
+                                <div className="pl-6 md:pl-16 space-y-2 relative border-l border-gray-100 ml-6 md:ml-10">
                                   {children.map(child => (
                                     <div 
                                       key={child.id}

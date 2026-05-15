@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
+export interface OnboardingStats {
+  total: number;
+  completed: number;
+  currentPhaseName: string | null;
+}
+
 export const useClientOnboarding = (clientId?: string) => {
   const [isCompleted, setIsCompleted] = useState(false);
+  const [stats, setStats] = useState<OnboardingStats>({ total: 0, completed: 0, currentPhaseName: null });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,16 +22,29 @@ export const useClientOnboarding = (clientId?: string) => {
       try {
         const { data, error } = await supabase
           .from('onboarding_checklist')
-          .select('is_completed')
-          .eq('client_id', clientId);
+          .select('is_completed, phase_name, phase')
+          .is('parent_id', null)
+          .eq('client_id', clientId)
+          .order('phase', { ascending: true });
 
         if (error) throw error;
 
         if (data && data.length > 0) {
-          const allCompleted = data.every(item => item.is_completed);
+          const total = data.length;
+          const completed = data.filter(item => item.is_completed).length;
+          const allCompleted = total === completed && total > 0;
           setIsCompleted(allCompleted);
+
+          let currentPhaseName = null;
+          if (!allCompleted) {
+            const firstIncomplete = data.find(item => !item.is_completed);
+            if (firstIncomplete) currentPhaseName = firstIncomplete.phase_name;
+          }
+
+          setStats({ total, completed, currentPhaseName });
         } else {
           setIsCompleted(false);
+          setStats({ total: 0, completed: 0, currentPhaseName: null });
         }
       } catch (err) {
         console.error('Error checking onboarding completion:', err);
@@ -57,5 +77,5 @@ export const useClientOnboarding = (clientId?: string) => {
     };
   }, [clientId]);
 
-  return { isCompleted, loading };
+  return { isCompleted, loading, stats };
 };
