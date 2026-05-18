@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, useAuth } from '../../lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Trash, Link2, Copy, Save, AlertCircle, Sparkles, X, ChevronDown, ChevronRight, MessageSquare, Target, CheckCircle2, XCircle, LayoutList, GripVertical } from 'lucide-react';
+import { Plus, Trash, Link2, Copy, Save, AlertCircle, Sparkles, X, ChevronDown, ChevronRight, MessageSquare, Target, CheckCircle2, XCircle, LayoutList, GripVertical, Edit2 } from 'lucide-react';
 import { ConfirmModal } from '../ConfirmModal';
 
 interface ThemeBankProps {
@@ -19,6 +19,10 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
   // Theme creation inside a session
   const [newItemModel, setNewItemModel] = useState<{session_id: string, title: string, description: string, format: string, reference_links: string}>({ session_id: '', title: '', description: '', format: 'Post Estático', reference_links: '' });
   const [loadingItemSession, setLoadingItemSession] = useState<string | null>(null);
+
+  // Theme editing inside a session
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editItemModel, setEditItemModel] = useState<{title: string, description: string, format: string, reference_links: string}>({ title: '', description: '', format: 'Post Estático', reference_links: '' });
 
   // Multi-select
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
@@ -154,6 +158,42 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
       } catch (err) {
           console.error(err);
           alert("Erro ao adicionar tema.");
+      } finally {
+          setLoadingItemSession(null);
+      }
+  };
+
+  const startEditingItem = (item: any) => {
+      setEditingItemId(item.id);
+      setEditItemModel({
+          title: item.title,
+          description: item.description || '',
+          format: item.format || 'Post Estático',
+          reference_links: (item.reference_links || []).join(', ')
+      });
+  };
+
+  const handleUpdateItem = async (itemId: string, sessionId: string) => {
+      if (!editItemModel.title.trim()) return;
+      setLoadingItemSession(sessionId);
+
+      try {
+          const { error } = await supabase
+            .from('theme_items')
+            .update({
+                title: editItemModel.title,
+                description: editItemModel.description,
+                format: editItemModel.format,
+                reference_links: parseLinks(editItemModel.reference_links),
+            })
+            .eq('id', itemId);
+
+          if (error) throw error;
+          setEditingItemId(null);
+          fetchSessions();
+      } catch (err) {
+          console.error(err);
+          alert("Erro ao salvar alterações.");
       } finally {
           setLoadingItemSession(null);
       }
@@ -416,31 +456,85 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
                                    </button>
                                  </div>
                                  <div className="flex-1">
-                                 <div className="flex justify-between items-start mb-3">
-                                     <div className="flex items-center gap-2">
-                                         <span className="cursor-move p-1 text-gray-300 hover:text-gray-500"><GripVertical size={14} /></span>
-                                         <h5 className="font-bold text-gray-900 text-sm">{item.title}</h5>
-                                         <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[9px] font-bold uppercase tracking-widest rounded">{item.format}</span>
-                                     </div>
-                                     <div className="flex items-center gap-2">
-                                         {item.approval_status === 'approved' && (
-                                             <button 
-                                                onClick={() => onTransferTheme(item)}
-                                                className="px-3 py-1.5 bg-brand-dark text-white text-[9px] font-bold uppercase tracking-widest rounded-lg hover:bg-black transition-all"
+                                 {editingItemId === item.id ? (
+                                     <div className="flex flex-col gap-3">
+                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                             <input 
+                                                className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-brand-dark outline-none font-medium" 
+                                                placeholder="Título do Tema" 
+                                                value={editItemModel.title}
+                                                onChange={e => setEditItemModel({...editItemModel, title: e.target.value})}
+                                             />
+                                             <select 
+                                                className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-brand-dark outline-none font-medium bg-white"
+                                                value={editItemModel.format}
+                                                onChange={e => setEditItemModel({...editItemModel, format: e.target.value})}
                                              >
-                                                Transferir para Mapa
+                                                 <option>Post Estático</option>
+                                                 <option>Reels</option>
+                                                 <option>Carrossel</option>
+                                                 <option>Stories</option>
+                                             </select>
+                                         </div>
+                                         <textarea 
+                                            className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-brand-dark outline-none font-medium resize-none" 
+                                            placeholder="Descrição detalhada..." 
+                                            rows={2}
+                                            value={editItemModel.description}
+                                            onChange={e => setEditItemModel({...editItemModel, description: e.target.value})}
+                                         />
+                                         <input 
+                                            className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-brand-dark outline-none font-medium" 
+                                            placeholder="Links de Referência (separados por vírgula)" 
+                                            value={editItemModel.reference_links}
+                                            onChange={e => setEditItemModel({...editItemModel, reference_links: e.target.value})}
+                                         />
+                                         <div className="flex justify-end mt-1 gap-2">
+                                             <button 
+                                                onClick={() => setEditingItemId(null)}
+                                                className="px-4 py-2 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-gray-200 transition-all"
+                                             >
+                                                 Cancelar
                                              </button>
+                                             <button 
+                                                onClick={() => handleUpdateItem(item.id, session.id)}
+                                                disabled={!editItemModel.title.trim()}
+                                                className="px-5 py-2 bg-brand-dark text-white rounded-xl text-[10px] font-bold uppercase tracking-widest disabled:opacity-50 hover:bg-black transition-all"
+                                             >
+                                                 Salvar Tema
+                                             </button>
+                                         </div>
+                                     </div>
+                                 ) : (
+                                     <>
+                                         <div className="flex justify-between items-start mb-3">
+                                             <div className="flex items-center gap-2">
+                                                 <span className="cursor-move p-1 text-gray-300 hover:text-gray-500"><GripVertical size={14} /></span>
+                                                 <h5 className="font-bold text-gray-900 text-sm">{item.title}</h5>
+                                                 <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[9px] font-bold uppercase tracking-widest rounded">{item.format}</span>
+                                             </div>
+                                             <div className="flex items-center gap-2">
+                                                 {item.approval_status === 'approved' && (
+                                                     <button 
+                                                        onClick={() => onTransferTheme(item)}
+                                                        className="px-3 py-1.5 bg-brand-dark text-white text-[9px] font-bold uppercase tracking-widest rounded-lg hover:bg-black transition-all"
+                                                     >
+                                                        Transferir para Mapa
+                                                     </button>
+                                                 )}
+                                                 <button onClick={() => startEditingItem(item)} className="text-gray-300 hover:text-blue-500"><Edit2 size={14} /></button>
+                                                 <button onClick={() => setConfirmThemeId(item.id)} className="text-gray-300 hover:text-red-500"><Trash size={14} /></button>
+                                             </div>
+                                         </div>
+                                         <p className="text-sm text-gray-600 mb-3 ml-7">{item.description}</p>
+                                         
+                                         {item.client_comment && (
+                                             <div className="ml-7 mt-3 p-3 bg-gray-50 rounded-xl border border-black/[0.05]">
+                                                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 flex items-center gap-1"><MessageSquare size={10}/> Feedback do Cliente</p>
+                                                 <p className="text-sm font-medium text-gray-700">{item.client_comment}</p>
+                                             </div>
                                          )}
-                                         <button onClick={() => setConfirmThemeId(item.id)} className="text-gray-300 hover:text-red-500"><Trash size={14} /></button>
-                                     </div>
-                                 </div>
-                                 <p className="text-sm text-gray-600 mb-3 ml-7">{item.description}</p>
-                                 
-                                 {item.client_comment && (
-                                     <div className="ml-7 mt-3 p-3 bg-gray-50 rounded-xl border border-black/[0.05]">
-                                         <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 flex items-center gap-1"><MessageSquare size={10}/> Feedback do Cliente</p>
-                                         <p className="text-sm font-medium text-gray-700">{item.client_comment}</p>
-                                     </div>
+                                     </>
                                  )}
                                  </div>
                              </div>
