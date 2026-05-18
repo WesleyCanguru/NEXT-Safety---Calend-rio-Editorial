@@ -19,6 +19,9 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
   const [newItemModel, setNewItemModel] = useState<{session_id: string, title: string, description: string, format: string, reference_links: string}>({ session_id: '', title: '', description: '', format: 'Post Estático', reference_links: '' });
   const [loadingItemSession, setLoadingItemSession] = useState<string | null>(null);
 
+  // Multi-select
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
+
   useEffect(() => {
     if (activeClient) fetchSessions();
   }, [activeClient]);
@@ -168,10 +171,59 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
       if (!confirm("Excluir tema?")) return;
       try {
          await supabase.from('theme_items').delete().eq('id', itemId);
+         // Clear from selection if it was there
+         const newSet = new Set(selectedItemIds);
+         if (newSet.has(itemId)) {
+            newSet.delete(itemId);
+            setSelectedItemIds(newSet);
+         }
          fetchSessions();
       } catch (err) {
           console.error(err);
       }
+  };
+
+  const toggleSelection = (itemId: string) => {
+    const newSet = new Set(selectedItemIds);
+    if (newSet.has(itemId)) {
+      newSet.delete(itemId);
+    } else {
+      newSet.add(itemId);
+    }
+    setSelectedItemIds(newSet);
+  };
+
+  const toggleSelectAllInSession = (sessionId: string, items: any[]) => {
+    const itemIds = items.map(i => i.id);
+    const allInSessionSelected = itemIds.every(id => selectedItemIds.has(id));
+    const newSet = new Set(selectedItemIds);
+    
+    if (allInSessionSelected) {
+        itemIds.forEach(id => newSet.delete(id));
+    } else {
+        itemIds.forEach(id => newSet.add(id));
+    }
+    setSelectedItemIds(newSet);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItemIds.size === 0) return;
+    if (!confirm(`Excluir ${selectedItemIds.size} temas selecionados?`)) return;
+
+    try {
+        const { error } = await supabase
+            .from('theme_items')
+            .delete()
+            .in('id', Array.from(selectedItemIds));
+        
+        if (error) throw error;
+        
+        setSelectedItemIds(new Set());
+        fetchSessions();
+    } catch (err) {
+        console.error(err);
+        alert("Erro ao excluir temas selecionados.");
+    }
   };
 
   // Drag and Drop
@@ -226,6 +278,35 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
           </div>
        </div>
 
+       {selectedItemIds.size > 0 && (
+         <motion.div 
+           initial={{ opacity: 0, y: -20 }}
+           animate={{ opacity: 1, y: 0 }}
+           className="bg-red-50 border border-red-100 p-4 rounded-2xl flex items-center justify-between"
+         >
+           <div className="flex items-center gap-3">
+             <div className="w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold text-xs">
+               {selectedItemIds.size}
+             </div>
+             <p className="text-sm font-bold text-red-700">Temas selecionados</p>
+           </div>
+           <div className="flex gap-2">
+             <button 
+               onClick={() => setSelectedItemIds(new Set())}
+               className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-gray-700"
+             >
+               Cancelar
+             </button>
+             <button 
+               onClick={handleBulkDelete}
+               className="px-4 py-2 bg-red-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-red-700 transition-all flex items-center gap-2"
+             >
+               <Trash size={14} /> Excluir Selecionados
+             </button>
+           </div>
+         </motion.div>
+       )}
+
        {sessions.map(session => (
            <div key={session.id} className="bg-white rounded-3xl border border-black/[0.05] overflow-hidden shadow-sm">
                <div 
@@ -270,6 +351,25 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
                         exit={{ height: 0, opacity: 0 }}
                         className="border-t border-gray-100 bg-gray-50/50 p-6 flex flex-col gap-4"
                       >
+                         {/* Selection Bar for session */}
+                         {session.theme_items?.length > 0 && (
+                           <div className="flex items-center justify-between bg-white/50 p-3 rounded-xl border border-black/[0.03] mb-2">
+                             <button 
+                               onClick={() => toggleSelectAllInSession(session.id, session.theme_items)}
+                               className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-brand-dark transition-colors"
+                             >
+                               {session.theme_items.every((i: any) => selectedItemIds.has(i.id)) ? (
+                                 <><XCircle size={14} className="text-red-400" /> Desmarcar Todos</>
+                               ) : (
+                                 <><CheckCircle2 size={14} className="text-brand-dark" /> Selecionar Todos da Sessão</>
+                               )}
+                             </button>
+                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                               {session.theme_items.filter((i: any) => selectedItemIds.has(i.id)).length} de {session.theme_items.length} selecionados
+                             </span>
+                           </div>
+                         )}
+
                          {/* Lista de temas */}
                          {session.theme_items?.map((item: any, idx: number) => (
                              <div 
@@ -288,8 +388,20 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
                                        moveItem(session.id, session.theme_items, sourceIdx, idx);
                                     }
                                 }}
-                                className={`p-5 bg-white border rounded-2xl shadow-sm transition-all hover:shadow-md ${getApprovalColor(item.approval_status)}`}
+                                className={`p-5 bg-white border rounded-2xl shadow-sm transition-all hover:shadow-md flex gap-4 ${getApprovalColor(item.approval_status)} ${selectedItemIds.has(item.id) ? 'ring-2 ring-brand-dark border-brand-dark/30 shadow-brand-dark/10' : ''}`}
                              >
+                                 <div className="pt-1">
+                                   <button 
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       toggleSelection(item.id);
+                                     }}
+                                     className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${selectedItemIds.has(item.id) ? 'bg-brand-dark border-brand-dark text-white' : 'bg-white border-gray-200 text-transparent hover:border-brand-dark'}`}
+                                   >
+                                     <CheckCircle2 size={12} />
+                                   </button>
+                                 </div>
+                                 <div className="flex-1">
                                  <div className="flex justify-between items-start mb-3">
                                      <div className="flex items-center gap-2">
                                          <span className="cursor-move p-1 text-gray-300 hover:text-gray-500"><GripVertical size={14} /></span>
@@ -316,6 +428,7 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
                                          <p className="text-sm font-medium text-gray-700">{item.client_comment}</p>
                                      </div>
                                  )}
+                                 </div>
                              </div>
                          ))}
 
