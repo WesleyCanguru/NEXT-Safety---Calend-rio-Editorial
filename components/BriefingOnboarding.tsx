@@ -286,7 +286,10 @@ export const BriefingOnboarding: React.FC<{ isDashboardView?: boolean }> = ({ is
         .eq('briefing_type', selectedBriefingType);
       
       await loadBriefings();
-      if (complete) setSelectedBriefingType(null);
+      if (complete) {
+        setSelectedBriefingType(null);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } catch (err) {
       console.error(err);
     } finally {
