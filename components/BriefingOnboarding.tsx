@@ -374,6 +374,23 @@ export const BriefingOnboarding: React.FC<{ isDashboardView?: boolean }> = ({ is
     );
   }
 
+  const renderHeader = () => (
+    <header className="w-full max-w-7xl mx-auto px-4 sm:px-8 py-5 flex items-center justify-between border-b border-gray-100 bg-white/50 backdrop-blur-md">
+      <div className="flex items-center gap-3">
+        <Logo className="w-32 sm:w-44" />
+      </div>
+      <div>
+        <button 
+          onClick={() => logout()}
+          className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-900 border border-gray-200 hover:border-gray-300 rounded-full transition-all font-medium text-xs sm:text-sm shadow-sm"
+        >
+          <LogOut size={14} className="opacity-70" />
+          <span>Sair</span>
+        </button>
+      </div>
+    </header>
+  );
+
   const allCompleted = briefings.length > 0 && briefings.every(b => b.is_completed);
   const completedCount = briefings.filter(b => b.is_completed).length;
 
@@ -383,206 +400,188 @@ export const BriefingOnboarding: React.FC<{ isDashboardView?: boolean }> = ({ is
     const title = briefingSpec ? briefingSpec.title : selectedBriefingType;
 
     return (
-      <div className="w-full min-h-[calc(100vh-80px)] bg-[#FDFDFD] flex flex-col items-center justify-center py-10 px-4 relative">
-        <div className="absolute top-10 left-10 hidden sm:block">
-          <Logo className="w-48" />
-        </div>
+      <div className="w-full min-h-screen bg-[#FDFDFD] flex flex-col">
+        {renderHeader()}
 
-        <div className="absolute top-10 right-10">
-          <button 
-            onClick={() => logout()}
-            className="flex items-center gap-2 px-4 py-2 border border-brand-dark/10 rounded-xl text-gray-500 hover:text-red-500 hover:border-red-100 hover:bg-red-50 transition-all font-bold tracking-widest uppercase text-[10px]"
-          >
-            <LogOut size={16} /> Sair do sistema
-          </button>
-        </div>
-        
-        <div className="w-full max-w-3xl mx-auto p-4 sm:p-10 bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-black/[0.03] min-h-[80vh] flex flex-col pt-10">
-          <button 
-            onClick={() => setSelectedBriefingType(null)}
-          className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-500 hover:text-brand-dark transition-colors mb-8 w-fit"
-        >
-          <ArrowLeft size={16} /> Voltar para os briefings
-        </button>
-        
-        <h2 className="text-3xl font-black text-brand-dark mb-2 tracking-tight">{title}</h2>
-        <p className="text-gray-500 font-medium mb-10">Preencha as informações detalhadas para este módulo.</p>
+        <div className="flex-1 flex flex-col items-center justify-center py-8 px-4">
+          <div className="w-full max-w-3xl mx-auto p-5 sm:p-10 bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-black/[0.02] flex flex-col pt-10">
+            <button 
+              onClick={() => setSelectedBriefingType(null)}
+              className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-500 hover:text-brand-dark transition-colors mb-8 w-fit"
+            >
+              <ArrowLeft size={16} /> Voltar para os briefings
+            </button>
+            
+            <h2 className="text-3xl font-black text-brand-dark mb-2 tracking-tight">{title}</h2>
+            <p className="text-gray-500 font-medium mb-10">Preencha as informações detalhadas para este módulo.</p>
 
-        <div className="space-y-8 flex-1">
-          {questions.map((q) => (
-            <div key={q.key}>
-              <label className="block text-sm font-bold text-gray-800 mb-2">{q.label}</label>
-              {q.help && <p className="text-[11px] text-gray-500 mb-3 leading-relaxed">{q.help}</p>}
-              
-              {q.type === 'object' && q.objectKeys ? (
-                <div className="space-y-3 p-4 bg-gray-50/50 rounded-2xl border border-gray-200">
-                  {q.objectKeys.map((objKey: string) => (
-                    <div key={objKey} className="flex flex-col sm:flex-row sm:items-center gap-2">
-                       <label className="text-xs font-bold text-gray-500 uppercase w-32 shrink-0">{objKey}</label>
-                       <input
-                          type="text"
-                          value={(formData[q.key] && formData[q.key][objKey]) || ''}
-                          onChange={(e) => setFormData({ 
-                            ...formData, 
-                            [q.key]: { ...(formData[q.key] || {}), [objKey]: e.target.value } 
-                          })}
-                          className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark shadow-sm transition-all bg-white"
-                       />
+            <div className="space-y-8 flex-1">
+              {questions.map((q) => (
+                <div key={q.key}>
+                  <label className="block text-sm font-bold text-gray-800 mb-2">{q.label}</label>
+                  {q.help && <p className="text-[11px] text-gray-500 mb-3 leading-relaxed">{q.help}</p>}
+                  
+                  {q.type === 'object' && q.objectKeys ? (
+                    <div className="space-y-3 p-4 bg-gray-50/50 rounded-2xl border border-gray-200">
+                      {q.objectKeys.map((objKey: string) => (
+                        <div key={objKey} className="flex flex-col sm:flex-row sm:items-center gap-2">
+                           <label className="text-xs font-bold text-gray-500 uppercase w-32 shrink-0">{objKey}</label>
+                           <input
+                              type="text"
+                              value={(formData[q.key] && formData[q.key][objKey]) || ''}
+                              onChange={(e) => setFormData({ 
+                                ...formData, 
+                                [q.key]: { ...(formData[q.key] || {}), [objKey]: e.target.value } 
+                              })}
+                              className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark shadow-sm transition-all bg-white"
+                           />
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : q.type === 'array' ? (
+                    <div>
+                      <p className="text-[10px] text-gray-400 mb-2 italic">Separe os itens por vírgula</p>
+                      <textarea
+                        value={Array.isArray(formData[q.key]) ? formData[q.key].join(', ') : (formData[q.key] || '')}
+                        onChange={(e) => setFormData({ ...formData, [q.key]: e.target.value })}
+                        placeholder="Item 1, Item 2, Item 3..."
+                        className="w-full border border-gray-200 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark resize-none shadow-sm transition-all bg-gray-50/50"
+                        rows={3}
+                      />
+                    </div>
+                  ) : q.type === 'textarea' ? (
+                    <textarea
+                      value={formData[q.key] || ''}
+                      onChange={(e) => setFormData({ ...formData, [q.key]: e.target.value })}
+                      placeholder={q.placeholder}
+                      className="w-full border border-gray-200 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark resize-none shadow-sm transition-all bg-gray-50/50"
+                      rows={4}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={formData[q.key] || ''}
+                      onChange={(e) => setFormData({ ...formData, [q.key]: e.target.value })}
+                      placeholder={q.placeholder}
+                      className="w-full border border-gray-200 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark shadow-sm transition-all bg-gray-50/50"
+                    />
+                  )}
                 </div>
-              ) : q.type === 'array' ? (
-                <div>
-                  <p className="text-[10px] text-gray-400 mb-2 italic">Separe os itens por vírgula</p>
-                  <textarea
-                    value={Array.isArray(formData[q.key]) ? formData[q.key].join(', ') : (formData[q.key] || '')}
-                    onChange={(e) => setFormData({ ...formData, [q.key]: e.target.value })}
-                    placeholder="Item 1, Item 2, Item 3..."
-                    className="w-full border border-gray-200 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark resize-none shadow-sm transition-all bg-gray-50/50"
-                    rows={3}
-                  />
-                </div>
-              ) : q.type === 'textarea' ? (
-                <textarea
-                  value={formData[q.key] || ''}
-                  onChange={(e) => setFormData({ ...formData, [q.key]: e.target.value })}
-                  placeholder={q.placeholder}
-                  className="w-full border border-gray-200 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark resize-none shadow-sm transition-all bg-gray-50/50"
-                  rows={4}
-                />
-              ) : (
-                <input
-                  type="text"
-                  value={formData[q.key] || ''}
-                  onChange={(e) => setFormData({ ...formData, [q.key]: e.target.value })}
-                  placeholder={q.placeholder}
-                  className="w-full border border-gray-200 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark shadow-sm transition-all bg-gray-50/50"
-                />
-              )}
+              ))}
             </div>
-          ))}
-        </div>
 
-        <div className="mt-12 flex flex-col sm:flex-row gap-4 pt-8 border-t border-gray-100 pb-10">
-          <button
-            onClick={() => handleSave(false)}
-            disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 px-6 py-4 border border-gray-200 text-gray-700 rounded-2xl hover:bg-gray-50 transition-colors font-bold tracking-widest uppercase text-xs disabled:opacity-50"
-          >
-            Salvar Rascunho
-          </button>
-          <button
-            onClick={() => handleSave(true)}
-            disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white rounded-2xl hover:opacity-90 transition-opacity font-bold tracking-widest uppercase text-xs shadow-lg disabled:opacity-50"
-          >
-            {saving ? 'Salvando...' : <><CheckCircle size={16} /> Concluir Briefing</>}
-          </button>
+            <div className="mt-12 flex flex-col sm:flex-row gap-4 pt-8 border-t border-gray-100 pb-10">
+              <button
+                onClick={() => handleSave(false)}
+                disabled={saving}
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 border border-gray-200 text-gray-700 rounded-2xl hover:bg-gray-50 transition-colors font-bold tracking-widest uppercase text-xs disabled:opacity-50"
+              >
+                Salvar Rascunho
+              </button>
+              <button
+                onClick={() => handleSave(true)}
+                disabled={saving}
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white rounded-2xl hover:opacity-90 transition-opacity font-bold tracking-widest uppercase text-xs shadow-lg disabled:opacity-50"
+              >
+                {saving ? 'Salvando...' : <><CheckCircle size={16} /> Concluir Briefing</>}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full min-h-[calc(100vh-80px)] bg-[#FDFDFD] flex flex-col items-center justify-center py-10 px-4 relative">
-      <div className="absolute top-10 left-10 hidden sm:block">
-        <Logo className="w-56" />
-      </div>
-
-      <div className="absolute top-10 right-10">
-        <button 
-          onClick={() => logout()}
-          className="flex items-center gap-2 px-4 py-2 border border-brand-dark/10 rounded-xl text-gray-500 hover:text-red-500 hover:border-red-100 hover:bg-red-50 transition-all font-bold tracking-widest uppercase text-[10px]"
-        >
-          <LogOut size={16} /> Sair do sistema
-        </button>
-      </div>
+    <div className="w-full min-h-screen bg-[#FDFDFD] flex flex-col">
+      {renderHeader()}
       
-      <div className="max-w-4xl w-full p-6 sm:p-10 bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-black/[0.03]">
-        <div className="mb-10 text-center">
-          <div className="w-20 h-20 bg-brand-dark/5 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 shrink-0 text-brand-dark">
-            <Target size={32} />
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-brand-dark mb-4 tracking-tight">Briefings Estratégicos</h1>
-          <p className="text-gray-500 font-medium max-w-lg mx-auto text-sm sm:text-base mb-8">
-            {isAdmin ? 'Gerenciamento de formulários estratégicos do cliente.' : 'Antes de começar, precisamos de algumas informações estratégicas. Preencha os formulários abaixo.'}
-          </p>
-          
-          <div className="max-w-lg mx-auto">
-            <div className="mb-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
-              <span>{isAdmin ? 'Status do Cliente' : 'Progresso Geral'}</span>
-              <span>{completedCount} de {briefings.length} concluídos</span>
+      <div className="flex-1 flex flex-col items-center justify-center py-8 px-4 pb-16">
+        <div className="max-w-4xl w-full p-6 sm:p-10 bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-black/[0.02]">
+          <div className="mb-10 text-center">
+            <div className="w-20 h-20 bg-brand-dark/5 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 shrink-0 text-brand-dark">
+              <Target size={32} />
             </div>
-            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-               <div className="h-full bg-brand-dark transition-all duration-500" style={{ width: `${briefings.length ? (completedCount / briefings.length) * 100 : 0}%` }} />
-            </div>
-          </div>
-        </div>
-
-        {isAdmin && (
-          <div className="mb-10 bg-gray-50 p-6 rounded-3xl border border-gray-100">
-            <h3 className="text-sm font-bold text-brand-dark uppercase tracking-widest mb-4">Gerenciar Formulários Ativos</h3>
-            <div className="flex flex-wrap gap-2">
-              {Array.from(new Set([...Object.keys(BRIEFING_QUESTIONS), ...Object.keys(customTemplates)])).map((type) => {
-                const spec = customTemplates[type] || BRIEFING_QUESTIONS[type];
-                const isActive = briefings.some(b => b.briefing_type === type);
-                return (
-                  <button
-                    key={type}
-                    onClick={() => handleToggleType(type)}
-                    className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${
-                      isActive 
-                        ? 'bg-brand-dark text-white shadow-md' 
-                        : 'bg-white text-gray-400 border border-gray-100 hover:border-brand-dark/20'
-                    }`}
-                  >
-                    {spec.title}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-[10px] text-gray-400 mt-4 italic">* Clique para ativar ou desativar os formulários para este cliente.</p>
-          </div>
-        )}
-
-        <div className="grid gap-4 sm:grid-cols-2 mb-10 max-w-2xl mx-auto">
-          {briefings.map(b => {
-             const spec = customTemplates[b.briefing_type] || BRIEFING_QUESTIONS[b.briefing_type];
-             const title = spec ? spec.title : b.briefing_type;
-             return (
-              <div 
-                key={b.id} 
-                onClick={() => handleSelectBriefing(b)}
-                className={`p-6 rounded-[1.5rem] border-2 cursor-pointer transition-all hover:-translate-y-1 ${b.is_completed ? 'border-green-100 bg-green-50/50' : 'border-gray-100 hover:border-brand-dark bg-white shadow-[0_4px_20px_rgba(0,0,0,0.03)]'}`}
-              >
-                <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${b.is_completed ? 'bg-green-100 text-green-600' : 'bg-brand-dark/5 text-brand-dark'}`}>
-                      {b.is_completed ? <CheckCircle size={24} /> : <FileText size={24} />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-gray-900 truncate text-lg">{title}</h3>
-                      <span className={`text-[10px] uppercase tracking-widest font-bold mt-1 block ${b.is_completed ? 'text-green-600' : 'text-gray-400'}`}>
-                          {b.is_completed ? 'Concluído' : 'Pendente'}
-                      </span>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-gray-300 shrink-0" />
-                </div>
+            <h1 className="text-3xl sm:text-4xl font-black text-brand-dark mb-4 tracking-tight">Briefings Estratégicos</h1>
+            <p className="text-gray-500 font-medium max-w-lg mx-auto text-sm sm:text-base mb-8">
+              {isAdmin ? 'Gerenciamento de formulários estratégicos do cliente.' : 'Antes de começar, precisamos de algumas informações estratégicas. Preencha os formulários abaixo.'}
+            </p>
+            
+            <div className="max-w-lg mx-auto">
+              <div className="mb-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                <span>{isAdmin ? 'Status do Cliente' : 'Progresso Geral'}</span>
+                <span>{completedCount} de {briefings.length} concluídos</span>
               </div>
-            );
-          })}
-        </div>
-
-        {allCompleted && briefings.length > 0 && (
-          <div className="flex justify-center border-t border-gray-100 pt-10">
-            <button
-              onClick={() => window.location.reload()}
-              className="flex items-center gap-3 px-8 py-4 bg-brand-dark text-white rounded-2xl font-bold uppercase tracking-widest text-sm hover:opacity-90 transition-all hover:shadow-xl shadow-brand-dark/20 hover:-translate-y-1"
-            >
-              Acessar minha Bolsa <Send size={18} />
-            </button>
+              <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                 <div className="h-full bg-brand-dark transition-all duration-500" style={{ width: `${briefings.length ? (completedCount / briefings.length) * 100 : 0}%` }} />
+              </div>
+            </div>
           </div>
-        )}
+
+          {isAdmin && (
+            <div className="mb-10 bg-gray-50 p-6 rounded-3xl border border-gray-100">
+              <h3 className="text-sm font-bold text-brand-dark uppercase tracking-widest mb-4">Gerenciar Formulários Ativos</h3>
+              <div className="flex flex-wrap gap-2">
+                {Array.from(new Set([...Object.keys(BRIEFING_QUESTIONS), ...Object.keys(customTemplates)])).map((type) => {
+                  const spec = customTemplates[type] || BRIEFING_QUESTIONS[type];
+                  const isActive = briefings.some(b => b.briefing_type === type);
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => handleToggleType(type)}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${
+                        isActive 
+                          ? 'bg-brand-dark text-white shadow-md' 
+                          : 'bg-white text-gray-400 border border-gray-100 hover:border-brand-dark/20'
+                      }`}
+                    >
+                      {spec.title}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-gray-400 mt-4 italic">* Clique para ativar ou desativar os formulários para este cliente.</p>
+            </div>
+          )}
+
+          <div className="grid gap-4 sm:grid-cols-2 mb-10 max-w-2xl mx-auto w-full">
+            {briefings.map(b => {
+               const spec = customTemplates[b.briefing_type] || BRIEFING_QUESTIONS[b.briefing_type];
+               const title = spec ? spec.title : b.briefing_type;
+               return (
+                <div 
+                  key={b.id} 
+                  onClick={() => handleSelectBriefing(b)}
+                  className={`p-6 rounded-[1.5rem] border-2 cursor-pointer transition-all hover:-translate-y-1 ${b.is_completed ? 'border-green-100 bg-green-50/50 hover:bg-green-50' : 'border-gray-100/70 hover:border-brand-dark bg-white shadow-[0_4px_20px_rgba(0,0,0,0.02)]'}`}
+                >
+                  <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${b.is_completed ? 'bg-green-100 text-green-600' : 'bg-brand-dark/5 text-brand-dark'}`}>
+                         {b.is_completed ? <CheckCircle size={24} /> : <FileText size={24} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-snug break-words">{title}</h3>
+                        <span className={`text-[10px] uppercase tracking-widest font-bold mt-1 block ${b.is_completed ? 'text-green-600' : 'text-gray-400'}`}>
+                            {b.is_completed ? 'Concluído' : 'Pendente'}
+                        </span>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-gray-300 shrink-0" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {allCompleted && briefings.length > 0 && (
+            <div className="flex justify-center border-t border-gray-100 pt-10">
+              <button
+                onClick={() => window.location.reload()}
+                className="flex items-center gap-3 px-8 py-4 bg-brand-dark text-white rounded-2xl font-bold uppercase tracking-widest text-sm hover:opacity-90 transition-all hover:shadow-xl shadow-brand-dark/20 hover:-translate-y-1"
+              >
+                Acessar minha Bolsa <Send size={18} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
