@@ -12,7 +12,7 @@ import { OnboardingTemplatesModal } from './OnboardingTemplatesModal';
 import { BriefingTemplatesModal } from './BriefingTemplatesModal';
 
 const SERVICE_TO_BRIEFINGS: Record<string, string[]> = {
-  'Social Media': ['persona', 'publico_alvo', 'tom_voz', 'posicionamento'],
+  'Social Media': ['persona', 'publico_alvo', 'tom_voz', 'posicionamento', 'conteudo_bastidores'],
   'Tráfego Pago': ['trafego_pago'],
   'Website': ['site'],
   'Identidade Visual': ['persona', 'posicionamento'],

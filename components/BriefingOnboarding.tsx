@@ -91,11 +91,28 @@ export const BRIEFING_QUESTIONS: Record<string, { title: string, questions: any[
       { key: 'meta_principal', label: 'Meta principal das campanhas', type: 'textarea', help: 'O que definirá o projeto como um Sucesso Absoluto? Ex: Queremos captar R$10.000 de vendas online ou obter 80 leads qualificados por semana.' },
       { key: 'gatilho_agir', label: 'Gatilho para agir', type: 'array', help: 'Qual é o gatilho, oferta ou isca que fará o usuário clicar no seu anúncio agora mesmo? Ex: Bônus VIP, Desconto na 1ª Consulta, Escassez (Últimas Vagas), Autoridade...' }
     ]
+  },
+  'conteudo_bastidores': {
+    title: 'Conteúdo, Bastidores e Autoridade',
+    questions: [
+      { key: 'duvidas_frequentes', label: 'Quais dúvidas seus clientes mais fazem antes de contratar/comprar?', type: 'textarea' },
+      { key: 'erros_mercado', label: 'Quais erros você mais vê as pessoas cometendo no seu mercado?', type: 'textarea' },
+      { key: 'entendimento_servico', label: 'O que você gostaria que as pessoas entendessem melhor sobre seu serviço?', type: 'textarea' },
+      { key: 'processo_atendimento', label: 'Como funciona seu processo de atendimento do início ao fim?', type: 'textarea' },
+      { key: 'diferencial_pratica', label: 'O que torna seu atendimento/produto diferente na prática?', type: 'textarea' },
+      { key: 'historias_clientes', label: 'Quais histórias de clientes você pode contar sem expor nomes?', type: 'textarea' },
+      { key: 'bastidores_confianca', label: 'Quais bastidores do seu trabalho poderiam gerar confiança?', type: 'textarea' },
+      { key: 'nunca_faria', label: 'O que você nunca faria no seu mercado?', type: 'textarea' },
+      { key: 'crencas_defende', label: 'Quais crenças você defende sobre sua área?', type: 'textarea' },
+      { key: 'temas_evitar', label: 'Quais temas você não quer abordar nas redes sociais?', type: 'textarea' },
+      { key: 'produtos_vender_30d', label: 'Quais serviços/produtos você mais quer vender nos próximos 30 dias?', type: 'textarea' },
+      { key: 'provas_sociais', label: 'Quais provas você tem hoje? (Depoimentos, antes/depois, cases, fotos, números, anos de experiência, clientes atendidos)', type: 'textarea' }
+    ]
   }
 };
 
 const SERVICE_TO_BRIEFINGS: Record<string, string[]> = {
-  'Social Media': ['persona', 'publico_alvo', 'tom_voz', 'posicionamento'],
+  'Social Media': ['persona', 'publico_alvo', 'tom_voz', 'posicionamento', 'conteudo_bastidores'],
   'Tráfego Pago': ['trafego_pago'],
   'Website': ['site'],
   'Identidade Visual': ['persona', 'posicionamento'],
