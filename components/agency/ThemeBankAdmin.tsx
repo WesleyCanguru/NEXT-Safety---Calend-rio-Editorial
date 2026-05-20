@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, useAuth } from '../../lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Trash, Link2, Copy, Save, AlertCircle, Sparkles, X, ChevronDown, ChevronRight, MessageSquare, Target, CheckCircle2, XCircle, LayoutList, GripVertical, Edit2 } from 'lucide-react';
+import { Plus, Trash, Link2, Copy, Save, AlertCircle, Sparkles, X, ChevronDown, ChevronRight, MessageSquare, Target, CheckCircle2, XCircle, LayoutList, GripVertical, Edit2, FileText } from 'lucide-react';
 import { ConfirmModal } from '../ConfirmModal';
+import { ImportThemesPdfModal } from './ImportThemesPdfModal';
 
 interface ThemeBankProps {
   onTransferTheme: (theme: any) => void;
@@ -17,6 +18,7 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
   const [newSessionTitle, setNewSessionTitle] = useState('');
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editSessionTitle, setEditSessionTitle] = useState('');
+  const [showImportPdf, setShowImportPdf] = useState(false);
 
   
   // Theme creation inside a session
@@ -128,16 +130,26 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
     alert('Link copiado!');
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (session: any) => {
+    const hasRevision = session.theme_items?.some((t: any) => t.approval_status === 'revision');
+    if (hasRevision || session.status === 'changes_requested') {
+      return 'bg-amber-100 text-amber-700 font-extrabold border border-amber-200';
+    }
+    const status = session.status;
     switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-500';
-      case 'sent': return 'bg-blue-100 text-blue-600';
-      case 'reviewed': return 'bg-green-100 text-green-600';
-      default: return 'bg-gray-100 text-gray-500';
+      case 'draft': return 'bg-gray-100 text-gray-500 border border-gray-200';
+      case 'sent': return 'bg-blue-100 text-blue-600 border border-blue-200';
+      case 'reviewed': return 'bg-green-100 text-green-600 border border-green-200';
+      default: return 'bg-gray-100 text-gray-500 border border-gray-200';
     }
   };
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = (session: any) => {
+    const hasRevision = session.theme_items?.some((t: any) => t.approval_status === 'revision');
+    if (hasRevision || session.status === 'changes_requested') {
+      return 'Alteração';
+    }
+    const status = session.status;
     switch (status) {
       case 'draft': return 'Rascunho';
       case 'sent': return 'Enviado';
@@ -338,28 +350,46 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
 
   return (
     <div className="space-y-6">
-       <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-black/[0.05] shadow-sm">
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2"><Sparkles size={18} className="text-brand-dark" /> Banco de Temas</h3>
-            <p className="text-sm font-medium text-gray-500">Crie sessões de temas e envie para aprovação do cliente.</p>
-          </div>
-          <div className="flex gap-2">
-             <input 
-               type="text" 
-               placeholder="Nome da nova sessão (ex: Temas Agosto)"
-               value={newSessionTitle}
-               onChange={e => setNewSessionTitle(e.target.value)}
-               className="h-10 border border-gray-200 rounded-xl px-4 text-sm focus:border-brand-dark outline-none font-medium text-gray-900"
-             />
-             <button
-               onClick={handleCreateSession}
-               disabled={creatingSession || !newSessionTitle.trim()}
-               className="h-10 px-5 bg-brand-dark text-white rounded-xl text-[10px] font-bold uppercase tracking-widest disabled:opacity-50 hover:bg-black transition-all flex items-center justify-center whitespace-nowrap"
-             >
-                {creatingSession ? 'Criando...' : 'Criar Sessão'}
-             </button>
-          </div>
-       </div>
+        <ImportThemesPdfModal
+          isOpen={showImportPdf}
+          onClose={() => setShowImportPdf(false)}
+          activeClient={activeClient}
+          agencyId={agencyId}
+          existingSessions={sessions}
+          onSuccess={() => {
+            fetchSessions();
+            showToast('Temas importados com sucesso!');
+          }}
+        />
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-black/[0.05] shadow-sm">
+           <div>
+             <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2"><Sparkles size={18} className="text-brand-dark" /> Banco de Temas</h3>
+             <p className="text-sm font-medium text-gray-500">Crie sessões de temas e envie para aprovação do cliente.</p>
+           </div>
+           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+              <input 
+                type="text" 
+                placeholder="Nome da nova sessão (ex: Temas Agosto)"
+                value={newSessionTitle}
+                onChange={e => setNewSessionTitle(e.target.value)}
+                className="h-10 border border-gray-200 rounded-xl px-4 text-sm focus:border-brand-dark outline-none font-medium text-gray-900 flex-1 md:flex-initial"
+              />
+              <button
+                onClick={handleCreateSession}
+                disabled={creatingSession || !newSessionTitle.trim()}
+                className="h-10 px-5 bg-brand-dark text-white rounded-xl text-[10px] font-bold uppercase tracking-widest disabled:opacity-50 hover:bg-black transition-all flex items-center justify-center whitespace-nowrap"
+              >
+                 {creatingSession ? 'Criando...' : 'Criar Sessão'}
+              </button>
+              <button
+                onClick={() => setShowImportPdf(true)}
+                className="h-10 px-5 border border-brand-dark/15 hover:border-brand-dark/30 bg-brand-dark/5 hover:bg-brand-dark/10 text-brand-dark rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
+              >
+                 <FileText size={14} /> Importar PDF
+              </button>
+           </div>
+        </div>
 
        {selectedItemIds.size > 0 && (
          <motion.div 
@@ -438,8 +468,8 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
                       </div>
                    </div>
                    <div className="flex items-center gap-3">
-                      <span className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest ${getStatusColor(session.status)}`}>
-                         {getStatusLabel(session.status)}
+                      <span className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest ${getStatusColor(session)}`}>
+                         {getStatusLabel(session)}
                       </span>
                       <button
                         onClick={(e) => copyApprovalLink(session.session_token, e)}
@@ -600,7 +630,7 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
                                              } catch {
                                                 const match = item.client_comment.match(/^\[(.*?)\] (.*)$/s);
                                                 if (match) {
-                                                   parsed = { author: match[1], content: match[2], date: '' };
+                                                   parsed = { author: match[1], content: match[2], date: item.reviewed_at || item.updated_at || item.created_at || '' };
                                                 }
                                              }
                                              return (
@@ -624,7 +654,13 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
                          ))}
 
                          {/* Form Adicionar */}
-                         <div className="mt-4 p-5 border border-dashed border-gray-300 rounded-2xl bg-white shadow-sm flex flex-col gap-3 relative">
+                         {session.status === 'reviewed' ? (
+                             <div className="mt-4 p-4 border border-emerald-200/50 bg-emerald-50/20 text-emerald-800 rounded-2xl flex items-center justify-center gap-2">
+                                 <CheckCircle2 size={16} className="text-emerald-500" />
+                                 <span className="text-xs font-bold uppercase tracking-wider">Esta sessão foi revisada pelo cliente e está finalizada.</span>
+                             </div>
+                         ) : (
+                             <div className="mt-4 p-5 border border-dashed border-gray-300 rounded-2xl bg-white shadow-sm flex flex-col gap-3 relative">
                              {loadingItemSession === session.id && (
                                  <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-2xl">
                                      <AlertCircle size={24} className="text-brand-dark animate-pulse" />
@@ -674,6 +710,7 @@ export const ThemeBankAdmin: React.FC<ThemeBankProps> = ({ onTransferTheme }) =>
                                  </button>
                              </div>
                          </div>
+                          )}
                       </motion.div>
                   )}
                </AnimatePresence>

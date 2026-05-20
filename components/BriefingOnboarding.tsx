@@ -176,11 +176,7 @@ export const BriefingOnboarding: React.FC<{ isDashboardView?: boolean }> = ({ is
         
       let services = freshClientData?.services || activeClient?.services || [];
       if (!Array.isArray(services) || services.length === 0) {
-        // Fallback for legacy clients that only have service_type
-        const legacyType = freshClientData?.service_type || activeClient?.service_type;
-        if (legacyType === 'social_media') services = ['Social Media'];
-        else if (legacyType === 'design') services = ['Identidade Visual'];
-        else services = ['Social Media']; // Default
+        services = ['Social Media']; // Default
       }
       
       const customTypes = freshClientData?.features_settings?.active_briefing_types || activeClient?.features_settings?.active_briefing_types || [];

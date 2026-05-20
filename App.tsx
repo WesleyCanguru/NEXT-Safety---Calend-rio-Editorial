@@ -33,7 +33,7 @@ dayjs.locale('pt-br');
 
 import { Navigation } from './components/Navigation';
 
-type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'strategic-briefings' | 'paid-traffic' | 'website' | 'password-vault' | 'tutorials' | 'ai-photos' | 'agencyDashboard' | 'crm';
+type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'strategic-briefings' | 'paid-traffic' | 'website' | 'password-vault' | 'tutorials' | 'ai-photos' | 'agencyDashboard' | 'crm' | 'themes';
 
 interface MainAppProps {
   initialView?: ViewState;
@@ -472,6 +472,8 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
                     )}
                     {activeClient && <ClientChecklistView client={activeClient} onClose={() => setView('dashboard')} />}
                   </div>
+                ) : view === 'themes' ? (
+                  <MonthDetail monthName={selectedMonth || MONTH_NAMES[dayjs().month()]} onBack={handleBackToHome} initialViewMode="themes" />
                 ) : view === 'home' ? (
                   <AnnualOverview onSelectMonth={handleSelectMonth} />
                 ) : (

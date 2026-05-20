@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'motion/react';
 interface MonthDetailProps {
   monthName: string;
   onBack: () => void;
+  initialViewMode?: ViewMode;
 }
 
 type ViewMode = 'list' | 'calendar' | 'themes';
@@ -32,7 +33,7 @@ interface GroupedPost {
     scheduled_time?: string | null;
 }
 
-export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) => {
+export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack, initialViewMode }) => {
   const { userRole, activeClient, agencyId } = useAuth();
   const { monthlyPlans, weeklySchedule, updateMonthlyPlan, loading: loadingEditorial } = useEditorialData();
   
@@ -42,7 +43,7 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newPostDefaultDate, setNewPostDefaultDate] = useState<string>('');
 
-  const [viewMode, setViewMode] = useState<ViewMode>('calendar');
+  const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode || 'calendar');
   
   // Confirm Action State
   const [confirmAction, setConfirmAction] = useState<{
@@ -963,17 +964,17 @@ export const MonthDetail: React.FC<MonthDetailProps> = ({ monthName, onBack }) =
                 </motion.button>
             )}
 
-            <div className="hidden md:flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 w-full sm:w-auto">
                 <span className="text-[9px] uppercase tracking-widest text-gray-400 font-bold ml-1 sm:ml-0">Visualização:</span>
-                <div className="flex bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 border border-black/[0.03] shadow-[0_4px_15px_rgba(0,0,0,0.03)]">
-                    <button onClick={() => setViewMode('list')} className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${viewMode === 'list' ? 'bg-brand-dark text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50'}`}>
+                <div className="flex bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 border border-black/[0.03] shadow-[0_4px_15px_rgba(0,0,0,0.03)] w-full sm:w-auto justify-between sm:justify-start">
+                    <button onClick={() => setViewMode('list')} className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${viewMode === 'list' ? 'bg-brand-dark text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50'}`}>
                         <List size={14} /> <span>Lista</span>
                     </button>
-                    <button onClick={() => setViewMode('calendar')} className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${viewMode === 'calendar' ? 'bg-brand-dark text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50'}`}>
+                    <button onClick={() => setViewMode('calendar')} className={`hidden md:flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${viewMode === 'calendar' ? 'bg-brand-dark text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50'}`}>
                         <CalendarIcon size={14} /> <span>Calendário</span>
                     </button>
                     {userRole === 'admin' && (
-                        <button onClick={() => setViewMode('themes')} className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${viewMode === 'themes' ? 'bg-brand-dark text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50'}`}>
+                        <button onClick={() => setViewMode('themes')} className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${viewMode === 'themes' ? 'bg-brand-dark text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50'}`}>
                             <Sparkles size={14} /> <span>Banco de Temas</span>
                         </button>
                     )}

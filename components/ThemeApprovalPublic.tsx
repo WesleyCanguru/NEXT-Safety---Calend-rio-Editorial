@@ -4,6 +4,54 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, CheckCircle2, MessageSquare, XCircle, Search, Calendar, ChevronRight, LayoutList, Target, AlertCircle, Save, Send } from 'lucide-react';
 import { Logo } from './Logo';
 
+// Robust comment parser to ignore raw JSON strings and extract fields reliably
+export function parseClientComment(clientComment: string | null | undefined): { author: string; content: string; date: string } {
+  const result = { author: 'Cliente', content: '', date: '' };
+  if (!clientComment) return result;
+  
+  let currentStr = clientComment;
+  try {
+    let attempts = 0;
+    while (typeof currentStr === 'string' && currentStr.trim().startsWith('{') && attempts < 5) {
+      attempts++;
+      const j = JSON.parse(currentStr);
+      if (j && typeof j === 'object') {
+        if (j.content !== undefined) {
+          result.content = j.content || '';
+          result.author = j.author || 'Cliente';
+          result.date = j.date || '';
+          return result;
+        }
+        break;
+      }
+      currentStr = j;
+    }
+  } catch (err) {
+    // Ignore and fallback
+  }
+
+  const raw = String(clientComment);
+  const match = raw.match(/^\[(.*?)\] (.*)$/s);
+  if (match) {
+    result.author = match[1];
+    result.content = match[2];
+  } else {
+    if (raw.includes('"content":')) {
+       const contentMatch = raw.match(/"content"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+       const authorMatch = raw.match(/"author"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+       const dateMatch = raw.match(/"date"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+       if (contentMatch) {
+         result.content = contentMatch[1].replace(/\\"/g, '"');
+         result.author = authorMatch ? authorMatch[1].replace(/\\"/g, '"') : 'Cliente';
+         result.date = dateMatch ? dateMatch[1] : '';
+         return result;
+       }
+    }
+    result.content = raw;
+  }
+  return result;
+}
+
 export const ThemeApprovalPublic: React.FC<{ sessionToken: string }> = ({ sessionToken }) => {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
@@ -47,24 +95,9 @@ export const ThemeApprovalPublic: React.FC<{ sessionToken: string }> = ({ sessio
 
       if (itemsError) throw itemsError;
 
-      // Initialize local state for edits
+      // Initialize local state for edits using robust parser
       setThemes(itemsData.map(item => {
-         let parsedComment = { author: '', content: '', date: '' };
-         let rawComment = item.client_comment;
-         if (rawComment) {
-            try {
-               const j = JSON.parse(rawComment);
-               if (j.content) parsedComment = j;
-            } catch {
-               const match = rawComment.match(/^\[(.*?)\] (.*)$/s);
-               if (match) {
-                   parsedComment = { author: match[1], content: match[2], date: item.reviewed_at || new Date().toISOString() };
-               } else {
-                   parsedComment = { author: 'Cliente', content: rawComment, date: item.reviewed_at || new Date().toISOString() };
-               }
-            }
-         }
-
+         const parsedComment = parseClientComment(item.client_comment);
          return {
             ...item,
             temp_status: item.approval_status,
@@ -91,7 +124,16 @@ export const ThemeApprovalPublic: React.FC<{ sessionToken: string }> = ({ sessio
   const handleUpdateThemeStatus = (id: string, newStatus: string) => {
     if (newStatus === 'revision') setShowRevisions(true);
     if (newStatus === 'rejected') setShowRejected(true);
-    handleUpdateTheme(id, { temp_status: newStatus, temp_comment: newStatus === 'approved' ? '' : themes.find(t => t.id === id)?.temp_comment });
+    
+    const existingTheme = themes.find(t => t.id === id);
+    const existingComment = existingTheme?.temp_comment || '';
+    const hasComment = existingComment.trim() !== '';
+    
+    handleUpdateTheme(id, { 
+      temp_status: newStatus, 
+      temp_comment: newStatus === 'approved' ? '' : existingComment,
+      temp_comment_saved: newStatus === 'approved' ? false : hasComment
+    });
   };
 
   const handleUpdateTheme = (id: string, updates: any) => {
@@ -175,31 +217,58 @@ export const ThemeApprovalPublic: React.FC<{ sessionToken: string }> = ({ sessio
       const rejectedCount = themes.filter(t => t.temp_status === 'rejected').length;
 
       return (
-        <div className="min-h-screen bg-[#FDFDFD] flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-dark/5 rounded-full blur-[100px] pointer-events-none"></div>
+        <div className="min-h-screen bg-[#F9FAFB] flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+            {/* Background ambient lighting */}
+            <div className="absolute -top-40 -left-40 w-96 h-96 bg-brand-dark/10 rounded-full blur-[120px] pointer-events-none"></div>
+            <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-brand-dark/10 rounded-full blur-[120px] pointer-events-none"></div>
             
-            <div className="relative z-10 max-w-xl mx-auto flex flex-col items-center">
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-green-100/50">
-                    <CheckCircle2 size={40} className="text-green-600" />
+            <div className="relative z-10 max-w-2xl w-full mx-auto bg-white rounded-[2.5rem] p-8 sm:p-12 border border-black/[0.04] shadow-2xl shadow-black/[0.03] flex flex-col items-center">
+                
+                {/* Visual relationship header */}
+                <div className="flex items-center justify-center gap-6 mb-10 w-full flex-wrap sm:flex-nowrap">
+                    {/* Agency Logo */}
+                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center h-16 w-28 shadow-sm">
+                        <Logo size="small" />
+                    </div>
+                    {/* Divider Arrow */}
+                    <div className="flex flex-col items-center min-w-[60px]">
+                        <div className="h-px w-12 bg-gradient-to-r from-gray-200 via-brand-dark to-gray-200"></div>
+                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-[#9333EA] mt-1">Exclusivo</span>
+                    </div>
+                    {/* Client Logo */}
+                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center h-16 w-28 shadow-sm">
+                        {session.clients?.logo_url ? (
+                            <img src={session.clients.logo_url} alt={session.clients?.name} className="h-10 max-w-[90px] object-contain" />
+                        ) : (
+                            <span className="text-xs font-bold text-gray-700 truncate">{session.clients?.name || 'Cliente'}</span>
+                        )}
+                    </div>
                 </div>
-                <h1 className="text-4xl font-bold text-gray-900 tracking-tighter mb-4">Aprovação Concluída</h1>
-                <p className="text-lg text-gray-500 font-medium mb-12">Obrigado! A equipe já foi notificada das suas respostas para a sessão <strong className="text-brand-dark">{session.title}</strong>.</p>
+
+                <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-green-500/10">
+                    <CheckCircle2 size={40} className="stroke-[2.5]" />
+                </div>
+                
+                <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight mb-3">Avaliação Concluída!</h1>
+                <p className="text-sm sm:text-base text-gray-500 font-semibold max-w-md leading-relaxed mb-10">
+                    Obrigado! A equipe da <strong className="text-brand-dark font-extrabold">Canguru Digital</strong> já foi notificada e suas respostas para a sessão <strong className="text-brand-dark font-extrabold">"{session.title}"</strong> de <strong className="text-gray-800 font-extrabold">{session.clients?.name || 'sua empresa'}</strong> foram salvas com sucesso.
+                </p>
                 
                 <div className="grid grid-cols-3 gap-4 w-full">
-                    <div className="bg-white rounded-3xl p-6 border border-black/[0.05] shadow-lg shadow-black/[0.02]">
-                        <div className="text-green-600 mb-2"><CheckCircle2 size={24} className="mx-auto" /></div>
-                        <div className="text-3xl font-bold text-gray-900 mb-1">{approvedCount}</div>
-                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-tight">Aprovados</div>
+                    <div className="bg-green-50/[0.4] rounded-2xl p-4 sm:p-5 border border-green-100 flex flex-col items-center">
+                        <div className="text-green-600 mb-2"><CheckCircle2 size={20} /></div>
+                        <div className="text-2xl font-black text-green-700 mb-0.5">{approvedCount}</div>
+                        <div className="text-[9px] font-extrabold text-green-600 uppercase tracking-widest leading-none">Aprovados</div>
                     </div>
-                    <div className="bg-white rounded-3xl p-6 border border-black/[0.05] shadow-lg shadow-black/[0.02]">
-                        <div className="text-amber-500 mb-2"><MessageSquare size={24} className="mx-auto" /></div>
-                        <div className="text-3xl font-bold text-gray-900 mb-1">{revisionCount}</div>
-                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-tight">Alterações</div>
+                    <div className="bg-amber-50/[0.4] rounded-2xl p-4 sm:p-5 border border-amber-100 flex flex-col items-center">
+                        <div className="text-amber-500 mb-2"><MessageSquare size={20} /></div>
+                        <div className="text-2xl font-black text-amber-700 mb-0.5">{revisionCount}</div>
+                        <div className="text-[9px] font-extrabold text-amber-600 uppercase tracking-widest leading-none">Alterações</div>
                     </div>
-                    <div className="bg-white rounded-3xl p-6 border border-black/[0.05] shadow-lg shadow-black/[0.02]">
-                        <div className="text-red-500 mb-2"><XCircle size={24} className="mx-auto" /></div>
-                        <div className="text-3xl font-bold text-gray-900 mb-1">{rejectedCount}</div>
-                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-tight">Reprovados</div>
+                    <div className="bg-red-50/[0.4] rounded-2xl p-4 sm:p-5 border border-red-100 flex flex-col items-center">
+                        <div className="text-red-500 mb-2"><XCircle size={20} className="text-red-500" /></div>
+                        <div className="text-2xl font-black text-red-700 mb-0.5">{rejectedCount}</div>
+                        <div className="text-[9px] font-extrabold text-red-600 uppercase tracking-widest leading-none">Reprovados</div>
                     </div>
                 </div>
             </div>
@@ -244,7 +313,8 @@ export const ThemeApprovalPublic: React.FC<{ sessionToken: string }> = ({ sessio
     );
   }
 
-  const pendingAndApproved = themes.filter(t => t.temp_status === 'pending' || t.temp_status === 'approved' || !t.temp_status);
+  const pendingAndApproved = themes.filter(t => (t.temp_status === 'pending' || t.temp_status === 'approved' || !t.temp_status) && t.temp_status !== 'adjusted');
+  const adjustedThemes = themes.filter(t => t.temp_status === 'adjusted');
   const revisions = themes.filter(t => t.temp_status === 'revision');
   const rejected = themes.filter(t => t.temp_status === 'rejected');
 
@@ -253,6 +323,7 @@ export const ThemeApprovalPublic: React.FC<{ sessionToken: string }> = ({ sessio
       const isApproved = theme.temp_status === 'approved';
       const isRevision = theme.temp_status === 'revision';
       const isRejected = theme.temp_status === 'rejected';
+      const isAdjusted = theme.temp_status === 'adjusted';
 
       return (
           <motion.div 
@@ -263,6 +334,7 @@ export const ThemeApprovalPublic: React.FC<{ sessionToken: string }> = ({ sessio
                 isApproved ? 'border-green-200 shadow-xl shadow-green-100/20' :
                 isRevision ? 'border-amber-200 shadow-xl shadow-amber-100/20' :
                 isRejected ? 'border-red-200 shadow-xl shadow-red-100/20' :
+                isAdjusted ? 'border-purple-300 ring-2 ring-purple-500/10 shadow-xl shadow-purple-100/30' :
                 'border-black/[0.05] shadow-xl shadow-black/[0.02] hover:border-black/[0.1]'
             }`}
           >
@@ -274,11 +346,56 @@ export const ThemeApprovalPublic: React.FC<{ sessionToken: string }> = ({ sessio
                       <div className="px-3 py-1 bg-brand-dark/5 text-brand-dark text-[10px] font-bold uppercase tracking-widest rounded-lg flex items-center gap-1.5">
                           <LayoutList size={12} /> {theme.format || 'Post'}
                       </div>
+                      {isAdjusted && (
+                          <div className="px-3 py-1 bg-purple-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg flex items-center gap-1.5 animate-pulse shadow-sm shadow-purple-200">
+                              <span>Alterado pela Agência</span>
+                          </div>
+                      )}
                   </div>
                   
-                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 tracking-tight leading-tight">{theme.title}</h3>
-                  {theme.description && (
-                      <p className="text-gray-500 font-medium leading-relaxed whitespace-pre-wrap text-sm sm:text-base">{theme.description}</p>
+                  {!isAdjusted ? (
+                      <>
+                          <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 tracking-tight leading-tight">{theme.title}</h3>
+                          {theme.description && (
+                              <p className="text-gray-500 font-medium leading-relaxed whitespace-pre-wrap text-sm sm:text-base">{theme.description}</p>
+                          )}
+                      </>
+                  ) : (
+                      <div className="mb-6 p-5 bg-purple-50/50 rounded-2xl border border-purple-100 flex flex-col gap-4">
+                          {/* Display past client comment context */}
+                          {theme.client_comment && (() => {
+                              const commentParsed = parseClientComment(theme.client_comment);
+                              return (
+                                  <div className="border-b border-purple-100/60 pb-3">
+                                      <p className="text-[10px] font-black text-purple-700 uppercase tracking-widest flex items-center gap-1.5 mb-1.5">
+                                          <MessageSquare size={12} /> Seu Comentário Anterior:
+                                      </p>
+                                      <p className="text-xs font-semibold text-purple-950 italic">"{commentParsed.content}"</p>
+                                  </div>
+                              );
+                          })()}
+
+                          {/* Comparativo de Conteúdo */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-medium">
+                              {/* Versão Anterior */}
+                              <div className="p-3.5 bg-red-50/20 border border-red-100/30 rounded-xl">
+                                  <p className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-2 flex items-center gap-1">
+                                      <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span> Como estava antes:
+                                  </p>
+                                  <p className="font-extrabold text-[#374151] line-through mb-1.5 leading-snug">{theme.previous_title || theme.title}</p>
+                                  <p className="text-[#6B7280] line-through leading-relaxed whitespace-pre-wrap">{theme.previous_description || theme.description}</p>
+                              </div>
+
+                              {/* Versão Nova */}
+                              <div className="p-3.5 bg-green-50/20 border border-green-100/30 rounded-xl">
+                                  <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-2 flex items-center gap-1">
+                                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Como está agora:
+                                  </p>
+                                  <p className="font-extrabold text-[#111827] mb-1.5 leading-snug text-sm">{theme.title}</p>
+                                  <p className="text-[#374151] leading-relaxed whitespace-pre-wrap text-sm">{theme.description}</p>
+                              </div>
+                          </div>
+                      </div>
                   )}
 
                   {theme.reference_links && theme.reference_links.length > 0 && (
@@ -300,6 +417,7 @@ export const ThemeApprovalPublic: React.FC<{ sessionToken: string }> = ({ sessio
                   isApproved ? 'bg-green-50/50 border-green-100/50' :
                   isRevision ? 'bg-amber-50/50 border-amber-100/50' :
                   isRejected ? 'bg-red-50/50 border-red-100/50' :
+                  isAdjusted ? 'bg-purple-50/50 border-purple-100/50' :
                   'bg-gray-50 border-black/[0.02]'
               }`}>
                   <div className="flex flex-wrap gap-2">
@@ -435,8 +553,39 @@ export const ThemeApprovalPublic: React.FC<{ sessionToken: string }> = ({ sessio
         </header>
 
         {/* List of Themes */}
-        <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-8">
-            {pendingAndApproved.map(theme => renderTheme(theme))}
+        <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-12">
+            
+            {/* Seção de Publicações Alteradas / Ajustadas */}
+            {adjustedThemes.length > 0 && (
+                <div className="space-y-6">
+                    <div className="border-[#9333EA]/20 bg-purple-50/40 p-5 rounded-2xl border flex flex-col gap-1 shadow-sm">
+                        <h4 className="text-base font-extrabold text-purple-950 flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-purple-600 animate-pulse"></span>
+                            Temas Alterados pela Agência
+                        </h4>
+                        <p className="text-xs text-purple-800 font-semibold leading-relaxed">
+                            Estes temas foram ajustados pela equipe da <strong>Canguru Digital</strong> com base nas suas solicitações de alteração. Compare o antes e o depois abaixo e dê sua nova aprovação!
+                        </p>
+                    </div>
+                    <div className="space-y-8">
+                        {adjustedThemes.map(theme => renderTheme(theme))}
+                    </div>
+                </div>
+            )}
+
+            {/* Seção Padrão de Temas para Avaliação */}
+            {pendingAndApproved.length > 0 && (
+                <div className="space-y-6">
+                    {adjustedThemes.length > 0 && (
+                        <div className="border-b border-gray-100 pb-3 mt-6">
+                            <h4 className="text-base font-bold text-gray-800">Outros Temas de sua Sessão</h4>
+                        </div>
+                    )}
+                    <div className="space-y-8">
+                        {pendingAndApproved.map(theme => renderTheme(theme))}
+                    </div>
+                </div>
+            )}
 
             {revisions.length > 0 && (
                 <div className="mt-10 pt-6 border-t border-gray-100">

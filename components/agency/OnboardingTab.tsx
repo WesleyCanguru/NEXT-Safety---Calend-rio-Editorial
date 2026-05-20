@@ -260,10 +260,14 @@ export const OnboardingTab: React.FC<{ onNavigateToClients: (client: Client) => 
                 
                 <div className="flex items-center gap-3 pr-10">
                   <div 
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm overflow-hidden flex-shrink-0"
                     style={{ backgroundColor: client.color }}
                   >
-                    {client.initials}
+                    {client.logo_url ? (
+                      <img src={client.logo_url} alt={client.name} className="w-full h-full object-contain mix-blend-multiply p-1" />
+                    ) : (
+                      client.initials
+                    )}
                   </div>
                   <div className="min-w-0">
                     <p className="font-bold text-gray-900 truncate">{client.name}</p>
@@ -380,10 +384,14 @@ export const OnboardingTab: React.FC<{ onNavigateToClients: (client: Client) => 
                     <td className="p-6">
                       <div className="flex items-center gap-3">
                         <div 
-                          className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm"
+                          className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm overflow-hidden flex-shrink-0"
                           style={{ backgroundColor: client.color }}
                         >
-                          {client.initials}
+                          {client.logo_url ? (
+                            <img src={client.logo_url} alt={client.name} className="w-full h-full object-contain mix-blend-multiply p-1" />
+                          ) : (
+                            client.initials
+                          )}
                         </div>
                         <div>
                           <p className="font-bold text-gray-900">{client.name}</p>
