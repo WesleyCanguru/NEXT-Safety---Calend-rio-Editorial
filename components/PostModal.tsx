@@ -602,13 +602,21 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
 
     const newCommentObj = { 
         post_id: currentPostKey, 
+        agency_id: agencyId,
         author_role: userRole, 
         author_name: userRole === 'admin' ? 'Canguru' : userRole === 'approver' ? (activeClient?.responsible || 'Wesley') : 'Equipe', 
         content: newComment, 
-        visible_to_admin: true 
+        visible_to_admin: !isPrivate 
     };
     const { data, error } = await supabase.from('comments').insert(newCommentObj).select().single();
-    if (!error && data) {
+    
+    if (error) {
+        console.error('Erro ao salvar comentário:', error);
+        alert('⚠️ Não foi possível salvar seu comentário. Seu texto está preservado abaixo — copie-o e tente novamente em instantes.');
+        return; // Retorna sem modificar status e mantendo o erro
+    }
+
+    if (data) {
         setComments(prev => [...prev, data as PostComment]);
         setNewComment('');
         if (userRole === 'approver') {
@@ -630,6 +638,26 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
 
   const handleApproveThemeWithNotes = async () => {
       if (!themeNoteText.trim()) return alert("A observação é obrigatória.");
+      
+      const currentPostKey = post?.date_key === 'temp' ? dateKey : post?.date_key || dateKey;
+      const newCommentObj = { 
+          post_id: currentPostKey, 
+          agency_id: agencyId,
+          author_role: userRole, 
+          author_name: userRole === 'admin' ? 'Canguru' : userRole === 'approver' ? (activeClient?.responsible || 'Wesley') : 'Equipe', 
+          content: `⚠️ APROVOU O TEMA com observação: ${themeNoteText}`, 
+          visible_to_admin: true 
+      };
+      
+      const { data, error } = await supabase.from('comments').insert(newCommentObj).select().single();
+      if (error) {
+          console.error('Erro ao salvar observação:', error);
+          alert('⚠️ Não foi possível salvar sua observação. Seu texto está preservado abaixo — copie-o e tente novamente em instantes.');
+          return;
+      }
+
+      if (data) setComments(prev => [...prev, data as PostComment]);
+      
       await changeStatus('theme_approved_with_notes', { theme_client_notes: themeNoteText });
       setShowThemeNotesInput(false);
       setThemeNoteText('');
@@ -638,6 +666,26 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
 
   const handleRejectTheme = async () => {
       if (!themeNoteText.trim()) return alert("O motivo da reprovação é obrigatório.");
+      
+      const currentPostKey = post?.date_key === 'temp' ? dateKey : post?.date_key || dateKey;
+      const newCommentObj = { 
+          post_id: currentPostKey, 
+          agency_id: agencyId,
+          author_role: userRole, 
+          author_name: userRole === 'admin' ? 'Canguru' : userRole === 'approver' ? (activeClient?.responsible || 'Wesley') : 'Equipe', 
+          content: `❌ REPROVOU o tema. Justificativa: ${themeNoteText}`, 
+          visible_to_admin: true 
+      };
+
+      const { data, error } = await supabase.from('comments').insert(newCommentObj).select().single();
+      if (error) {
+          console.error('Erro ao salvar reprovação:', error);
+          alert('⚠️ Não foi possível salvar sua justificativa. Seu texto está preservado abaixo — copie-o e tente novamente em instantes.');
+          return;
+      }
+
+      if (data) setComments(prev => [...prev, data as PostComment]);
+
       await changeStatus('theme_rejected', { theme_rejection_reason: themeNoteText });
       setShowThemeRejectInput(false);
       setThemeNoteText('');
@@ -653,18 +701,24 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
       
       const newCommentObj = { 
           post_id: post?.date_key === 'temp' ? dateKey : post?.date_key || dateKey, 
+          agency_id: agencyId,
           author_role: userRole, 
           author_name: userRole === 'admin' ? 'Canguru' : userRole === 'approver' ? (activeClient?.responsible || 'Wesley') : 'Equipe', 
           content: `❌ REPROVOU a publicação. Justificativa: ${justification}`, 
           visible_to_admin: true 
       };
       const { data, error } = await supabase.from('comments').insert(newCommentObj).select().single();
-      if (!error && data) {
+      
+      if (error) {
+          console.error('Erro ao registrar reprovação:', error);
+          alert(`⚠️ Não foi possível registrar a reprovação. Tente novamente em instantes.\n\nSeu texto:\n${justification}`);
+          return;
+      }
+      
+      if (data) {
           setComments(prev => [...prev, data as PostComment]);
           await changeStatus('rejected');
           onClose();
-      } else {
-          alert('Erro ao registrar reprovação.');
       }
   };
 

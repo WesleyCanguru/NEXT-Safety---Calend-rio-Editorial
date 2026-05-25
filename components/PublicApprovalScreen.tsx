@@ -193,23 +193,29 @@ export const PublicApprovalScreen: React.FC = () => {
      setSubmitting(true);
      try {
         const approvedStatus = isThemeMode ? 'theme_approved' : 'approved';
-        // 1. Aprovar Principal
-        await savePostStatus(primaryPost, primaryContent, approvedStatus);
-
-        // 2. Aprovar Contraparte (se existir)
-        if (counterpartPost && counterpartContent) {
-            await savePostStatus(counterpartPost, counterpartContent, approvedStatus);
-        }
-
-        // 3. Comentário no Principal (para registro)
+        
+        // 1. Salvar Comentário Primeiro
         const newCommentObj = {
            post_id: primaryPost.date_key,
+           agency_id: primaryPost.agency_id || agencyId || 1,
            author_role: 'approver',
            author_name: name,
            content: isThemeMode ? `✅ APROVOU o tema${counterpartPost ? ' (e a versão vinculada)' : ''}.` : `✅ APROVOU a publicação${counterpartPost ? ' (e a versão vinculada)' : ''}.`,
            visible_to_admin: true
         };
-        const { data: insertedComment } = await supabase.from('comments').insert(newCommentObj).select().single();
+        const { data: insertedComment, error: commentError } = await supabase.from('comments').insert(newCommentObj).select().single();
+        if (commentError) {
+             alert('⚠️ Não foi possível registrar a aprovação. Tente novamente em instantes.');
+             setSubmitting(false);
+             return;
+        }
+
+        // 2. Aprovar Principal e Contraparte
+        await savePostStatus(primaryPost, primaryContent, approvedStatus);
+        if (counterpartPost && counterpartContent) {
+            await savePostStatus(counterpartPost, counterpartContent, approvedStatus);
+        }
+
         if (insertedComment) {
             setComments(prev => [...prev, insertedComment as PostComment]);
         }
@@ -234,6 +240,23 @@ export const PublicApprovalScreen: React.FC = () => {
         const rejectedStatus = isThemeMode ? 'theme_rejected' : 'rejected';
         const extraFields = isThemeMode ? { theme_rejection_reason: comment } : {};
         
+        // 1. Salvar Comentário Primeiro
+        const newCommentObj = {
+           post_id: primaryPost.date_key,
+           agency_id: primaryPost.agency_id || agencyId || 1,
+           author_role: 'approver',
+           author_name: userName,
+           content: isThemeMode ? `❌ REPROVOU o tema. Justificativa: ${comment}` : `❌ REPROVOU a publicação. Justificativa: ${comment}`,
+           visible_to_admin: true
+        };
+        
+        const { data: insertedComment, error: commentError } = await supabase.from('comments').insert(newCommentObj).select().single();
+        if (commentError) {
+             alert('⚠️ Não foi possível salvar sua justificativa. Seu texto está preservado na caixa de texto — copie-o e tente novamente em instantes.');
+             setSubmitting(false);
+             return; // DONT close modal, dont save status
+        }
+
         // Helper inline para lidar com extraFields
         const saveRejectedStatus = async (pData: PostData, cData: DailyContent) => {
             await supabase
@@ -253,24 +276,12 @@ export const PublicApprovalScreen: React.FC = () => {
                  }, { onConflict: 'date_key' });
         };
 
-        // 1. Marcar rejected Principal
+        // 2. Marcar rejected Principal e Contraparte
         await saveRejectedStatus(primaryPost, primaryContent!);
-
-        // 2. Marcar rejected Contraparte (se existir)
         if (counterpartPost && counterpartContent) {
             await saveRejectedStatus(counterpartPost, counterpartContent);
         }
 
-        // 3. Comentário
-        const newCommentObj = {
-           post_id: primaryPost.date_key,
-           author_role: 'approver',
-           author_name: userName,
-           content: isThemeMode ? `❌ REPROVOU o tema. Justificativa: ${comment}` : `❌ REPROVOU a publicação. Justificativa: ${comment}`,
-           visible_to_admin: true
-        };
-        
-        const { data: insertedComment } = await supabase.from('comments').insert(newCommentObj).select().single();
         if (insertedComment) {
             setComments(prev => [...prev, insertedComment as PostComment]);
         }
@@ -297,6 +308,23 @@ export const PublicApprovalScreen: React.FC = () => {
         const changesStatus = isThemeMode ? 'theme_approved_with_notes' : 'changes_requested';
         const extraFields = isThemeMode ? { theme_client_notes: comment } : {};
 
+        // 1. Salvar Comentário Primeiro
+        const newCommentObj = {
+           post_id: primaryPost.date_key,
+           agency_id: primaryPost.agency_id || agencyId || 1,
+           author_role: 'approver',
+           author_name: userName,
+           content: isThemeMode ? `⚠️ APROVOU O TEMA com observação: ${comment}` : comment,
+           visible_to_admin: true
+        };
+        
+        const { data: insertedComment, error: commentError } = await supabase.from('comments').insert(newCommentObj).select().single();
+        if (commentError) {
+             alert('⚠️ Não foi possível enviar sua solicitação. Seu texto está preservado na caixa de texto — copie-o e tente novamente em instantes.');
+             setSubmitting(false);
+             return; 
+        }
+
         // Helper inline para lidar com extraFields
         const saveChangesStatus = async (pData: PostData, cData: DailyContent) => {
             await supabase
@@ -316,24 +344,12 @@ export const PublicApprovalScreen: React.FC = () => {
                  }, { onConflict: 'date_key' });
         };
 
-        // 1. Marcar changes_requested Principal
+        // 2. Marcar changes_requested Principal e Contraparte
         await saveChangesStatus(primaryPost, primaryContent!);
-
-        // 2. Marcar changes_requested Contraparte (se existir)
         if (counterpartPost && counterpartContent) {
             await saveChangesStatus(counterpartPost, counterpartContent);
         }
 
-        // 3. Comentário
-        const newCommentObj = {
-           post_id: primaryPost.date_key,
-           author_role: 'approver',
-           author_name: userName,
-           content: isThemeMode ? `⚠️ APROVOU O TEMA com observação: ${comment}` : comment,
-           visible_to_admin: true
-        };
-        
-        const { data: insertedComment } = await supabase.from('comments').insert(newCommentObj).select().single();
         if (insertedComment) {
             setComments(prev => [...prev, insertedComment as PostComment]);
         }
