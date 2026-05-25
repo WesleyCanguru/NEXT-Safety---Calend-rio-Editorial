@@ -559,7 +559,7 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
 
   // --- COMMENT LOGIC ---
   const handleDeleteComment = async (commentId: string) => {
-      const { error } = await supabase.from('comments').delete().eq('agency_id', agencyId).eq('id', commentId);
+      const { error } = await supabase.from('comments').delete().eq('id', commentId);
       if (!error) setComments(prev => prev.filter(c => c.id !== commentId));
       setConfirmDeleteCommentId(null);
   };
@@ -602,7 +602,6 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
 
     const newCommentObj = { 
         post_id: currentPostKey, 
-        agency_id: agencyId,
         author_role: userRole, 
         author_name: userRole === 'admin' ? 'Canguru' : userRole === 'approver' ? (activeClient?.responsible || 'Wesley') : 'Equipe', 
         content: newComment, 
@@ -654,7 +653,6 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
       
       const newCommentObj = { 
           post_id: post?.date_key === 'temp' ? dateKey : post?.date_key || dateKey, 
-          agency_id: agencyId,
           author_role: userRole, 
           author_name: userRole === 'admin' ? 'Canguru' : userRole === 'approver' ? (activeClient?.responsible || 'Wesley') : 'Equipe', 
           content: `❌ REPROVOU a publicação. Justificativa: ${justification}`, 

@@ -124,7 +124,6 @@ export const PublicApprovalScreen: React.FC = () => {
             .from('comments')
             .select('*')
             .in('post_id', keysToFetch)
-            .eq('agency_id', primary.post.agency_id)
             .eq('visible_to_admin', true) // Only show comments intended for public/admin/approver flow
             .order('created_at', { ascending: true });
 
@@ -205,7 +204,6 @@ export const PublicApprovalScreen: React.FC = () => {
         // 3. Comentário no Principal (para registro)
         const newCommentObj = {
            post_id: primaryPost.date_key,
-           agency_id: primaryPost.agency_id || agencyId,
            author_role: 'approver',
            author_name: name,
            content: isThemeMode ? `✅ APROVOU o tema${counterpartPost ? ' (e a versão vinculada)' : ''}.` : `✅ APROVOU a publicação${counterpartPost ? ' (e a versão vinculada)' : ''}.`,
@@ -266,7 +264,6 @@ export const PublicApprovalScreen: React.FC = () => {
         // 3. Comentário
         const newCommentObj = {
            post_id: primaryPost.date_key,
-           agency_id: primaryPost.agency_id || agencyId,
            author_role: 'approver',
            author_name: userName,
            content: isThemeMode ? `❌ REPROVOU o tema. Justificativa: ${comment}` : `❌ REPROVOU a publicação. Justificativa: ${comment}`,
@@ -330,7 +327,6 @@ export const PublicApprovalScreen: React.FC = () => {
         // 3. Comentário
         const newCommentObj = {
            post_id: primaryPost.date_key,
-           agency_id: primaryPost.agency_id || agencyId,
            author_role: 'approver',
            author_name: userName,
            content: isThemeMode ? `⚠️ APROVOU O TEMA com observação: ${comment}` : comment,
