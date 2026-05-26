@@ -24,6 +24,7 @@ import { AgencyTasksTab } from './AgencyTasksTab';
 import { AgencyContractsTab } from './AgencyContractsTab';
 import { OnboardingTab } from './OnboardingTab';
 import { ClientesTab } from './ClientesTab';
+import { AnotacoesTab } from './AnotacoesTab';
 import { Logo } from '../Logo';
 
 import { useAuth } from '../../lib/supabase';
@@ -35,7 +36,7 @@ interface AgencyDashboardProps {
   onTabChange?: (tab: string) => void;
 }
 
-type Tab = 'home' | 'tasks' | 'financeiro' | 'prospeccao' | 'contratos' | 'onboarding' | 'clientes';
+type Tab = 'home' | 'tasks' | 'financeiro' | 'prospeccao' | 'contratos' | 'onboarding' | 'clientes' | 'anotacoes';
 
 export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSelectClient, activeTab, onTabChange }) => {
   const { userRole } = useAuth();
@@ -63,6 +64,11 @@ export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSele
               {activeTab === 'tasks' && <AgencyTasksTab />}
               {activeTab === 'financeiro' && <FinanceiroTab />}
               {activeTab === 'clientes' && <ClientesTab onBack={() => onTabChange?.('home')} />}
+              {activeTab === 'anotacoes' && (
+                <div className="h-[calc(100vh-8rem)] flex flex-col relative overflow-hidden">
+                  <AnotacoesTab />
+                </div>
+              )}
               {activeTab === 'prospeccao' && (
                 <div className="h-[calc(100vh-8rem)] flex flex-col">
                   <AgencyCRMTab />

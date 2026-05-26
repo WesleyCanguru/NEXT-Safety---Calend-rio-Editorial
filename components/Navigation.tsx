@@ -30,7 +30,8 @@ import {
   Clock,
   Sparkles,
   PlayCircle,
-  BarChart3
+  BarChart3,
+  NotebookPen
 } from 'lucide-react';
 import { useAuth, supabase } from '../lib/supabase';
 import { Logo } from './Logo';
@@ -82,6 +83,7 @@ export const Navigation: React.FC<SidebarProps> = ({
   const agencyItems = [
     { id: 'home', label: 'Início', icon: Home },
     { id: 'tasks', label: 'Processos & Tarefas', icon: ClipboardList },
+    { id: 'anotacoes', label: 'Anotações', icon: NotebookPen },
     { id: 'prospeccao', label: 'CRM / Prospecção', icon: Kanban },
     { id: 'financeiro', label: 'Financeiro', icon: DollarSign },
     { id: 'onboarding', label: 'Onboarding', icon: Target },

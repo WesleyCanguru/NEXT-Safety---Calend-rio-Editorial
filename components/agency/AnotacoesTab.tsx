@@ -1,0 +1,110 @@
+import React, { useState, useEffect } from 'react';
+import { useNotebooks } from '../../hooks/useNotebooks';
+import { useNotes, Note } from '../../hooks/useNotes';
+import { NotebookList } from '../anotacoes/NotebookList';
+import { NoteList } from '../anotacoes/NoteList';
+import { NoteEditor } from '../anotacoes/NoteEditor';
+import { ChevronLeft } from 'lucide-react';
+
+type MobileView = 'notebooks' | 'notes' | 'editor';
+
+export function AnotacoesTab() {
+  const { notebooks, loading: notebooksLoading, createNotebook } = useNotebooks();
+  
+  const [selectedNotebookId, setSelectedNotebookId] = useState<string | null>(null);
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [mobileView, setMobileView] = useState<MobileView>('notebooks');
+
+  const { notes, loading: notesLoading, createNote, updateNote } = useNotes(selectedNotebookId);
+
+  // Auto-select first notebook if none selected
+  useEffect(() => {
+    if (notebooks.length > 0 && !selectedNotebookId) {
+      // Pick Geral or default or first
+      const defaultNb = notebooks.find(n => n.is_default) || notebooks.find(n => n.title === 'Geral') || notebooks[0];
+      setSelectedNotebookId(defaultNb.id);
+    }
+  }, [notebooks, selectedNotebookId]);
+
+  const selectedNotebook = notebooks.find(n => n.id === selectedNotebookId) || null;
+  const selectedNote = notes.find(n => n.id === selectedNoteId) || null;
+
+  const handleSelectNotebook = (id: string) => {
+    setSelectedNotebookId(id);
+    setSelectedNoteId(null);
+    setMobileView('notes');
+  };
+
+  const handleSelectNote = (id: string) => {
+    setSelectedNoteId(id);
+    setMobileView('editor');
+  };
+
+  const handleCreateNote = async () => {
+    const note = await createNote();
+    if (note) {
+      setSelectedNoteId(note.id);
+      setMobileView('editor');
+    }
+  };
+
+  const handleCreateNotebook = async () => {
+    const name = window.prompt('Qual o nome do novo caderno?');
+    if (!name) return;
+    const emojis = ['📓', '📘', '📗', '📔', '📙', '📋', '📁'];
+    const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+    const nb = await createNotebook(name.trim(), emoji, '#3B82F6');
+    if (nb) {
+      handleSelectNotebook(nb.id);
+    }
+  };
+
+  return (
+    <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col md:flex-row absolute inset-0">
+      
+      {/* Mobile headers for back navigation */}
+      <div className="md:hidden flex shrink-0 border-b border-gray-100 p-4 bg-white/50 backdrop-blur-sm z-20">
+        {mobileView === 'notes' && (
+          <button onClick={() => setMobileView('notebooks')} className="flex items-center text-brand-dark font-medium">
+            <ChevronLeft size={20} /> Cadernos
+          </button>
+        )}
+        {mobileView === 'editor' && (
+          <button onClick={() => setMobileView('notes')} className="flex items-center text-brand-dark font-medium">
+            <ChevronLeft size={20} /> Notas
+          </button>
+        )}
+        {mobileView === 'notebooks' && (
+          <h2 className="font-bold text-brand-dark px-2">Anotações</h2>
+        )}
+      </div>
+
+      <div className={`md:flex h-full w-full ${mobileView === 'notebooks' ? 'block' : 'hidden md:block'}`}>
+        <NotebookList 
+          notebooks={notebooks} 
+          selectedId={selectedNotebookId} 
+          onSelect={handleSelectNotebook}
+          onCreate={handleCreateNotebook}
+        />
+      </div>
+
+      <div className={`md:flex h-full w-full ${mobileView === 'notes' ? 'block' : 'hidden md:block'}`}>
+        <NoteList 
+          notebook={selectedNotebook}
+          notes={notes}
+          selectedId={selectedNoteId}
+          onSelect={handleSelectNote}
+          onCreate={handleCreateNote}
+        />
+      </div>
+
+      <div className={`md:flex h-full w-full flex-1 ${mobileView === 'editor' ? 'block' : 'hidden md:block'}`}>
+        <NoteEditor 
+          note={selectedNote}
+          onUpdate={updateNote}
+        />
+      </div>
+      
+    </div>
+  );
+}
