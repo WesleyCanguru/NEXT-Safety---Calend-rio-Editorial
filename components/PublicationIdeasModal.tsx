@@ -57,31 +57,39 @@ export const PublicationIdeasModal: React.FC<PublicationIdeasModalProps> = ({ on
       created_at: new Date().toISOString()
     };
 
-    if (editingId) {
-      const { error } = await supabase
-        .from('post_ideas')
-        .update(payload)
-        .eq('agency_id', agencyId)
-        .eq('id', editingId);
-      if (!error) {
+    try {
+      if (editingId) {
+        const { error } = await supabase
+          .from('post_ideas')
+          .update(payload)
+          .eq('agency_id', agencyId)
+          .eq('id', editingId);
+        if (error) throw error;
+        
         setEditingId(null);
         setIsAdding(false);
         fetchIdeas();
-      }
-    } else {
-      const { error } = await supabase
-        .from('post_ideas')
-        .insert([payload]);
-      if (!error) {
+        setTheme('');
+        setDate('');
+        setFormat('');
+      } else {
+        const { error } = await supabase
+          .from('post_ideas')
+          .insert([payload]);
+        if (error) throw error;
+        
         setIsAdding(false);
         fetchIdeas();
+        setTheme('');
+        setDate('');
+        setFormat('');
       }
+    } catch (err) {
+      console.error('Erro ao salvar ideia:', err);
+      alert('⚠️ Não foi possível salvar sua ideia. Seu texto está preservado abaixo — para garantir, você pode copiá-lo e tentar enviar novamente. Se o erro persistir, por favor entre em contato conosco pelo grupo para nos avisar!');
+    } finally {
+      setIsSaving(false);
     }
-
-    setTheme('');
-    setDate('');
-    setFormat('');
-    setIsSaving(false);
   };
 
   const handleDelete = async (id: string) => {

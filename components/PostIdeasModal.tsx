@@ -106,7 +106,7 @@ export const PostIdeasModal: React.FC<PostIdeasModalProps> = ({ clientId, monthN
       handleCloseForm();
     } catch (err) {
       console.error('Erro ao salvar ideia:', err);
-      alert('Erro ao salvar ideia. Tente novamente.');
+      alert('⚠️ Não foi possível salvar sua ideia. Seu texto está preservado abaixo — para garantir, você pode copiá-lo e tentar enviar novamente. Se o erro persistir, por favor entre em contato conosco pelo grupo para nos avisar!');
     } finally {
       setIsSubmitting(false);
     }
