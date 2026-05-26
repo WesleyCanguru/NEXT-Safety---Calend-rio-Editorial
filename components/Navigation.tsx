@@ -104,19 +104,11 @@ export const Navigation: React.FC<SidebarProps> = ({
       { id: 'themes', label: 'Banco de Temas', icon: Sparkles, featureKey: 'mapa', defaultVisible: hasService('Social Media') },
       { id: 'strategic-briefings', label: 'Briefings', icon: Target, featureKey: 'briefings', defaultVisible: hasService('Social Media') || hasService('Tráfego Pago') },
       { id: 'paid-traffic', label: 'Tráfego Pago', icon: Zap, featureKey: 'reportei_paid', defaultVisible: hasService('Tráfego Pago') },
-      { id: 'reportei_paid', label: 'Dashboard Pago', icon: BarChart3, featureKey: 'reportei_paid', defaultVisible: hasService('Tráfego Pago') },
-      { id: 'reportei_organic', label: 'Dashboard Orgânico', icon: TrendingUp, featureKey: 'reportei_organic', defaultVisible: hasService('Social Media') },
       { id: 'website', label: 'Website', icon: Globe, featureKey: 'website', defaultVisible: hasService('Tráfego Pago') },
       { id: 'ai-photos', label: 'Fotos IA', icon: Camera, featureKey: 'ai_photos', defaultVisible: hasService('Fotos com IA') },
       { id: 'password-vault', label: 'Senhas', icon: ShieldCheck, featureKey: null, defaultVisible: true },
-      { id: 'drive', label: 'Documentos', icon: FolderOpen, featureKey: 'drive', defaultVisible: true },
       { id: 'tutorials', label: 'Tutoriais', icon: BookOpen, featureKey: 'tutorials', defaultVisible: true }
     ];
-
-    if (activeClient?.is_lead_tracking_enabled || userRole === 'admin') {
-      const isLeadEnabled = activeClient?.is_lead_tracking_enabled ?? false;
-      allModules.push({ id: 'crm', label: 'CRM / Leads', icon: Users, featureKey: 'crm', defaultVisible: isLeadEnabled });
-    }
 
     // Aplicar ordem personalizada se existir
     const menuOrder = activeClient.features_settings?.menu_order;
@@ -129,11 +121,6 @@ export const Navigation: React.FC<SidebarProps> = ({
         if (indexB === -1) indexB = 999;
         return indexA - indexB;
       });
-    } else if (allModules.some(m => m.id === 'crm')) {
-      // Ordem padrão: CRM em segundo se não houver ordem personalizada
-      const crmIndex = allModules.findIndex(m => m.id === 'crm');
-      const [crmModule] = allModules.splice(crmIndex, 1);
-      allModules.splice(1, 0, crmModule);
     }
 
     const mapped = allModules.filter(item => {
@@ -142,8 +129,7 @@ export const Navigation: React.FC<SidebarProps> = ({
       return getFeature(item.featureKey, item.defaultVisible);
     }).map(item => {
       const isHiddenForClient = item.featureKey && !getFeature(item.featureKey, item.defaultVisible);
-      // CRM is special: if is_lead_tracking_enabled is true, it shouldn't show as Hidden for Admin even if feature is explicitly off
-      const forceShowAsActive = item.id === 'crm' && activeClient?.is_lead_tracking_enabled;
+      const forceShowAsActive = false;
       const shouldShowHiddenTag = userRole === 'admin' && isHiddenForClient && !forceShowAsActive;
       
       return {
@@ -308,17 +294,19 @@ export const Navigation: React.FC<SidebarProps> = ({
             {!isCollapsed && <span className="text-[10px] font-bold uppercase tracking-widest">{agencyName ? `Painel ${agencyName.split(' ')[0]}` : "Painel Agência"}</span>}
           </button>
         ) : (
-          <button
-            onClick={onBackToSelector}
-            className={`
-              w-full flex items-center gap-3 p-3 rounded-2xl text-gray-400 hover:bg-gray-100 hover:text-brand-dark transition-all
-              ${isCollapsed ? 'justify-center' : ''}
-            `}
-            title="Sair do Módulo"
-          >
-            <Building2 size={18} />
-            {!isCollapsed && <span className="text-[10px] font-bold uppercase tracking-widest">Início</span>}
-          </button>
+          view !== 'client' && (
+            <button
+              onClick={onBackToSelector}
+              className={`
+                w-full flex items-center gap-3 p-3 rounded-2xl text-gray-400 hover:bg-gray-100 hover:text-brand-dark transition-all
+                ${isCollapsed ? 'justify-center' : ''}
+              `}
+              title="Sair do Módulo"
+            >
+              <Building2 size={18} />
+              {!isCollapsed && <span className="text-[10px] font-bold uppercase tracking-widest">Início</span>}
+            </button>
+          )
         )}
         <button
           onClick={logout}

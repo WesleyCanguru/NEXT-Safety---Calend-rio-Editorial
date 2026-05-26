@@ -193,15 +193,21 @@ export const PostIdeasModal: React.FC<PostIdeasModalProps> = ({ clientId, monthN
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">
                     Formato (Opcional)
                   </label>
-                  <div className="relative">
-                    <LayoutTemplate className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    <input
-                      type="text"
-                      value={format}
-                      onChange={(e) => setFormat(e.target.value)}
-                      className="w-full bg-gray-50 border border-black/[0.05] rounded-2xl pl-11 pr-4 py-3 text-brand-dark focus:outline-none focus:border-brand-dark/20 focus:bg-white transition-all"
-                      placeholder="Ex: Reels, Carrossel, Foto..."
-                    />
+                  <div className="flex gap-2">
+                    {['Reels', 'Carrossel', 'Estático'].map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setFormat(format === opt ? '' : opt)}
+                        className={`flex-1 py-3 px-3 border rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer text-center ${
+                          format === opt
+                            ? 'bg-brand-dark text-white border-brand-dark shadow-md'
+                            : 'bg-white border-black/[0.05] text-gray-500 hover:bg-gray-50 hover:text-brand-dark'
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
