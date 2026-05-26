@@ -78,7 +78,7 @@ function FallbackEditor({ note, title, setTitle, onUpdate, isSaving }: FallbackE
   }, [content, note.id, onUpdate]);
 
   return (
-    <div className="flex-1 flex flex-col bg-white overflow-hidden p-6">
+    <div className="h-full w-full flex flex-col bg-white overflow-hidden p-6">
       <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl mb-4 text-xs font-semibold">
         💡 Modo de Edição Clássico (Seguro) - Este dispositivo usa um motor de renderização alternativo. Suas anotações estão totalmente seguras e salvas automaticamente!
       </div>
@@ -285,7 +285,7 @@ function NoteEditorRich({ note, onUpdate, title, setTitle, isSaving, setIsSaving
   ];
 
   return (
-    <div className="flex-1 flex flex-col bg-white overflow-hidden" onClick={closeDropdowns}>
+    <div className="h-full w-full flex flex-col bg-white overflow-hidden" onClick={closeDropdowns}>
       {/* Head & Rich Toolbar */}
       <div className="border-b border-gray-100 bg-white sticky top-0 z-10 shrink-0">
         <div className="px-8 py-5">

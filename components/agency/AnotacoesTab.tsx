@@ -98,7 +98,7 @@ export function AnotacoesTab() {
         />
       </div>
 
-      <div className={`h-full flex-1 min-w-0 ${mobileView === 'editor' ? 'block w-full md:w-auto md:flex-1' : 'hidden md:block'}`}>
+      <div className={`h-full flex-1 flex flex-col min-w-0 ${mobileView === 'editor' ? 'flex w-full md:w-auto md:flex-1' : 'hidden md:block'}`}>
         <NoteEditor 
           note={selectedNote}
           onUpdate={updateNote}
