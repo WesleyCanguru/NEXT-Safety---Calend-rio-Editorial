@@ -79,7 +79,7 @@ export function AnotacoesTab() {
         )}
       </div>
 
-      <div className={`md:flex h-full w-full ${mobileView === 'notebooks' ? 'block' : 'hidden md:block'}`}>
+      <div className={`h-full ${mobileView === 'notebooks' ? 'block w-full' : 'hidden md:block'} shrink-0`}>
         <NotebookList 
           notebooks={notebooks} 
           selectedId={selectedNotebookId} 
@@ -88,7 +88,7 @@ export function AnotacoesTab() {
         />
       </div>
 
-      <div className={`md:flex h-full w-full ${mobileView === 'notes' ? 'block' : 'hidden md:block'}`}>
+      <div className={`h-full ${mobileView === 'notes' ? 'block w-full md:w-80' : 'hidden md:block'} shrink-0`}>
         <NoteList 
           notebook={selectedNotebook}
           notes={notes}
@@ -98,7 +98,7 @@ export function AnotacoesTab() {
         />
       </div>
 
-      <div className={`md:flex h-full w-full flex-1 ${mobileView === 'editor' ? 'block' : 'hidden md:block'}`}>
+      <div className={`h-full flex-1 min-w-0 ${mobileView === 'editor' ? 'block w-full md:w-auto md:flex-1' : 'hidden md:block'}`}>
         <NoteEditor 
           note={selectedNote}
           onUpdate={updateNote}

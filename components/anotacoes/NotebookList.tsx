@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Notebook } from '../../hooks/useNotebooks';
-import { Plus, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { Plus, ChevronLeft } from 'lucide-react';
 import { supabase, useAuth } from '../../lib/supabase';
 
 interface NotebookListProps {
@@ -80,10 +80,10 @@ export function NotebookList({ notebooks, selectedId, onSelect, onCreate }: Note
           <button 
             type="button"
             onClick={toggleCollapse} 
-            className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors text-gray-500" 
-            title={isCollapsed ? "Expandir Menu" : "Recolher Menu"}
+            className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors text-gray-400 bg-gray-100/50 hover:text-gray-600 border border-black/[0.01]" 
+            title={isCollapsed ? "Expandir" : "Recolher"}
           >
-            {isCollapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
+            <ChevronLeft size={16} className={`transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
           </button>
         </div>
       </div>
