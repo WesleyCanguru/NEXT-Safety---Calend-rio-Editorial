@@ -166,13 +166,22 @@ export const PublicationIdeasModal: React.FC<PublicationIdeasModalProps> = ({ on
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Formato (Opcional)</label>
-                    <input 
-                      type="text" 
-                      value={format} 
-                      onChange={e => setFormat(e.target.value)}
-                      className="w-full bg-gray-50 border border-black/[0.05] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark/10 transition-all"
-                      placeholder="Ex: Reels, Carrossel..."
-                    />
+                    <div className="flex gap-2">
+                      {['Reels', 'Carrossel', 'Estático'].map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => setFormat(format === opt ? '' : opt)}
+                          className={`flex-1 py-3 px-3 border rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer text-center ${
+                            format === opt
+                              ? 'bg-brand-dark text-white border-brand-dark shadow-md'
+                              : 'bg-white border-black/[0.05] text-gray-500 hover:bg-gray-50 hover:text-brand-dark'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
