@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, useAuth } from '../../lib/supabase';
-import { X, Plus, GripVertical, Settings2, Trash2, Save } from 'lucide-react';
+import { X, Plus, GripVertical, Settings2, Trash2, Save, CheckCircle, AlertCircle } from 'lucide-react';
 import { BRIEFING_QUESTIONS } from '../BriefingOnboarding';
 
 interface Props {
@@ -9,6 +9,12 @@ interface Props {
 
 export function BriefingTemplatesModal({ onClose }: Props) {
   const { agencyId } = useAuth();
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
   const [templates, setTemplates] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -67,14 +73,15 @@ export function BriefingTemplatesModal({ onClose }: Props) {
     if (!selectedType || !agencyId) return;
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('agency_briefing_templates')
         .upsert({
           agency_id: agencyId,
           briefing_type: selectedType,
           title: editingTitle,
           questions: editingQuestions
-        });
+        })
+        .select();
 
       if (error) throw error;
       
@@ -82,9 +89,10 @@ export function BriefingTemplatesModal({ onClose }: Props) {
         ...templates,
         [selectedType]: { title: editingTitle, questions: editingQuestions }
       });
-      alert('Salvo com sucesso!');
+      showToast('Formulário salvo com sucesso!', 'success');
     } catch (err: any) {
-      alert('Erro ao salvar. Verifique se a tabela agency_briefing_templates foi criada. ' + err.message);
+      console.error('Erro ao salvar formulário:', err);
+      showToast('Erro ao salvar formulário de briefing!', 'error');
     }
     setSaving(false);
   };
@@ -242,6 +250,27 @@ export function BriefingTemplatesModal({ onClose }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[9999] animate-bounce-short">
+          <div className={`flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border ${
+            toast.type === 'success' 
+              ? 'bg-green-50 border-green-100 text-green-800' 
+              : 'bg-red-50 border-red-100 text-red-800'
+          }`}>
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+              toast.type === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+            }`}>
+              {toast.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+            </div>
+            <div>
+              <p className="font-extrabold text-[10px] uppercase tracking-widest text-gray-400 leading-none">Notificação</p>
+              <p className="text-sm font-bold mt-1 text-gray-900 leading-tight">{toast.message}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

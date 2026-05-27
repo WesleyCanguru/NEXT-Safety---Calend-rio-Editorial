@@ -665,13 +665,19 @@ export const OnboardingTab: React.FC<{ onNavigateToClients: (client: Client) => 
       {/* Onboarding Templates Modal */}
       {showTemplatesModal && (
         <OnboardingTemplatesModal
-          onClose={() => setShowTemplatesModal(false)}
+          onClose={() => {
+            setShowTemplatesModal(false);
+            fetchOnboardingData();
+          }}
         />
       )}
 
       {showBriefingsModal && (
         <BriefingTemplatesModal
-          onClose={() => setShowBriefingsModal(false)}
+          onClose={() => {
+            setShowBriefingsModal(false);
+            fetchOnboardingData();
+          }}
         />
       )}
     </div>
