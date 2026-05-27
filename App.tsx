@@ -162,7 +162,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header Fixo - Apenas para visões sem sidebar persistente ou para visualização do mapa editorial */}
         {((!showNav && view !== 'agencyDashboard' && view !== 'strategic-briefings') || view === 'month-detail') && (
-          <header className={`bg-white/70 backdrop-blur-xl border-b border-black/[0.02] sticky top-0 ${showNav ? 'z-40' : 'z-50'} shadow-[0_1px_10px_rgba(0,0,0,0.02)]`}>
+          <header className={`bg-white/70 backdrop-blur-xl border-b border-black/[0.02] sticky ${showNav ? 'top-16 lg:top-0 z-40' : 'top-0 z-50'} shadow-[0_1px_10px_rgba(0,0,0,0.02)]`}>
             {/* Linha Superior: Logo e Botões de Navegação - Ocultar se já houver sidebar lateral */}
             {!showNav && (
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
