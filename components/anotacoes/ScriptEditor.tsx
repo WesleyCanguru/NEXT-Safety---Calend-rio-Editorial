@@ -17,9 +17,10 @@ import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough, 
   Heading1, Heading2, Heading3, List, ListOrdered, Quote, 
   Link as LinkIcon, Image as ImageIcon, AlignLeft, AlignCenter, 
-  AlignRight, Undo, Redo, Type, ChevronDown, ListTodo, Plus, Check, X, Link2, ArrowLeft, Archive, RefreshCw, Trash2, CheckSquare, Sparkles
+  AlignRight, Undo, Redo, Type, ChevronDown, ListTodo, Plus, Check, X, Link2, ArrowLeft, Archive, RefreshCw, Trash2, CheckSquare, Sparkles,
+  Edit, Eye
 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { supabase, useAuth } from '../../lib/supabase';
 
 // Custom Font Size Extension to avoid type compilation issues with setFontSize commands
 const FontSize = Extension.create({
@@ -62,12 +63,14 @@ interface ScriptEditorProps {
 
 // Fallback editor for safe rendering in any device/app standard webview
 function FallbackScriptEditor({ script, onUpdate, onBack, clientName, isPublicView = false }: ScriptEditorProps) {
+  const { userRole } = useAuth();
   const [title, setTitle] = useState(script.title);
   const [content, setContent] = useState(script.content?.html || '');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [clientLoggedRecordedMsg, setClientLoggedRecordedMsg] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     setTitle(script.title);
@@ -152,7 +155,7 @@ function FallbackScriptEditor({ script, onUpdate, onBack, clientName, isPublicVi
           )}
 
           <div className="flex flex-col">
-            {isEditingTitle && !isRecorded ? (
+            {isEditingTitle && !isRecorded && isEditing ? (
               <div className="flex items-center gap-2">
                 <input
                   type="text"
@@ -174,8 +177,8 @@ function FallbackScriptEditor({ script, onUpdate, onBack, clientName, isPublicVi
             ) : (
               <div className="flex items-center gap-2">
                 <h1 
-                  onClick={() => !isRecorded && setIsEditingTitle(true)}
-                  className={`text-2xl font-black text-brand-dark tracking-tight leading-none ${!isRecorded ? 'cursor-pointer hover:opacity-85' : ''}`}
+                  onClick={() => !isRecorded && isEditing && setIsEditingTitle(true)}
+                  className={`text-2xl font-black text-brand-dark tracking-tight leading-none ${!isRecorded && isEditing ? 'cursor-pointer hover:opacity-85' : ''}`}
                 >
                   {script.title}
                 </h1>
@@ -192,6 +195,16 @@ function FallbackScriptEditor({ script, onUpdate, onBack, clientName, isPublicVi
         </div>
 
         <div className="flex items-center gap-2">
+          {!isRecorded && (
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${isEditing ? 'bg-blue-50 text-blue-600 border border-blue-200' : 'bg-brand-dark hover:bg-brand-dark/95 text-white shadow-sm'}`}
+            >
+              {isEditing ? <Eye size={13} /> : <Edit size={13} />}
+              {isEditing ? 'Modo Leitura' : 'Editar Roteiro'}
+            </button>
+          )}
+
           {!isRecorded ? (
             <button
               onClick={markAsRecorded}
@@ -212,7 +225,7 @@ function FallbackScriptEditor({ script, onUpdate, onBack, clientName, isPublicVi
             )
           )}
 
-          {!isPublicView && (
+          {!isPublicView && userRole === 'admin' && (
             <button
               onClick={copyShareLink}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${copyFeedback ? 'bg-green-50 border-green-200 text-green-600' : 'bg-white hover:bg-gray-50 border-gray-200 text-gray-600'}`}
@@ -229,7 +242,7 @@ function FallbackScriptEditor({ script, onUpdate, onBack, clientName, isPublicVi
         placeholder={isRecorded ? "Roteiro gravado. Edição desabilitada." : "Escreva seu roteiro..."}
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        disabled={isRecorded}
+        disabled={isRecorded || !isEditing}
       />
       
       <div className="mt-2 text-right text-xs text-gray-400 font-medium">
@@ -265,11 +278,13 @@ class ScriptEditorErrorBoundary extends Component<EditorErrorBoundaryProps, { ha
 }
 
 function ScriptEditorRich({ script, onUpdate, onBack, clientName, isPublicView = false }: ScriptEditorProps) {
+  const { userRole } = useAuth();
   const [title, setTitle] = useState(script.title);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [clientLoggedRecordedMsg, setClientLoggedRecordedMsg] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Dropdown states for Rich Toolbar
   const [fontDropdownOpen, setFontDropdownOpen] = useState(false);
@@ -307,10 +322,10 @@ function ScriptEditorRich({ script, onUpdate, onBack, clientName, isPublicView =
       TaskItem.configure({ nested: true }),
     ],
     content: script.content?.html || '',
-    editable: script.status !== 'recorded',
+    editable: script.status !== 'recorded' && isEditing,
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose-base focus:outline-none max-w-none min-h-[450px] font-sans text-brand-dark leading-relaxed',
+        class: `prose prose-sm sm:prose-base focus:outline-none max-w-none min-h-[450px] font-sans text-brand-dark leading-relaxed ${!isEditing ? 'pointer-events-none' : ''}`,
       },
     },
   });
@@ -321,9 +336,9 @@ function ScriptEditorRich({ script, onUpdate, onBack, clientName, isPublicView =
       if (editor.getHTML() !== (script.content?.html || '')) {
         editor.commands.setContent(script.content?.html || '', { emitUpdate: false });
       }
-      editor.setEditable(script.status !== 'recorded');
+      editor.setEditable(script.status !== 'recorded' && isEditing);
     }
-  }, [script.id, script.status, editor]);
+  }, [script.id, script.status, editor, isEditing]);
 
   // Sync title React state
   useEffect(() => {
@@ -333,7 +348,7 @@ function ScriptEditorRich({ script, onUpdate, onBack, clientName, isPublicView =
   // Auto-save handler
   useEffect(() => {
     let timer: any;
-    if (editor && script.status !== 'recorded') {
+    if (editor && script.status !== 'recorded' && isEditing) {
       const handleTransaction = () => {
         clearTimeout(timer);
         timer = setTimeout(() => {
@@ -348,7 +363,7 @@ function ScriptEditorRich({ script, onUpdate, onBack, clientName, isPublicView =
         clearTimeout(timer);
       };
     }
-  }, [editor, script, handleUpdateContent]);
+  }, [editor, script, handleUpdateContent, isEditing]);
 
   const addImage = async () => {
     const input = document.createElement('input');
@@ -477,7 +492,7 @@ function ScriptEditorRich({ script, onUpdate, onBack, clientName, isPublicView =
             )}
 
             <div className="flex flex-col">
-              {isEditingTitle && !isRecorded ? (
+              {isEditingTitle && !isRecorded && isEditing ? (
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -499,9 +514,9 @@ function ScriptEditorRich({ script, onUpdate, onBack, clientName, isPublicView =
               ) : (
                 <div className="flex items-center gap-2">
                   <h1 
-                    onClick={() => !isRecorded && setIsEditingTitle(true)}
-                    className={`text-2xl sm:text-3xl font-black text-brand-dark tracking-tight leading-none ${!isRecorded ? 'cursor-pointer hover:opacity-85 decoration-dotted decoration-brand-dark/20 underline-offset-4' : ''}`}
-                    title={!isRecorded ? "Clique para editar o título" : undefined}
+                    onClick={() => !isRecorded && isEditing && setIsEditingTitle(true)}
+                    className={`text-2xl sm:text-3xl font-black text-brand-dark tracking-tight leading-none ${!isRecorded && isEditing ? 'cursor-pointer hover:opacity-85 decoration-dotted decoration-brand-dark/20 underline-offset-4' : ''}`}
+                    title={!isRecorded && isEditing ? "Clique para editar o título" : undefined}
                   >
                     {script.title}
                   </h1>
@@ -518,6 +533,16 @@ function ScriptEditorRich({ script, onUpdate, onBack, clientName, isPublicView =
           </div>
 
           <div className="flex items-center gap-2">
+            {!isRecorded && (
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${isEditing ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-sm' : 'bg-brand-dark hover:bg-brand-dark/95 text-white shadow-sm'}`}
+              >
+                {isEditing ? <Eye size={13} /> : <Edit size={13} />}
+                {isEditing ? 'Modo Leitura' : '✏️ Editar'}
+              </button>
+            )}
+
             {!isRecorded ? (
               <button
                 onClick={markAsRecorded}
@@ -538,7 +563,7 @@ function ScriptEditorRich({ script, onUpdate, onBack, clientName, isPublicView =
               )
             )}
 
-            {!isPublicView && (
+            {!isPublicView && userRole === 'admin' && (
               <button
                 onClick={copyShareLink}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${copyFeedback ? 'bg-green-50 border-green-200 text-green-600' : 'bg-white hover:bg-gray-50 border-gray-200 text-gray-600'}`}
@@ -550,8 +575,8 @@ function ScriptEditorRich({ script, onUpdate, onBack, clientName, isPublicView =
           </div>
         </div>
 
-        {/* Toolbar (Only for TipTap when editor is active) */}
-        {editor && !isRecorded && (
+        {/* Toolbar (Only for TipTap when editor is active and we are in edit mode) */}
+        {editor && !isRecorded && isEditing && (
           <div className="px-6 py-2 border-t border-gray-50 flex flex-col gap-2 overflow-x-auto no-scrollbar text-gray-500 bg-gray-50/50">
             {/* LINHA 1 - Texto, Fontes, Tamanho e Estrutura */}
             <div className="flex items-center gap-1.5 flex-nowrap shrink-0 overflow-x-auto no-scrollbar py-0.5">
@@ -773,7 +798,7 @@ function ScriptEditorRich({ script, onUpdate, onBack, clientName, isPublicView =
       {/* Content area */}
       <div 
         className="flex-1 overflow-y-auto px-8 py-6 cursor-text" 
-        onClick={() => !isRecorded && editor?.commands.focus()}
+        onClick={() => !isRecorded && isEditing && editor?.commands.focus()}
       >
         <EditorContent editor={editor} />
       </div>
