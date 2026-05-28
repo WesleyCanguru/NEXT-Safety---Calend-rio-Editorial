@@ -25,6 +25,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { PasswordVault } from './components/PasswordVault';
 import { TutorialCenter } from './components/TutorialCenter';
 import { AiPhotosView } from './components/AiPhotosView';
+import { RoteirosSection } from './components/anotacoes/RoteirosSection';
+import { ScriptApprovalPublic } from './components/anotacoes/ScriptApprovalPublic';
 
 import { AgencyHome } from './components/agency/AgencyHome';
 import { AgencyDashboard } from './components/agency/AgencyDashboard';
@@ -33,7 +35,7 @@ dayjs.locale('pt-br');
 
 import { Navigation } from './components/Navigation';
 
-type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'strategic-briefings' | 'paid-traffic' | 'website' | 'password-vault' | 'tutorials' | 'ai-photos' | 'agencyDashboard' | 'crm' | 'themes';
+type ViewState = 'home' | 'month-detail' | 'onboarding' | 'dashboard' | 'briefings' | 'strategic-briefings' | 'paid-traffic' | 'website' | 'password-vault' | 'tutorials' | 'ai-photos' | 'agencyDashboard' | 'crm' | 'themes' | 'roteiros';
 
 interface MainAppProps {
   initialView?: ViewState;
@@ -374,6 +376,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
                     onNavigateToPasswordVault={() => setView('password-vault')}
                     onNavigateToTutorials={() => setView('tutorials')}
                     onNavigateToAiPhotos={() => setView('ai-photos')}
+                    onNavigateToRoteiros={() => setView('roteiros')}
                     onRefreshClient={refreshActiveClient}
                   />
                 ) : view === 'briefings' ? (
@@ -438,6 +441,21 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
                     )}
                     <AiPhotosView />
                   </div>
+                ) : view === 'roteiros' ? (
+                  <div className="bg-white rounded-[2.5rem] border border-black/[0.03] shadow-sm min-h-[80vh] p-6 sm:p-10">
+                    {!showNav && (
+                      <div className="mb-8 border-b border-gray-100 pb-6 flex items-center gap-4">
+                        <button 
+                          onClick={() => setView('dashboard')}
+                          className="p-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-400 hover:text-brand-dark"
+                        >
+                          <ChevronRight className="w-5 h-5 rotate-180" />
+                        </button>
+                        <h2 className="text-xl font-bold text-brand-dark">Voltar ao Dashboard</h2>
+                      </div>
+                    )}
+                    {activeClient && <RoteirosSection clientId={activeClient.id} clientName={activeClient.name} />}
+                  </div>
                 ) : view === 'dashboard' ? (
                   <ClientHome
                     onNavigateToOnboarding={() => setView('onboarding')}
@@ -455,6 +473,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
                     onNavigateToPasswordVault={() => setView('password-vault')}
                     onNavigateToTutorials={() => setView('tutorials')}
                     onNavigateToAiPhotos={() => setView('ai-photos')}
+                    onNavigateToRoteiros={() => setView('roteiros')}
                     onRefreshClient={refreshActiveClient}
                   />
                 ) : view === 'onboarding' ? (
@@ -575,20 +594,33 @@ const App: React.FC = () => {
   const [isPublicMode, setIsPublicMode] = useState(false);
   const [contractToken, setContractToken] = useState<string | null>(null);
   const [themeToken, setThemeToken] = useState<string | null>(null);
+  const [roteiroToken, setRoteiroToken] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('mode') === 'public' && params.get('id')) {
       setIsPublicMode(true);
     }
+    
+    // Suportar ?roteiro=ID
+    const roteiroParam = params.get('roteiro') || params.get('script_id') || params.get('script');
+    if (roteiroParam) {
+      setRoteiroToken(roteiroParam);
+    }
+
     const pathname = window.location.pathname;
     const contractMatch = pathname.match(/^\/contrato\/([^/]+)\/?$/);
     if (contractMatch) {
       setContractToken(contractMatch[1]);
     }
-  const themeMatch = pathname.match(/^\/temas\/([^/]+)\/?$/);
+    const themeMatch = pathname.match(/^\/temas\/([^/]+)\/?$/);
     if (themeMatch) {
       setThemeToken(themeMatch[1]);
+    }
+    // Suportar /roteiro/ID
+    const roteiroMatch = pathname.match(/^\/roteiro\/([^/]+)\/?$/);
+    if (roteiroMatch) {
+      setRoteiroToken(roteiroMatch[1]);
     }
   }, []);
 
@@ -598,6 +630,10 @@ const App: React.FC = () => {
 
   if (themeToken) {
     return <ThemeApprovalPublic sessionToken={themeToken} />;
+  }
+
+  if (roteiroToken) {
+    return <ScriptApprovalPublic scriptId={roteiroToken} />;
   }
 
   if (isPublicMode) {
