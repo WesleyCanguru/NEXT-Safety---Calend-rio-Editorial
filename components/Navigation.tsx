@@ -76,6 +76,7 @@ export const Navigation: React.FC<SidebarProps> = ({
       .select('*')
       .eq('agency_id', agencyId)
       .eq('is_active', true)
+      .or('client_status.eq.active,client_status.is.null')
       .order('name');
     if (data) setAvailableClients(data);
   };

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { supabase, hashPassword, useAuth } from '../lib/supabase';
 import { Client, ClientLeadConfig } from '../types';
 import { getAnnualOverviewTemplate } from '../constants';
+import dayjs from 'dayjs';
 import { 
   ArrowLeft, 
   Plus, 
@@ -35,7 +36,8 @@ import {
   Trash2,
   LayoutDashboard,
   Copy,
-  Target
+  Target,
+  XCircle
 } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
 import { BRIEFING_QUESTIONS } from './BriefingOnboarding';
@@ -129,6 +131,9 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
   const [saving, setSaving] = useState(false);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [cancellingClient, setCancellingClient] = useState<Client | null>(null);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   const [clientContract, setClientContract] = useState<any | null>(null);
   const [loadingContract, setLoadingContract] = useState(false);
 
@@ -204,6 +209,9 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
     briefings_waived: false,
     is_lead_tracking_enabled: false,
     features_settings: {} as Record<string, any>,
+    client_type: 'recurring' as 'recurring' | 'one_time',
+    client_status: 'active' as 'active' | 'cancelled' | 'completed',
+    service_end_date: '',
   });
   const [uploading, setUploading] = useState(false);
   const [newContractLinkInfo, setNewContractLinkInfo] = useState<{ clientId: string, token: string } | null>(null);
@@ -232,7 +240,32 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
         .select('*')
         .eq('agency_id', agencyId)
         .order('name');
-      if (data) setClients(data as Client[]);
+      
+      if (data) {
+        const hoje = new Date().toISOString().split('T')[0];
+        const updatedData = await Promise.all(data.map(async (client: any) => {
+          if (
+            client.client_type === 'one_time' &&
+            client.client_status === 'active' &&
+            client.service_end_date &&
+            client.service_end_date < hoje
+          ) {
+            try {
+              const { data: updatedClient } = await supabase
+                .from('clients')
+                .update({ client_status: 'completed' })
+                .eq('id', client.id)
+                .select()
+                .single();
+              return updatedClient || { ...client, client_status: 'completed' };
+            } catch (err) {
+              console.error("Erro no encerramento automático:", err);
+            }
+          }
+          return client;
+        }));
+        setClients(updatedData as Client[]);
+      }
     } catch (err) {
       console.error('Error fetching clients:', err);
     } finally {
@@ -275,6 +308,9 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
         briefings_waived: form.briefings_waived,
         features_settings: form.features_settings,
         agency_id: agencyId, // <-- Insert with correct agencyId
+        client_type: form.client_type,
+        client_status: editingClientId ? form.client_status : 'active',
+        service_end_date: form.client_type === 'one_time' ? (form.service_end_date || null) : null,
       };
 
       let clientData;
@@ -532,6 +568,9 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
       briefings_waived: false,
       is_lead_tracking_enabled: false,
       features_settings: {},
+      client_type: 'recurring',
+      client_status: 'active',
+      service_end_date: '',
       ...{ kanban_stages: ['Novo Lead', 'Em Contato', 'Reunião Agendada', 'Proposta Enviada', 'Fechado'], specialty_options: [] }
     });
     setEditingClientId(null);
@@ -584,6 +623,9 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
       briefings_waived: client.briefings_waived || false,
       is_lead_tracking_enabled: leadConfig?.is_enabled || false,
       features_settings: client.features_settings || {},
+      client_type: client.client_type || 'recurring',
+      client_status: client.client_status || 'active',
+      service_end_date: client.service_end_date || '',
       ...{ 
         kanban_stages: leadConfig?.kanban_stages || ['Novo Lead', 'Em Contato', 'Reunião Agendada', 'Proposta Enviada', 'Fechado'], 
         specialty_options: leadConfig?.specialty_options || [] 
@@ -615,6 +657,28 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
     } finally {
       setIsDeleteModalOpen(false);
       setDeletingClient(null);
+      setTimeout(() => setSuccessMsg(''), 5000);
+    }
+  };
+
+  const handleCancelClient = async () => {
+    if (!cancellingClient) return;
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ client_status: 'cancelled' })
+        .eq('id', cancellingClient.id);
+
+      if (error) throw error;
+      setSuccessMsg(`Cliente "${cancellingClient.name}" marcado como cancelado com sucesso.`);
+      setErrorMsg('');
+      fetchClients();
+    } catch (err: any) {
+      console.error('Erro ao cancelar cliente:', err);
+      setErrorMsg(err.message || 'Erro ao cancelar o cliente.');
+    } finally {
+      setIsCancelModalOpen(false);
+      setCancellingClient(null);
       setTimeout(() => setSuccessMsg(''), 5000);
     }
   };
@@ -754,6 +818,62 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
                   placeholder="Ex: Tecnologia / SaaS"
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tipo de cliente</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer bg-gray-50 hover:bg-gray-100/60 px-4 py-2.5 border border-gray-200 rounded-xl text-sm transition-all flex-1 justify-center">
+                    <input 
+                      type="radio" 
+                      name="client_type" 
+                      value="recurring"
+                      checked={form.client_type === 'recurring'}
+                      onChange={() => setForm(f => ({ ...f, client_type: 'recurring', service_end_date: '' }))}
+                      className="w-4 h-4 text-blue-650 border-gray-300 focus:ring-blue-500"
+                    />
+                    <span className="text-gray-750 font-bold text-xs uppercase tracking-wider">🔄 Recorrente</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer bg-gray-50 hover:bg-gray-100/60 px-4 py-2.5 border border-gray-200 rounded-xl text-sm transition-all flex-1 justify-center">
+                    <input 
+                      type="radio" 
+                      name="client_type" 
+                      value="one_time"
+                      checked={form.client_type === 'one_time'}
+                      onChange={() => setForm(f => ({ ...f, client_type: 'one_time' }))}
+                      className="w-4 h-4 text-blue-650 border-gray-300 focus:ring-blue-500"
+                    />
+                    <span className="text-gray-750 font-bold text-xs uppercase tracking-wider">📦 Pontual</span>
+                  </label>
+                </div>
+              </div>
+
+              {form.client_type === 'one_time' && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Data de Encerramento *</label>
+                  <input 
+                    type="date" 
+                    value={form.service_end_date} 
+                    onChange={e => setForm(f => ({ ...f, service_end_date: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700" 
+                    required
+                  />
+                </div>
+              )}
+
+              {editingClientId && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Status do Cliente</label>
+                  <select 
+                    value={form.client_status} 
+                    onChange={e => setForm(f => ({ ...f, client_status: e.target.value as any }))}
+                    className="w-full px-4 py-2.5 border border-gray-305 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700 bg-white"
+                  >
+                    <option value="active">🟢 Ativo</option>
+                    <option value="cancelled">🔴 Cancelado</option>
+                    <option value="completed">🟣 Concluído</option>
+                  </select>
+                </div>
+              )}
 
               <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Redes Sociais Ativas</label>
@@ -1462,67 +1582,175 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
         {/* Lista de clientes */}
         {loading ? (
           <div className="text-center text-gray-400 py-12">Carregando...</div>
-        ) : (
-          <div className="space-y-4">
-            {clients.map((client, index) => (
-              <motion.div 
-                key={client.id} 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="group flex items-center gap-5 p-6 bg-white rounded-3xl border border-black/[0.03] shadow-[0_10px_30px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] transition-all duration-300"
-              >
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0 shadow-sm overflow-hidden"
-                  style={{ backgroundColor: client.color }}>
-                  {client.logo_url ? (
-                    <img src={client.logo_url} alt={client.name} className="w-full h-full object-contain mix-blend-multiply" />
-                  ) : (
-                    client.initials
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-brand-dark text-base mb-1">{client.name}</p>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                    {client.segment || '—'} {client.responsible ? `• ${client.responsible}` : ''}
-                  </p>
-                  {client.services && client.services.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {client.services.map(service => (
-                        <span key={service} className="px-2.5 py-1 bg-gray-50 text-gray-500 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-black/[0.03]">
-                          {service}
-                        </span>
-                      ))}
+        ) : (() => {
+          const activeClientsList = clients.filter(c => !c.client_status || c.client_status === 'active');
+          const inactiveClientsList = clients.filter(c => c.client_status === 'cancelled' || c.client_status === 'completed');
+
+          return (
+            <div className="space-y-6">
+              <div className="space-y-4">
+                {activeClientsList.map((client, index) => (
+                  <motion.div 
+                    key={client.id} 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="group flex flex-col sm:flex-row items-start sm:items-center gap-5 p-6 bg-white rounded-3xl border border-black/[0.03] shadow-[0_10px_30px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] transition-all duration-300"
+                  >
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0 shadow-sm overflow-hidden"
+                      style={{ backgroundColor: client.color }}>
+                      {client.logo_url ? (
+                        <img src={client.logo_url} alt={client.name} className="w-full h-full object-contain mix-blend-multiply" />
+                      ) : (
+                        client.initials
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="flex-shrink-0 flex items-center gap-4">
-                  <button 
-                    onClick={() => handleEdit(client)}
-                    className="flex flex-col items-center justify-center gap-1 p-2 text-gray-400 hover:text-brand-dark transition-colors"
-                    title="Editar Cliente"
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <p className="font-bold text-brand-dark text-base">{client.name}</p>
+                        {client.client_type === 'one_time' && (
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-md text-[8px] font-black uppercase tracking-widest">
+                            Pontual {client.service_end_date ? `• até ${dayjs(client.service_end_date).format('DD/MM')}` : ''}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
+                        {client.segment || '—'} {client.responsible ? `• ${client.responsible}` : ''}
+                      </p>
+                      {client.services && client.services.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {client.services.map(service => (
+                            <span key={service} className="px-2.5 py-1 bg-gray-50 text-gray-500 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-black/[0.03]">
+                              {service}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-shrink-0 flex items-center gap-4 self-end sm:self-auto mt-4 sm:mt-0">
+                      <button 
+                        onClick={() => handleEdit(client)}
+                        className="flex flex-col items-center justify-center gap-1 p-2 text-gray-400 hover:text-brand-dark transition-colors"
+                        title="Editar Cliente"
+                      >
+                        <Edit2 size={18} />
+                        <span className="text-[9px] font-bold uppercase tracking-widest">Editar</span>
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setCancellingClient(client);
+                          setIsCancelModalOpen(true);
+                        }}
+                        className="flex flex-col items-center justify-center gap-1 p-2 text-gray-400 hover:text-[#dc2626] transition-colors"
+                        title="Cancelar Cliente"
+                      >
+                        <XCircle size={18} />
+                        <span className="text-[9px] font-bold uppercase tracking-widest">Cancelar</span>
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setDeletingClient(client);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        className="flex flex-col items-center justify-center gap-1 p-2 text-gray-400 hover:text-red-500 transition-colors"
+                        title="Excluir Cliente"
+                      >
+                        <Trash2 size={18} />
+                        <span className="text-[9px] font-bold uppercase tracking-widest">Excluir</span>
+                      </button>
+                      <span className="text-[10px] px-3 py-1.5 bg-green-50 text-green-600 border border-green-100 rounded-xl font-bold uppercase tracking-widest h-fit">
+                        Ativo
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {inactiveClientsList.length > 0 && (
+                <div className="pt-4 border-t border-gray-100">
+                  <button
+                    onClick={() => setShowInactive(!showInactive)}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200/80 text-gray-500 hover:text-gray-700 rounded-xl text-xs font-bold uppercase tracking-widest transition-all mb-4"
                   >
-                    <Edit2 size={18} />
-                    <span className="text-[9px] font-bold uppercase tracking-widest">Editar</span>
+                    {showInactive ? 'Ocultar clientes inativos' : `Ver clientes inativos (${inactiveClientsList.length})`}
                   </button>
-                  <button 
-                    onClick={() => {
-                      setDeletingClient(client);
-                      setIsDeleteModalOpen(true);
-                    }}
-                    className="flex flex-col items-center justify-center gap-1 p-2 text-gray-400 hover:text-red-500 transition-colors"
-                    title="Excluir Cliente"
-                  >
-                    <Trash2 size={18} />
-                    <span className="text-[9px] font-bold uppercase tracking-widest">Excluir</span>
-                  </button>
-                  <span className={`text-[10px] px-3 py-1.5 rounded-xl font-bold uppercase tracking-widest h-fit ${client.is_active ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-gray-50 text-gray-500 border border-gray-100'}`}>
-                    {client.is_active ? 'Ativo' : 'Inativo'}
-                  </span>
+
+                  <AnimatePresence>
+                    {showInactive && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-4 overflow-hidden"
+                      >
+                        {inactiveClientsList.map((client, index) => (
+                          <div 
+                            key={client.id} 
+                            className="flex flex-col sm:flex-row items-start sm:items-center gap-5 p-6 bg-white/60 rounded-3xl border border-black/[0.02] shadow-sm opacity-65 group transition-all duration-300"
+                          >
+                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0 shadow-sm overflow-hidden"
+                              style={{ backgroundColor: client.color }}>
+                              {client.logo_url ? (
+                                <img src={client.logo_url} alt={client.name} className="w-full h-full object-contain mix-blend-multiply" />
+                              ) : (
+                                client.initials
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <p className="font-bold text-brand-dark text-base">{client.name}</p>
+                                <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${
+                                  client.client_status === 'cancelled' 
+                                    ? 'bg-rose-50 text-rose-600 border border-rose-100' 
+                                    : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
+                                }`}>
+                                  {client.client_status === 'cancelled' ? 'Cancelado' : 'Concluído'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
+                                {client.segment || '—'} {client.responsible ? `• ${client.responsible}` : ''}
+                              </p>
+                              {client.services && client.services.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-3">
+                                  {client.services.map(service => (
+                                    <span key={service} className="px-2.5 py-1 bg-gray-50/50 text-gray-450 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-black/[0.02]">
+                                      {service}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-shrink-0 flex items-center gap-4 self-end sm:self-auto mt-4 sm:mt-0">
+                              <button 
+                                onClick={() => handleEdit(client)}
+                                className="flex flex-col items-center justify-center gap-1 p-2 text-gray-400 hover:text-brand-dark transition-colors"
+                                title="Editar Cliente"
+                              >
+                                <Edit2 size={18} />
+                                <span className="text-[9px] font-bold uppercase tracking-widest">Editar</span>
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  setDeletingClient(client);
+                                  setIsDeleteModalOpen(true);
+                                }}
+                                className="flex flex-col items-center justify-center gap-1 p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                title="Excluir Cliente"
+                              >
+                                <Trash2 size={18} />
+                                <span className="text-[9px] font-bold uppercase tracking-widest">Excluir</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
+              )}
+            </div>
+          );
+        })()}
       </motion.div>
 
       {newContractLinkInfo && (
@@ -1580,6 +1808,26 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
         onCancel={() => {
           setIsDeleteModalOpen(false);
           setDeletingClient(null);
+        }}
+        confirmButtonColor="red"
+      />
+
+      <ConfirmModal
+        isOpen={isCancelModalOpen}
+        title="Cancelar Cliente"
+        message={
+          <>
+            Tem certeza que deseja marcar o cliente <strong>{cancellingClient?.name}</strong> como cancelado?
+            <br /><br />
+            O histórico será preservado, mas ele sairá da lista de clientes ativos.
+          </>
+        }
+        confirmText="Sim, Cancelar"
+        cancelText="Voltar"
+        onConfirm={handleCancelClient}
+        onCancel={() => {
+          setIsCancelModalOpen(false);
+          setCancellingClient(null);
         }}
         confirmButtonColor="red"
       />

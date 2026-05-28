@@ -237,6 +237,9 @@ export interface Client {
   created_at?: string;
   traffic_strategy_data?: TrafficStrategyData | null;
   features_settings?: Record<string, any> | null;
+  client_type?: 'recurring' | 'one_time';
+  client_status?: 'active' | 'cancelled' | 'completed';
+  service_end_date?: string | null;
 }
 
 export interface PostIdea {
