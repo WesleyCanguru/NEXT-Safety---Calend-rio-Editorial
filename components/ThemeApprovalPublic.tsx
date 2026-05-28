@@ -283,7 +283,7 @@ export const ThemeApprovalPublic: React.FC<{ sessionToken: string }> = ({ sessio
               <div className="flex justify-center mb-10">
                   {session.clients?.logo_url ? (
                       <img src={session.clients.logo_url} alt={session.clients?.name} className="h-16 object-contain" />
-                  ) : <Logo size="medium" />}
+                  ) : <Logo size="large" />}
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center tracking-tight">Quem está avaliando?</h2>
               <p className="text-gray-500 text-center mb-8 text-sm font-medium">Precisamos do seu nome para identificar os comentários e aprovações no sistema.</p>

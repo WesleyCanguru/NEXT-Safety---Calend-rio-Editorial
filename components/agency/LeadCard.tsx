@@ -16,7 +16,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onClick }) => {
 
   return (
     <motion.button
-      whileHover={{ scale: 1.02, y: -3, shadow: '0 15px 20px -5px rgba(0, 0, 0, 0.04)' }}
+      whileHover={{ scale: 1.02, y: -3, boxShadow: '0 15px 20px -5px rgba(0, 0, 0, 0.04)' }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className="w-full bg-white p-6 rounded-[2rem] border border-black/[0.03] shadow-sm text-left group transition-all"

@@ -118,7 +118,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
   // 2. Para clientes em módulos internos (fora do Dashboard e Onboarding inicial)
   const clientDoingOnboarding = userRole === 'approver' && activeClient && !activeClient.onboarding_completed && !activeClient.briefings_waived;
   const showClientNav = userRole === 'approver' && view !== 'dashboard' && !clientDoingOnboarding;
-  const showNav = userRole === 'admin' || showClientNav;
+  const showNav = userRole === 'admin' || userRole === 'team' || showClientNav;
 
   return (
     <div className={`min-h-screen flex font-sans text-brand-dark bg-[#FDFDFD] relative overflow-x-hidden ${showNav ? (isNavCollapsed ? 'lg:pl-20' : 'lg:pl-72') : ''} transition-all duration-500 ease-[0.16,1,0.3,1]`}>
@@ -183,7 +183,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
                           <span className="text-lg sm:text-3xl font-bold text-brand-dark tracking-tighter serif italic truncate max-w-[120px] sm:max-w-none">{activeClient.name}</span>
                         )
                       ) : (
-                        <Logo size="medium" />
+                        <Logo size="large" />
                       )}
                       {activeClient && (
                         <>
@@ -204,7 +204,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
                       <span className="text-[8px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-0.5">Membro Premium</span>
                       <span className="text-[11px] font-bold text-brand-dark uppercase tracking-widest">{getRoleLabel()}</span>
                     </div>
-                    {userRole === 'admin' && (
+                    {(userRole as any) === 'admin' && (
                       <button
                         onClick={onGoToAgencyHome}
                         className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] transition-all bg-gray-50/50 text-gray-500 hover:bg-gray-100 hover:text-brand-dark border border-black/[0.02]"
@@ -214,11 +214,11 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
                         <span className="hidden sm:inline">Menu Inicial</span>
                       </button>
                     )}
-                    {userRole === 'admin' && (
+                    {(userRole as any) === 'admin' && (
                       <button
                         onClick={() => setView('agencyDashboard')}
                         className={`flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] transition-all ${
-                          view === 'agencyDashboard'
+                          (view as string) === 'agencyDashboard'
                             ? 'bg-brand-dark text-white shadow-xl shadow-brand-dark/20'
                             : 'bg-gray-50/50 text-gray-500 hover:text-brand-dark hover:bg-gray-100 border border-black/[0.02]'
                         }`}
@@ -228,7 +228,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialView, onExitAgencyDashboard, o
                         <span className="hidden sm:inline">Painel Canguru</span>
                       </button>
                     )}
-                    {userRole === 'admin' && (
+                    {(userRole as any) === 'admin' && (
                       <button
                         onClick={() => {
                           setActiveClient(null);

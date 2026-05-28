@@ -212,7 +212,7 @@ export const ContractFormScreen: React.FC<ContractFormScreenProps> = ({ formToke
             <img src={agencyData.logo_url} alt={agencyData.name} className="h-16 object-contain mb-8 mix-blend-multiply" />
           ) : (
             <div className="mb-8 scale-150">
-                <Logo size="medium" />
+                <Logo size="large" />
             </div>
           )}
           <h1 className="text-3xl font-bold tracking-tight text-gray-900 text-center">Ficha Cadastral para Contrato</h1>

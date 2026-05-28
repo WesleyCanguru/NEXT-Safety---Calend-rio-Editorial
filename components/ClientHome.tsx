@@ -81,7 +81,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const destino = params.get('destino') || params.get('active_view');
-    if (destino === 'crm' && (activeClient?.is_lead_tracking_enabled || isAdmin)) {
+    if (destino === 'crm' && ((activeClient as any)?.is_lead_tracking_enabled || isAdmin)) {
       setActiveView('leads');
     }
   }, [activeClient, isAdmin]);
@@ -220,7 +220,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
       y: 0,
       transition: {
         duration: 0.6,
-        ease: [0.16, 1, 0.3, 1]
+        ease: [0.16, 1, 0.3, 1] as any
       }
     }
   };
@@ -406,7 +406,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
         <motion.div
           key="crm"
           variants={itemVariants}
-          whileHover={{ y: -4, shadow: '0 20px 40px rgba(0,0,0,0.08)' }}
+          whileHover={{ y: -4, boxShadow: '0 20px 40px rgba(0,0,0,0.08)' }}
           onClick={() => setActiveView('leads')}
           className="bg-white p-10 rounded-[2.5rem] border border-black/[0.03] shadow-[0_10px_30px_rgba(0,0,0,0.02)] cursor-pointer group transition-all h-full"
         >
@@ -661,7 +661,7 @@ export const ClientHome: React.FC<ClientHomeProps> = ({
           </button>
           <LeadTrackerView 
             clientId={activeClient.id} 
-            config={leadConfig || { is_enabled: true, client_id: activeClient.id }} 
+            config={(leadConfig || { is_enabled: true, client_id: activeClient.id }) as any} 
             onBack={() => {
               setActiveView('dashboard');
               checkStatus();

@@ -236,7 +236,7 @@ export interface Client {
   due_day?: number;
   created_at?: string;
   traffic_strategy_data?: TrafficStrategyData | null;
-  features_settings?: Record<string, boolean> | null;
+  features_settings?: Record<string, any> | null;
 }
 
 export interface PostIdea {
@@ -247,6 +247,8 @@ export interface PostIdea {
   date: string | null;
   format: string | null;
   created_at: string;
+  created_by_name?: string | null;
+  created_by_role?: string | null;
 }
 
 // --- NOVOS TIPOS PARA GESTÃO DA AGÊNCIA ---

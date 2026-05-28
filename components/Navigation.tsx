@@ -106,7 +106,7 @@ export const Navigation: React.FC<SidebarProps> = ({
       { id: 'paid-traffic', label: 'Tráfego Pago', icon: Zap, featureKey: 'reportei_paid', defaultVisible: hasService('Tráfego Pago') },
       { id: 'website', label: 'Website', icon: Globe, featureKey: 'website', defaultVisible: hasService('Tráfego Pago') },
       { id: 'ai-photos', label: 'Fotos IA', icon: Camera, featureKey: 'ai_photos', defaultVisible: hasService('Fotos com IA') },
-      { id: 'roteiros', label: 'Roteiros', icon: FileText, featureKey: null, defaultVisible: true },
+      { id: 'roteiros', label: 'Roteiros', icon: FileText, featureKey: 'roteiros', defaultVisible: true },
       { id: 'password-vault', label: 'Senhas', icon: ShieldCheck, featureKey: null, defaultVisible: true },
       { id: 'tutorials', label: 'Tutoriais', icon: BookOpen, featureKey: 'tutorials', defaultVisible: true }
     ];
@@ -124,14 +124,16 @@ export const Navigation: React.FC<SidebarProps> = ({
       });
     }
 
+    const isAgencyUser = userRole === 'admin' || userRole === 'team';
+
     const mapped = allModules.filter(item => {
-      if (userRole === 'admin') return true;
+      if (isAgencyUser) return true;
       if (!item.featureKey) return item.defaultVisible;
       return getFeature(item.featureKey, item.defaultVisible);
     }).map(item => {
       const isHiddenForClient = item.featureKey && !getFeature(item.featureKey, item.defaultVisible);
       const forceShowAsActive = false;
-      const shouldShowHiddenTag = userRole === 'admin' && isHiddenForClient && !forceShowAsActive;
+      const shouldShowHiddenTag = isAgencyUser && isHiddenForClient && !forceShowAsActive;
       
       return {
         ...item,
@@ -140,7 +142,7 @@ export const Navigation: React.FC<SidebarProps> = ({
       };
     });
 
-    if (userRole === 'admin') {
+    if (isAgencyUser) {
       // Reordenar: ativos primeiro, inativos por último
       const active = mapped.filter(i => !i.isInactive);
       const inactive = mapped.filter(i => i.isInactive);

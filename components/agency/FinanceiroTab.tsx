@@ -266,7 +266,7 @@ export const FinanceiroTab: React.FC = () => {
         ].map((item, idx) => (
           <motion.div 
             key={idx}
-            whileHover={{ y: -3, shadow: '0 15px 20px -5px rgba(0, 0, 0, 0.04)' }}
+            whileHover={{ y: -3, boxShadow: '0 15px 20px -5px rgba(0, 0, 0, 0.04)' }}
             className="bg-white p-6 rounded-[2rem] border border-black/[0.03] shadow-sm transition-all duration-300 flex items-center gap-5"
           >
             <div className={`w-12 h-12 ${item.bg} rounded-2xl flex-shrink-0 flex items-center justify-center ${item.color}`}>

@@ -691,7 +691,7 @@ export const OnboardingTab: React.FC<{ onNavigateToClients: (client: Client) => 
                                 ) : (
                                   <span className="text-yellow-600 flex items-center gap-1"><Clock size={10} /> Em rascunho</span>
                                 )}
-                                {b.created_at || b.completed_at ? ` • ${dayjs(b.completed_at || b.created_at).format('DD/MM/YYYY')}` : ''}
+                                {b.created_at || (b as any).completed_at ? ` • ${dayjs((b as any).completed_at || b.created_at).format('DD/MM/YYYY')}` : ''}
                               </p>
                             </div>
                             <ChevronRight 

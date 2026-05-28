@@ -18,7 +18,7 @@ interface WebsiteFeedbackPanelProps {
 }
 
 export default function WebsiteFeedbackPanel({ isOpen, onClose }: WebsiteFeedbackPanelProps) {
-  const { activeClient, userRole, user } = useAuth();
+  const { activeClient, userRole } = useAuth();
   const [feedbacks, setFeedbacks] = useState<WebsiteFeedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newFeedback, setNewFeedback] = useState('');
@@ -61,7 +61,7 @@ export default function WebsiteFeedbackPanel({ isOpen, onClose }: WebsiteFeedbac
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFeedback.trim() || !activeClient || !user) return;
+    if (!newFeedback.trim() || !activeClient) return;
 
     try {
       setIsSubmitting(true);
@@ -89,7 +89,7 @@ export default function WebsiteFeedbackPanel({ isOpen, onClose }: WebsiteFeedbac
         .from('website_feedbacks')
         .insert([{
           client_id: activeClient.id,
-          user_id: user.id,
+          user_id: userRole === 'admin' ? 'agency' : 'client',
           content: newFeedback.trim(),
           image_url: imageUrl,
           status: 'pending'

@@ -116,7 +116,8 @@ const REORDERABLE_MODULES = [
   { id: 'ai-photos', label: 'Fotos IA' },
   { id: 'password-vault', label: 'Senhas' },
   { id: 'drive', label: 'Documentos / Drive' },
-  { id: 'tutorials', label: 'Tutoriais' }
+  { id: 'tutorials', label: 'Tutoriais' },
+  { id: 'roteiros', label: 'Roteiros' }
 ];
 
 export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
@@ -202,7 +203,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
     due_day: 10,
     briefings_waived: false,
     is_lead_tracking_enabled: false,
-    features_settings: {} as Record<string, boolean>,
+    features_settings: {} as Record<string, any>,
   });
   const [uploading, setUploading] = useState(false);
   const [newContractLinkInfo, setNewContractLinkInfo] = useState<{ clientId: string, token: string } | null>(null);
@@ -515,6 +516,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
       instagram: '', 
       linkedin: '',
       tiktok: '',
+      reportei_url: '',
       organic_reportei_url: '',
       paid_reportei_url: '',
       drive_link: '',
@@ -566,6 +568,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
       instagram: client.instagram || '',
       linkedin: linkedinHandle,
       tiktok: client.tiktok || '',
+      reportei_url: client.reportei_url || '',
       organic_reportei_url: client.organic_reportei_url || '',
       paid_reportei_url: client.paid_reportei_url || '',
       drive_link: (client as any).drive_link || '',
@@ -1309,6 +1312,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ onBack }) => {
                       { id: 'mapa', label: 'Mapa de Conteúdo' },
                       { id: 'website', label: 'Aprovação Website' },
                       { id: 'ai_photos', label: 'Fotos com IA' },
+                      { id: 'roteiros', label: 'Roteiros' },
                     ].map(feature => {
                       const isChecked = form.features_settings?.[feature.id] ?? true;
                       return (

@@ -620,7 +620,7 @@ export const BriefingOnboarding: React.FC<{ isDashboardView?: boolean }> = ({ is
             </div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-10 mx-auto w-full max-w-6xl">
+          <div className="grid gap-4 sm:grid-cols-2 mb-10 mx-auto w-full max-w-4xl">
             {briefings.map(b => {
                const spec = customTemplates[b.briefing_type] || BRIEFING_QUESTIONS[b.briefing_type];
                const title = spec ? spec.title : b.briefing_type;
@@ -635,7 +635,7 @@ export const BriefingOnboarding: React.FC<{ isDashboardView?: boolean }> = ({ is
                          {b.is_completed ? <CheckCircle size={24} /> : <FileText size={24} />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-snug break-words">{title}</h3>
+                        <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-snug break-normal">{title}</h3>
                         <span className={`text-[10px] uppercase tracking-widest font-bold mt-1 block ${b.is_completed ? 'text-green-600' : 'text-gray-400'}`}>
                             {b.is_completed ? 'Concluído' : 'Pendente'}
                         </span>
