@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DailyContent, PostData, PostComment, PostStatus } from '../types';
 import { useAuth, supabase, parseImageUrl, stringifyImageUrl } from '../lib/supabase';
-import { X, Send, Image as ImageIcon, CheckCircle2, AlertTriangle, Save, UploadCloud, Trash2, Edit3, RefreshCw, Link, Check, Calendar, Instagram, Linkedin, ChevronDown, Layers, Copy, LayoutTemplate, Eye, FileText, XCircle } from 'lucide-react';
+import { X, Send, Image as ImageIcon, CheckCircle2, AlertTriangle, Save, UploadCloud, Trash2, Edit3, RefreshCw, Link, Check, Calendar, Instagram, Linkedin, ChevronDown, Layers, Copy, LayoutTemplate, Eye, FileText, XCircle, Building2 } from 'lucide-react';
 import { InstagramView, LinkedInView, TikTokView } from './PlatformViews';
 import { ConfirmModal } from './ConfirmModal';
 import { CustomDatePicker, CustomTimePicker } from './CustomPickers';
@@ -16,6 +16,8 @@ interface PostModalProps {
   onUpdate?: () => void;
   isNew?: boolean; 
   defaultDate?: string; 
+  clientOverride?: any;
+  isMasterMap?: boolean;
 }
 
 const POST_TYPES = [
@@ -43,10 +45,36 @@ const STATUS_OPTIONS: { value: PostStatus; label: string }[] = Object.keys(STATU
     label: STATUS_CONFIG[k as PostStatus].label
   }));
 
-export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, groupKeys, onClose, onUpdate, isNew = false, defaultDate = '' }) => {
-  const { userRole, activeClient, agencyId } = useAuth();
+export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, groupKeys, onClose, onUpdate, isNew = false, defaultDate = '', clientOverride, isMasterMap = false }) => {
+  const { userRole, activeClient: contextActiveClient, agencyId } = useAuth();
+  
+  const [agencyClients, setAgencyClients] = useState<any[]>([]);
+  const [selectedClientForNew, setSelectedClientForNew] = useState<any>(null);
+
+  const activeClient = selectedClientForNew || clientOverride || contextActiveClient;
   const canComment = !!userRole;
   const commentsEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchAgencyClients = async () => {
+      if (isMasterMap && agencyId) {
+        try {
+          const { data } = await supabase
+            .from('clients')
+            .select('*')
+            .eq('agency_id', agencyId)
+            .eq('is_active', true)
+            .order('name');
+          if (data) {
+            setAgencyClients(data);
+          }
+        } catch (e) {
+          console.error("Erro carregando clientes no PostModal:", e);
+        }
+      }
+    };
+    fetchAgencyClients();
+  }, [isMasterMap, agencyId]);
   
   // Data States
   const [post, setPost] = useState<PostData | null>(null);
@@ -382,6 +410,11 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
   const handleSavePost = async () => {
     if (!postDate) {
         alert("Por favor, selecione uma data.");
+        return;
+    }
+
+    if (isMasterMap && isNew && !activeClient?.id) {
+        alert("Por favor, selecione o cliente correspondente para criar a publicação.");
         return;
     }
 
@@ -985,6 +1018,29 @@ export const PostModal: React.FC<PostModalProps> = ({ dayContent, dateKey, group
                    className="p-5 border-b border-gray-100 bg-blue-50/30 overflow-y-auto max-h-[100%] custom-scrollbar pb-20"
                  >
                     
+                    {/* Seletor de Cliente para o Mapa Master */}
+                    {isMasterMap && isNew && (
+                      <div className="bg-white p-5 rounded-2xl border border-black/[0.05] shadow-sm mb-5">
+                          <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><Building2 size={14} className="text-brand-dark" /> Selecionar Cliente *</h3>
+                          <div className="relative">
+                              <select 
+                                  value={activeClient?.id || ''} 
+                                  onChange={(e) => {
+                                    const cl = agencyClients.find(c => c.id === e.target.value);
+                                    setSelectedClientForNew(cl || null);
+                                  }}
+                                  className="w-full appearance-none bg-white border border-black/[0.08] text-brand-dark py-3 px-4 rounded-xl leading-tight focus:outline-none focus:ring-2 focus:ring-brand-dark/10 focus:border-brand-dark font-bold text-[11px] uppercase tracking-widest transition-all"
+                              >
+                                  <option value="">Selecione um cliente...</option>
+                                  {agencyClients.map(c => (
+                                      <option key={c.id} value={c.id}>{c.name}</option>
+                                  ))}
+                              </select>
+                              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400"><ChevronDown size={14} /></div>
+                          </div>
+                      </div>
+                    )}
+
                     {/* 1. Status */}
                     <div className="bg-white p-5 rounded-2xl border border-black/[0.05] shadow-sm mb-5">
                         <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><AlertTriangle size={14} className="text-brand-dark" /> Status da Publicação</h3>

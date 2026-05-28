@@ -25,6 +25,7 @@ import { AgencyContractsTab } from './AgencyContractsTab';
 import { OnboardingTab } from './OnboardingTab';
 import { ClientesTab } from './ClientesTab';
 import { AnotacoesTab } from './AnotacoesTab';
+import { MasterEditorialMap } from './MasterEditorialMap';
 import { Logo } from '../Logo';
 
 import { useAuth } from '../../lib/supabase';
@@ -36,7 +37,7 @@ interface AgencyDashboardProps {
   onTabChange?: (tab: string) => void;
 }
 
-type Tab = 'home' | 'tasks' | 'financeiro' | 'prospeccao' | 'contratos' | 'onboarding' | 'clientes' | 'anotacoes';
+type Tab = 'home' | 'tasks' | 'financeiro' | 'prospeccao' | 'contratos' | 'onboarding' | 'clientes' | 'anotacoes' | 'masterMap';
 
 export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSelectClient, activeTab, onTabChange }) => {
   const { userRole } = useAuth();
@@ -59,6 +60,7 @@ export const AgencyDashboard: React.FC<AgencyDashboardProps> = ({ onBack, onSele
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
               {activeTab === 'home' && <HomeTab onNavigateToClients={(client) => onSelectClient(client)} />}
+              {activeTab === 'masterMap' && <MasterEditorialMap />}
               {activeTab === 'contratos' && <AgencyContractsTab />}
               {activeTab === 'onboarding' && <OnboardingTab onNavigateToClients={(client) => onSelectClient(client)} />}
               {activeTab === 'tasks' && <AgencyTasksTab />}
